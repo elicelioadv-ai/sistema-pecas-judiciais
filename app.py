@@ -11,6 +11,7 @@ import json
 import pandas as pd
 import streamlit as st
 
+import decisoes
 import motor
 
 st.set_page_config(page_title="Sistema de Peças Judiciais", page_icon="⚖️", layout="wide")
@@ -536,6 +537,144 @@ def aba_conferencia():
         st.write(f"- {i['referencia']} — `{i['status']}` — {i.get('fonte', '')}")
 
 
+@st.cache_data(ttl=6 * 3600, show_spinner=False)
+def _stj_acordaos(datasets, limite):
+    return decisoes.acordaos_recentes(list(datasets), limite)
+
+
+@st.cache_data(ttl=1 * 3600, show_spinner=False)
+def _datajud_consultar(alias, numero):
+    return decisoes.consultar_processo(alias, numero)
+
+
+def aba_decisoes():
+    st.subheader("📰 Decisões & Processos")
+    st.caption(
+        "Fontes **oficiais e gratuitas**: acórdãos recentes do STJ (Portal de Dados Abertos) e "
+        "movimentações de processos pelo **CNJ (DataJud)**. O sistema só reúne e organiza — "
+        "confira sempre no site oficial antes de citar."
+    )
+    t_stj, t_proc, t_links = st.tabs(
+        ["🗞️ STJ — acórdãos recentes", "📌 Acompanhar processo (CNJ)", "🔗 Atalhos oficiais"]
+    )
+
+    with t_stj:
+        st.caption("Baixa o arquivo mais recente de cada órgão e mostra as decisões mais novas. "
+                   "Mais órgãos = mais demorado (na primeira vez).")
+        rotulos = [r for r, _ in decisoes.ORGAOS_STJ]
+        sel = st.multiselect("Órgãos do STJ", rotulos,
+                             default=["Corte Especial", "1ª Seção", "2ª Seção", "3ª Seção"],
+                             key="stj_orgaos")
+        c1, c2 = st.columns([1, 2])
+        limite = c1.selectbox("Quantas decisões", [30, 60, 100, 200], index=1, key="stj_limite")
+        filtro = c2.text_input("Filtrar (palavra na ementa, nº do processo, relator)", key="stj_filtro")
+        if st.button("🔄 Buscar acórdãos recentes", type="primary"):
+            mapa = dict(decisoes.ORGAOS_STJ)
+            datasets = tuple(mapa[r] for r in sel)
+            if not datasets:
+                st.warning("Escolha ao menos um órgão.")
+            else:
+                with st.status("Baixando acórdãos do STJ...", expanded=False) as s:
+                    lista, erros = _stj_acordaos(datasets, limite)
+                    s.update(label=f"{len(lista)} acórdão(ões) carregado(s)",
+                             state="complete" if lista else "error")
+                st.session_state["stj_lista"] = lista
+                st.session_state["stj_erros"] = erros
+        for e in st.session_state.get("stj_erros", []):
+            st.warning(f"Não consegui ler um conjunto: {e}")
+        lista = st.session_state.get("stj_lista") or []
+        if not lista:
+            st.info("Clique em **🔄 Buscar acórdãos recentes** para carregar as decisões.")
+        else:
+            termo = (filtro or "").strip().lower()
+            mostrados = 0
+            for a in lista:
+                alvo = (f"{a['processo']} {a['relator']} {a['orgao']} {a['classe']} "
+                        f"{a['ementa']} {a['tese']} {a['tema']}").lower()
+                if termo and termo not in alvo:
+                    continue
+                mostrados += 1
+                titulo = f"{a['data'] or '—'} · {a['orgao']} · {a['processo']} — {a['classe']}"
+                with st.expander(titulo):
+                    st.markdown(f"**Relator(a):** {a['relator'] or '—'}")
+                    if a["tema"]:
+                        st.markdown(f"**Tema / repetitivo:** {a['tema']}")
+                    if a["tese"]:
+                        st.markdown(f"**Tese firmada:** {a['tese']}")
+                    st.markdown("**Ementa:**")
+                    st.write(a["ementa"] or "(sem ementa)")
+                    if a["processo"]:
+                        st.link_button(
+                            "Ver o processo no STJ",
+                            f"https://processo.stj.jus.br/processo/pesquisa/?termo={a['processo']}",
+                        )
+            if mostrados == 0:
+                st.info("Nenhuma decisão casou com o filtro.")
+
+    with t_proc:
+        st.caption("Consulta, pelo número único (CNJ), os dados e as **movimentações** de um processo. "
+                   "São metadados oficiais do DataJud — o texto da decisão você lê no site do tribunal.")
+        c1, c2 = st.columns(2)
+        ramos = list(decisoes.DATAJUD_RAMOS)
+        ramo = c1.selectbox("Ramo", ramos, index=ramos.index("Justiça Estadual"), key="dj_ramo")
+        opcoes = decisoes.DATAJUD_RAMOS[ramo]
+        preferido = {"Justiça Federal": "api_publica_trf5",
+                     "Justiça do Trabalho": "api_publica_trt7",
+                     "Justiça Eleitoral": "api_publica_tre-ce",
+                     "Justiça Estadual": "api_publica_tjce"}.get(ramo)
+        idx = next((j for j, (_, a) in enumerate(opcoes) if a == preferido), 0)
+        tribunal_rot = c2.selectbox("Tribunal", [r for r, _ in opcoes], index=idx, key="dj_tribunal")
+        alias = dict(opcoes)[tribunal_rot]
+        numero = st.text_input("Número do processo (formato CNJ)", key="dj_numero",
+                               placeholder="ex.: 3000867-89.2026.8.06.0000")
+        if st.button("🔍 Consultar processo", type="primary"):
+            if not numero.strip():
+                st.warning("Digite o número do processo.")
+            else:
+                try:
+                    with st.status("Consultando o DataJud...", expanded=False) as s:
+                        procs = _datajud_consultar(alias, numero)
+                        s.update(label=f"{len(procs)} processo(s) encontrado(s)",
+                                 state="complete" if procs else "error")
+                    st.session_state["dj_procs"] = procs
+                    st.session_state["dj_erro"] = ""
+                except Exception as e:
+                    st.session_state["dj_procs"] = []
+                    st.session_state["dj_erro"] = str(e)
+        if st.session_state.get("dj_erro"):
+            st.error(st.session_state["dj_erro"])
+        procs = st.session_state.get("dj_procs") or []
+        if not procs and not st.session_state.get("dj_erro"):
+            st.info("Digite o número e clique em **🔍 Consultar processo**.")
+        for p in procs:
+            st.markdown(f"### {p['numero']} — {p['tribunal']} ({p['grau']})")
+            if p["classe"]:
+                st.markdown(f"**Classe:** {p['classe']}")
+            if p["orgao"]:
+                st.markdown(f"**Órgão julgador:** {p['orgao']}")
+            if p["ajuizamento"]:
+                st.markdown(f"**Ajuizamento:** {p['ajuizamento']}")
+            if p["assuntos"]:
+                st.markdown("**Assuntos:** " + "; ".join(p["assuntos"]))
+            st.markdown(f"**Movimentações ({len(p['movimentos'])})** — mais recentes primeiro:")
+            for m in p["movimentos"][:20]:
+                st.markdown(f"- `{m['data']}` — {m['nome']}")
+            if len(p["movimentos"]) > 20:
+                with st.expander(f"Ver as demais {len(p['movimentos']) - 20} movimentações"):
+                    for m in p["movimentos"][20:]:
+                        st.markdown(f"- `{m['data']}` — {m['nome']}")
+            st.caption("Processos em segredo de justiça não aparecem. Confirme no site do tribunal.")
+
+    with t_links:
+        st.caption("Não existe um feed automático oficial para todos os tribunais. Estes atalhos abrem "
+                   "a busca no site do próprio órgão, que é o repositório oficial da jurisprudência.")
+        for grupo, itens in decisoes.ATALHOS:
+            st.markdown(f"**{grupo}**")
+            colunas = st.columns(2)
+            for j, (titulo, url) in enumerate(itens):
+                colunas[j % 2].link_button(titulo, url, width="stretch")
+
+
 def exportar(texto):
     stamp = f"{datetime.now():%Y%m%d_%H%M%S}"
     c1, c2 = st.columns(2)
@@ -557,8 +696,9 @@ def exportar(texto):
 
 
 # ------------------------------------------------------------------ abas principais
-aba_caso, aba_fatos, aba_peca, aba_conf, aba_base_ui, aba_anexo = st.tabs(
-    ["1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência", "🗂️ Base legal", "📎 Anexo/Análise"]
+aba_caso, aba_fatos, aba_peca, aba_conf, aba_base_ui, aba_anexo, aba_decisoes_ui = st.tabs(
+    ["1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência", "🗂️ Base legal", "📎 Anexo/Análise",
+     "📰 Decisões & Processos"]
 )
 
 with aba_caso:
@@ -733,3 +873,6 @@ with aba_conf:
 
 with aba_base_ui:
     aba_base()
+
+with aba_decisoes_ui:
+    aba_decisoes()
