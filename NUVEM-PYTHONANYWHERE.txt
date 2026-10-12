@@ -1,0 +1,113 @@
+==============================================================
+NUVEM - PYTHONANYWHERE (pythonanywhere.com)
+Sistema de Peças Judiciais - passo a passo de publicação
+==============================================================
+
+PRÉ-REQUISITO
+- Conta gratuita em https://www.pythonanywhere.com (é só se cadastrar).
+- Você já tem o zip "Sistema_de_Pecas_PythonAnywhere.zip" (gerado junto com
+  este arquivo, na pasta do projeto no seu computador).
+
+--------------------------------------------------------------
+1) SUBIR O ARQUIVO
+--------------------------------------------------------------
+- Entre no site. Aba "Files", você cai na pasta "/home/SEU_USUARIO".
+- Clique em "Upload a file" e selecione o arquivo:
+      Sistema_de_Pecas_PythonAnywhere.zip
+- Espere o upload terminar (ele aparece na lista de arquivos).
+
+--------------------------------------------------------------
+2) DESCOMPACTAR E INSTALAR (no console Bash)
+--------------------------------------------------------------
+- Aba "Consoles" -> "Bash". Digite, trocando SEU_USUARIO:
+
+   cd /home/SEU_USUARIO
+   mkdir -p sistema_pecas
+   unzip -o Sistema_de_Pecas_PythonAnywhere.zip -d sistema_pecas
+
+- Criar o ambiente virtual e instalar as dependências:
+
+   mkvirtualenv --python=python3.12 pecas
+   pip install -r /home/SEU_USUARIO/sistema_pecas/requirements.txt
+
+  (a instalação demora alguns minutos; aguarde terminar)
+
+- Instalar também a ferramenta "pa" do próprio PythonAnywhere:
+
+   pip install --upgrade pythonanywhere
+
+--------------------------------------------------------------
+3) LIBERAR A CHAVE DA API (arquivo .env no servidor)
+--------------------------------------------------------------
+No Bash, crie o arquivo de configuração:
+
+   cd /home/SEU_USUARIO/sistema_pecas
+   nano .env
+
+Cole este conteúdo (troque SUA_CHAVE pelo valor que você usa no
+seu computador, mesma chave do GEMINI_API_KEY local):
+
+   PROVEDOR=gemini
+   GEMINI_API_KEY=SUA_CHAVE
+   MODELO=gemini-3.8-flash
+   USO_PAGO=nao
+   MODO_CHAVE=gemini
+   REGIAO=
+   ACESSO_USUARIO=
+   SENHA_ACESSO=
+
+- No "nano": CTRL+O para salvar, ENTER, CTRL+X para sair.
+- NÃO suba o seu .env local: a chave fica só aqui no servidor.
+
+--------------------------------------------------------------
+4) CRIAR O SITE (Streamlit)
+--------------------------------------------------------------
+No Bash, rode o comando abaixo, trocando SEU_USUARIO nos DOIS lugares
+(se estiver no sistema EU da PythonAnywhere, o domínio muda para
+SEU_USUARIO.eu.pythonanywhere.com):
+
+   pa website create --domain SEU_USUARIO.pythonanywhere.com --command '/home/SEU_USUARIO/.virtualenvs/pecas/bin/streamlit run /home/SEU_USUARIO/sistema_pecas/app.py --server.headless true --server.address "unix://${DOMAIN_SOCKET}" --server.enableCORS false --server.enableXsrfProtection false --server.enableWebsocketCompression false'
+
+- Aguarde uns minutinhos começar. Depois abra:
+
+   https://SEU_USUARIO.pythonanywhere.com
+
+--------------------------------------------------------------
+5) PRIMEIRO ACESSO (definir usuário e senha)
+--------------------------------------------------------------
+- Pela primeira vez, o sistema pede para você definir o acesso
+  (porque o .env de lá está com usuário e senha vazios):
+    * Usuário (ex.: admin)
+    * Nova senha e Repita a nova senha
+    * botão "Definir acesso e entrar"
+- Isso grava usuário e senha (com hash) no .env do servidor.
+- A partir daí, para entrar é Usuário + Senha + "Entrar".
+
+--------------------------------------------------------------
+6) ATUALIZAR DEPOIS QUE MUDAR O CÓDIGO
+--------------------------------------------------------------
+- Faça download de um novo zip (ou reenvie os arquivos alterados)
+  para a pasta /home/SEU_USUARIO (por cima da anterior) e descompacte:
+   unzip -o ~/Sistema_de_Pecas_PythonAnywhere.zip -d ~/sistema_pecas
+- Recarregue o site:
+   pa website reload --domain SEU_USUARIO.pythonanywhere.com
+
+--------------------------------------------------------------
+AVISOS IMPORTANTES
+--------------------------------------------------------------
+- Plano GRATUITO: há limite diário de uso de CPU. Se o site travar por
+  isso, ele reinicia sozinho no dia seguinte; dá também para trocar o
+  nome da conta para plano pago.
+- Os casos salvos ficam em /home/SEU_USUARIO/sistema_pecas/historico
+  (persistente). Exportações (Word/PDF) vão para a pasta /saida.
+- LOG: acompanhe erros com:
+   tail -f /home/SEU_USUARIO/sistema_pecas/gerador.log
+- O ambiente faz parte de um recurso ainda em BETA do PythonAnywhere:
+  por isso ele não aparece na aba "Web" tradicional. Para gerenciar,
+  use "pa" no Bash:
+   pa website list
+   pa website reload --domain SEU_USUARIO.pythonanywhere.com
+   pa website delete --domain SEU_USUARIO.pythonanywhere.com
+- Domínio próprio/HTTPS: é preciso apontar o domínio e usar
+   pa website create-autorenew-cert --domain SEU_DOMINIO
+==============================================================

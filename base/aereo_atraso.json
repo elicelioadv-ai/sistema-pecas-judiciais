@@ -1,0 +1,72 @@
+[
+  {
+    "id": "cba_256_p1_II",
+    "referencia": "art. 256, §1º, II, do CBA – Lei nº 7.565/1986",
+    "status": "verificado",
+    "texto": "O transportador não responde pelo atraso do transporte aéreo contratado se comprovar que, por motivo de caso fortuito ou de força maior, foi impossível adotar medidas necessárias, suficientes e adequadas para evitar o dano. (redação da Lei nº 14.034/2020)",
+    "fonte": "https://legis.senado.leg.br/norma/32530099/publicacao/32531719"
+  },
+  {
+    "id": "cba_256_p3",
+    "referencia": "art. 256, §3º, do CBA – Lei nº 7.565/1986",
+    "status": "verificado",
+    "texto": "Constitui caso fortuito ou força maior a ocorrência de um ou mais dos seguintes eventos, DESDE QUE supervenientes, imprevisíveis e inevitáveis: I - restrições ao pouso ou à decolagem decorrentes de condições meteorológicas adversas impostas por órgão do sistema de controle do espaço aéreo; II - restrições ao pouso ou à decolagem decorrentes de indisponibilidade da infraestrutura aeroportuária; III - restrições ao voo, ao pouso ou à decolagem decorrentes de determinações da autoridade de aviação civil ou de qualquer outra autoridade ou órgão da Administração Pública, que será responsabilizada. (Lei nº 14.034/2020)",
+    "fonte": "https://legis.senado.leg.br/norma/32530099/publicacao/32531719"
+  },
+  {
+    "id": "cba_256_p4",
+    "referencia": "art. 256, §4º, do CBA – Lei nº 7.565/1986",
+    "status": "conferir",
+    "texto": "RESUMO (conferir texto literal no Planalto antes de citar): mesmo nas hipóteses de caso fortuito ou força maior, o transportador permanece obrigado a prestar ao passageiro a assistência prevista na regulamentação.",
+    "fonte": "https://www.planalto.gov.br/ccivil_03/Leis/L7565.htm"
+  },
+  {
+    "id": "cdc_14",
+    "referencia": "art. 14 do CDC – Lei nº 8.078/1990",
+    "status": "conferir",
+    "texto": "RESUMO (conferir texto literal): o fornecedor de serviços responde, independentemente de culpa, pela reparação dos danos causados aos consumidores por defeitos relativos à prestação dos serviços.",
+    "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm"
+  },
+  {
+    "id": "cdc_6_VI",
+    "referencia": "art. 6º, VI, do CDC – Lei nº 8.078/1990",
+    "status": "conferir",
+    "texto": "RESUMO (conferir texto literal): direito básico do consumidor à efetiva prevenção e reparação de danos patrimoniais e morais.",
+    "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm"
+  },
+  {
+    "id": "cdc_6_VIII",
+    "referencia": "art. 6º, VIII, do CDC – Lei nº 8.078/1990",
+    "status": "conferir",
+    "texto": "RESUMO (conferir texto literal): direito básico à facilitação da defesa, com inversão do ônus da prova a favor do consumidor quando verossímil a alegação ou hipossuficiente.",
+    "fonte": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm"
+  },
+  {
+    "id": "anac_400",
+    "referencia": "Resolução ANAC nº 400/2016 – assistência material e informação ao passageiro",
+    "status": "conferir",
+    "texto": "RESUMO (conferir ARTIGOS EXATOS no site da ANAC antes de citar número de artigo): regula a assistência material (comunicação, alimentação, hospedagem/transporte) conforme o tempo de espera, e o dever de informar o passageiro sobre o atraso e seus motivos. NÃO cite número de artigo enquanto o status for 'conferir'.",
+    "fonte": "https://www.gov.br/anac"
+  },
+  {
+    "id": "cf_5_X",
+    "referencia": "Constituição Federal, art. 5º, X",
+    "status": "conferir",
+    "texto": "RESUMO (conferir texto literal): são invioláveis a intimidade, a vida privada, a honra e a imagem das pessoas, assegurado o direito a indenização pelo dano material ou moral decorrente de sua violação.",
+    "fonte": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm"
+  },
+  {
+    "id": "cc_186_927",
+    "referencia": "Código Civil, arts. 186 e 927",
+    "status": "conferir",
+    "texto": "RESUMO (conferir texto literal): quem, por ato ilícito, causa dano a outrem fica obrigado a repará-lo.",
+    "fonte": "https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilado.htm"
+  },
+  {
+    "id": "juris_pendente",
+    "referencia": "Nenhuma jurisprudência verificada na base",
+    "status": "vazio",
+    "texto": "Nenhum precedente foi verificado e inserido nesta base. A IA NÃO pode citar julgados. Onde houver necessidade de jurisprudência, escrever [INSERIR JURISPRUDÊNCIA VERIFICADA].",
+    "fonte": ""
+  }
+]

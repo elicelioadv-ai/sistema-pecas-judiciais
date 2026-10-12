@@ -1,0 +1,53 @@
+GERADOR DE PECAS - GUIA RAPIDO
+================================
+
+1) Instalar dependencias:
+   pip install -r requirements.txt
+
+2) Configurar a chave:
+   copie o arquivo .env.example para .env e cole sua chave do Gemini
+   (para testar a chave:  python testar_chave.py)
+
+3) Abrir o programa:
+   - Duplo clique em abrir_gerador.pyw (abre escondido), ou
+   - Duplo clique em abrir_gerador.bat (mostra janela), ou
+   - No terminal:  streamlit run app.py
+   Para desligar: duplo clique em desligar_gerador.pyw
+
+COMO USAR (abas):
+   1 Caso         -> dados do caso + narrativa (pode gravar audio e transcrever)
+   2 Fatos        -> fatos organizados (edite), escolha modelo e base, gere a peca
+   3 Peca         -> revise o texto e exporte em Word (.docx) ou PDF
+   4 Conferencia  -> alertas automaticos (anti-invencao): citacoes, datas e valores
+   Base legal     -> curadoria das fontes; so o que estiver aqui pode ser citado
+
+HISTORICO: no menu lateral salve/abra/apague casos.
+
+ACESSO COM USUARIO E SENHA:
+   - Para entrar e preciso informar USUARIO e SENHA (definidos em ACESSO_USUARIO e
+     SENHA_ACESSO no .env; a senha fica gravada com HASH).
+   - Se o .env nao tiver esses valores, o 1o acesso mostra campos para voce definir
+     (usuario, nova senha, repita). Depois, "Trocar usuario / senha" fica na lateral
+     (dentro de Configuracoes).
+   - Na nuvem, defina as variaveis de ambiente ACESSO_USUARIO e SENHA_ACESSO no
+     painel do servico (ex.: Streamlit Community Cloud Secrets) em vez do .env.
+
+SEGURANCA (LGPD) - MODO SEGURO:
+   - Na lateral, "Modo seguro" (ligado por padrao) ANONIMIZA os dados antes de
+     envia-los a IA: nomes, CPF, CNPJ, e-mail, telefone e CEP viram marcadores
+     ([PESSOA_1], [CPF_1]...). A peca final e restaurada com os dados reais.
+   - Adicione em "Termos extras" nomes que aparecem so na narrativa (ex.: primeiro
+     nome, testemunhas) para garantir que tambem sejam ocultados.
+   - IMPORTANTE: a cota GRATUITA do Gemini pode usar seus dados para treinamento e
+     ser lida por revisores. Para dados reais, ative faturamento (conta paga) ou use
+     Vertex AI, em "Configuracoes do provedor" (marca USO_PAGO=sim no .env).
+   - Nada disso substitui a revisao do advogado nem a avaliacao de conformidade.
+
+RODAR OS TESTES:
+   python -m unittest discover -s tests
+
+ALERTAS DA CONFERENCIA:
+   [erro]  citou fonte que NAO existe na base, ou marcador de anonimizacao sobrando
+   [aviso] revisar: artigo/jurisprudencia fora da base, fonte "conferir",
+           data/valor que nao aparece nos fatos, ou campo [PREENCHER] pendente
+   [ok]    sem alertas automaticos (revise mesmo assim)

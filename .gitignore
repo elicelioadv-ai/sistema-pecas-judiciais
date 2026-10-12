@@ -1,0 +1,16 @@
+# Segredos / configuracao local (NUNCA subir)
+.env
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Logs e dados gerados em tempo de uso
+gerador.log
+historico/*.json
+saida/*
+
+# Sistema
+Thumbs.db
+Desktop.ini

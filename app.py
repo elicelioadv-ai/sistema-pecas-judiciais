@@ -1,0 +1,725 @@
+﻿"""
+app.py - a TELA do programa (Streamlit).
+
+Fluxo: Caso -> Fatos -> Peça -> Conferência, além de histórico e editor da base legal.
+Para abrir:  streamlit run app.py
+"""
+from datetime import datetime
+from pathlib import Path
+import json
+
+import pandas as pd
+import streamlit as st
+
+import motor
+
+st.set_page_config(page_title="Sistema de Peças Judiciais", page_icon="⚖️", layout="wide")
+
+
+def _carregar_municipios():
+    caminho = Path(__file__).resolve().parent / "dados" / "ibge_municipios.json"
+    try:
+        with open(caminho, encoding="utf-8-sig") as arq:
+            return json.load(arq)
+    except Exception:
+        return {}
+
+
+MUNICIPIOS = _carregar_municipios()
+
+ESTADOS = [
+    ("AC", "Acre"), ("AL", "Alagoas"), ("AP", "Amapá"), ("AM", "Amazonas"), ("BA", "Bahia"),
+    ("CE", "Ceará"), ("DF", "Distrito Federal"), ("ES", "Espírito Santo"), ("GO", "Goiás"),
+    ("MA", "Maranhão"), ("MT", "Mato Grosso"), ("MS", "Mato Grosso do Sul"), ("MG", "Minas Gerais"),
+    ("PA", "Pará"), ("PB", "Paraíba"), ("PR", "Paraná"), ("PE", "Pernambuco"), ("PI", "Piauí"),
+    ("RJ", "Rio de Janeiro"), ("RN", "Rio Grande do Norte"), ("RS", "Rio Grande do Sul"),
+    ("RO", "Rondônia"), ("RR", "Roraima"), ("SC", "Santa Catarina"), ("SP", "São Paulo"),
+    ("SE", "Sergipe"), ("TO", "Tocantins"),
+]
+OPCOES_UF = ["—"] + [f"{sigla} – {nome}" for sigla, nome in ESTADOS]
+SIGLA_UF = {f"{sigla} – {nome}": sigla for sigla, nome in ESTADOS}
+CAMPOS_ENDERECO = ("rua", "num", "bairro", "cep", "cidade", "uf", "cidade_livre", "compl")
+
+DEFAULTS = {
+    "dados": "", "narrativa": "", "fatos_edit": "", "peca_edit": "",
+    "pend": "", "respostas": "", "alertas": [], "usadas": [], "juris_sugerida": "",
+    "analise_doc": "", "analise_alertas": [],
+    "f_juizo": "", "f_outros": "", "f_rotulo": "Requerente / Requerido",
+    "mem_ruas": [], "mem_bairros": [], "mem_ceps": [],
+    "req_nome": "", "req_civil": "", "req_prof": "", "req_doc": "",
+    "rdo_nome": "", "rdo_civil": "", "rdo_prof": "", "rdo_doc": "",
+    **{f"req_{c}": "" for c in CAMPOS_ENDERECO},
+    **{f"rdo_{c}": "" for c in CAMPOS_ENDERECO},
+}
+for chave, inicial in DEFAULTS.items():
+    st.session_state.setdefault(chave, inicial)
+
+# aplica valores definidos por botões (antes de criar os campos, para não dar erro)
+for _campo, _pendente in (("fatos_edit", "_p_fatos"), ("peca_edit", "_p_peca"),
+                          ("pend", "_p_pend"), ("respostas", "_p_respostas")):
+    if _pendente in st.session_state:
+        st.session_state[_campo] = st.session_state.pop(_pendente)
+
+if st.session_state.pop("_limpar_respostas", False):
+    for _k in [k for k in st.session_state if str(k).startswith("resp_")]:
+        del st.session_state[_k]
+
+
+# ---------------------------------------------------------------- portão de acesso (senha)
+if not st.session_state.setdefault("autenticado", False):
+    st.markdown(
+        "<div style='text-align:center; font-size:clamp(70px,18vw,130px); line-height:1; "
+        "margin-bottom:6px;'>⚖️</div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        "<h1 style='text-align:center;'>Sistema de Peças Judiciais</h1>",
+        unsafe_allow_html=True,
+    )
+    st.markdown("Para acessar o sistema, informe seu **usuário** e **senha**.")
+
+    with st.form("login_form"):
+        usuario_entrada = st.text_input("Usuário", key="login_usuario")
+        senha_entrada = st.text_input("Senha de acesso", type="password", key="login_senha")
+        entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
+
+    if not motor.senha_ativa() or not motor.usuario_acesso():
+        st.warning("Nenhum acesso configurado ainda. Defina agora (vale para a nuvem também).")
+        with st.form("primeira_senha"):
+            u_novo = st.text_input("Usuário (ex.: admin)", key="u_novo")
+            s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1")
+            s2 = st.text_input("Repita a nova senha", type="password", key="s2")
+            definir = st.form_submit_button("Definir acesso e entrar")
+            if definir:
+                if not s1 or s1 != s2:
+                    st.error("As senhas não conferem.")
+                else:
+                    try:
+                        motor.definir_acesso(u_novo, s1)
+                        st.session_state.update(autenticado=True, usuario=u_novo.strip())
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Não deu para definir o acesso: {e}")
+
+    if entrar:
+        if motor.verificar_acesso(usuario_entrada, senha_entrada):
+            st.session_state.update(autenticado=True, usuario=usuario_entrada.strip())
+            st.rerun()
+        else:
+            st.error("Usuário ou senha incorretos.")
+
+    st.stop()
+
+
+def alerta(nivel, msg):
+    icone = {"erro": "❌", "aviso": "⚠️", "ok": "✅"}.get(nivel, "•")
+    st.markdown(f"{icone} {msg}")
+
+
+ROTULOS_PARTES = {
+    "Requerente / Requerido": ("Requerente", "Requerido"),
+    "Autor / Réu (ação criminal)": ("Autor", "Réu"),
+    "Recorrente / Recorrido (recurso)": ("Recorrente", "Recorrido"),
+    "Embargante / Embargado": ("Embargante", "Embargado"),
+}
+
+
+def _g(chave):
+    return str(st.session_state.get(chave, "") or "").strip()
+
+
+def _memorizar(mem_key, valor):
+    valor = str(valor or "").strip()
+    if not valor:
+        return
+    lista = st.session_state.setdefault(mem_key, [])
+    if valor not in lista:
+        lista.append(valor)
+        st.session_state[mem_key] = lista[-50:]
+
+
+def _memoria_select(label, mem_key, alvo_key):
+    alvo = _g(alvo_key)
+    opcoes = [m for m in st.session_state.get(mem_key, []) if m != alvo]
+    if not opcoes:
+        return
+    sel = st.selectbox(f"↩ {label}", ["—"] + opcoes, key=f"sel_{alvo_key}")
+    if sel and sel != "—":
+        st.session_state[alvo_key] = sel
+        st.rerun()
+
+
+def complementos_cidade(prefixo):
+    """Cidade (pesquisável por iniciais) e UF (pesquisável), com opção de digitar outra cidade."""
+    c5, c6 = st.columns([3, 1])
+    uf = st.session_state.get(f"{prefixo}_uf", "—")
+    lista = MUNICIPIOS.get(SIGLA_UF.get(uf, ""), []) if uf != "—" else []
+    opcoes = ["—"] + lista + (["✏️ outra (digitar)"] if uf != "—" else [])
+    c5.selectbox("Cidade", opcoes, key=f"{prefixo}_cidade")
+    c6.selectbox("UF", OPCOES_UF, key=f"{prefixo}_uf")
+    if st.session_state.get(f"{prefixo}_cidade", "") == "✏️ outra (digitar)":
+        st.text_input("Digite a cidade", key=f"{prefixo}_cidade_livre", placeholder="Nome da cidade")
+
+
+def _endereco_resumo(prefixo):
+    partes = []
+    rua = _g(f"{prefixo}_rua")
+    num = _g(f"{prefixo}_num")
+    if rua:
+        partes.append(rua + (f", {num}" if num else ""))
+    bairro = _g(f"{prefixo}_bairro")
+    if bairro:
+        partes.append(f"bairro {bairro}")
+    cidade = _g(f"{prefixo}_cidade")
+    if cidade == "✏️ outra (digitar)":
+        cidade = _g(f"{prefixo}_cidade_livre") or cidade
+    if cidade and cidade != "✏️ outra (digitar)":
+        uf = SIGLA_UF.get(_g(f"{prefixo}_uf"), _g(f"{prefixo}_uf"))
+        partes.append(cidade + (f" – {uf}" if uf else ""))
+    cep = _g(f"{prefixo}_cep")
+    if cep:
+        partes.append(f"CEP {cep}")
+    if _g(f"{prefixo}_compl"):
+        partes.append(_g(f"{prefixo}_compl"))
+    return ", ".join(partes)
+
+
+def _qualificacao(nome, civil, prof, doc, endr):
+    itens = []
+    if nome:
+        itens.append(f"nome: {nome}")
+    if civil:
+        itens.append(f"estado civil: {civil}")
+    if prof:
+        itens.append(f"profissão: {prof}")
+    if doc:
+        itens.append(f"cadastro (CPF/CNPJ/RG/OAB): {doc}")
+    if endr:
+        itens.append(f"endereço: {endr}")
+    return "; ".join(itens)
+
+
+def _cadastro_parte(prefixo, rotulo):
+    """Painel 'cadastro' de uma parte, com endereço em campos com memória."""
+    with st.expander(f"📋 {rotulo} (cadastro)"):
+        st.text_input("Nome completo", key=f"{prefixo}_nome", placeholder="Nome e sobrenome")
+        c1, c2 = st.columns(2)
+        c1.text_input("Estado civil", key=f"{prefixo}_civil", placeholder="ex.: casado(a)")
+        c2.text_input("Profissão", key=f"{prefixo}_prof", placeholder="ex.: vendedor(a)")
+        st.text_input("CPF / CNPJ / RG", key=f"{prefixo}_doc", placeholder="nº ...")
+        st.markdown("**Endereço**")
+        l1, l2 = st.columns([3, 1])
+        l1.text_input("Rua", key=f"{prefixo}_rua", placeholder="Av. ...")
+        l2.text_input("Número", key=f"{prefixo}_num", placeholder="123")
+        _memorizar("mem_ruas", st.session_state.get(f"{prefixo}_rua", ""))
+        _memoria_select("rua já usada", "mem_ruas", f"{prefixo}_rua")
+        l3, l4 = st.columns([3, 1])
+        l3.text_input("Bairro", key=f"{prefixo}_bairro", placeholder="Centro")
+        l4.text_input("CEP", key=f"{prefixo}_cep", placeholder="00000-000")
+        _memorizar("mem_bairros", st.session_state.get(f"{prefixo}_bairro", ""))
+        _memoria_select("bairro já usado", "mem_bairros", f"{prefixo}_bairro")
+        _memorizar("mem_ceps", st.session_state.get(f"{prefixo}_cep", ""))
+        _memoria_select("CEP já usado", "mem_ceps", f"{prefixo}_cep")
+        complementos_cidade(prefixo)
+        st.text_input("Complemento (apto/bloco, e-mail...)", key=f"{prefixo}_compl")
+
+
+def compor_dados():
+    """Junta os campos do cabeçalho da peça num único bloco enviado à IA."""
+    r1, r2 = ROTULOS_PARTES.get(st.session_state.get("f_rotulo", "Requerente / Requerido"),
+                                ("Requerente", "Requerido"))
+    partes = []
+    if _g("f_juizo"):
+        partes.append(f"Juízo/Vara: {_g('f_juizo')}")
+    endr1 = _endereco_resumo("req")
+    q1 = _qualificacao(_g("req_nome"), _g("req_civil"), _g("req_prof"), _g("req_doc"), endr1)
+    if q1:
+        partes.append(f"{r1}: {q1}")
+    endr2 = _endereco_resumo("rdo")
+    q2 = _qualificacao(_g("rdo_nome"), _g("rdo_civil"), _g("rdo_prof"), _g("rdo_doc"), endr2)
+    if q2:
+        partes.append(f"{r2}: {q2}")
+    if _g("f_outros"):
+        partes.append(f"Demais dados: {_g('f_outros')}")
+    return "\n".join(partes)
+
+
+def tentar(fn, *args, **kwargs):
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        motor._LOG.exception("Erro na operação")
+        st.error(str(e))
+        return None
+
+
+def _reseta_formulario():
+    """Limpa o caso em edição, mantendo as memórias de endereço."""
+    for chave, inicial in DEFAULTS.items():
+        if str(chave).startswith("mem_"):
+            continue
+        st.session_state[chave] = inicial.copy() if isinstance(inicial, list) else inicial
+    for k in [k for k in st.session_state if str(k).startswith(("resp_", "sel_"))]:
+        del st.session_state[k]
+    for k in ("export_docx", "export_pdf"):
+        st.session_state.pop(k, None)
+
+
+def iniciar_limpo(nome):
+    """Começa uma peça nova, zerando o formulário e fixando o nome do caso."""
+    _reseta_formulario()
+    st.session_state["nome_caso"] = nome
+    st.session_state["dados"] = compor_dados()
+
+
+def _dados_caso():
+    """Monta o dicionário completo do caso para salvar."""
+    return {
+        "dados": compor_dados(),
+        "f_juizo": st.session_state.get("f_juizo", ""),
+        "f_outros": st.session_state.get("f_outros", ""),
+        "f_rotulo": st.session_state.get("f_rotulo", "Requerente / Requerido"),
+        "req_nome": st.session_state.get("req_nome", ""), "req_civil": st.session_state.get("req_civil", ""),
+        "req_prof": st.session_state.get("req_prof", ""), "req_doc": st.session_state.get("req_doc", ""),
+        **{f"req_{c}": st.session_state.get(f"req_{c}", "") for c in CAMPOS_ENDERECO},
+        "rdo_nome": st.session_state.get("rdo_nome", ""), "rdo_civil": st.session_state.get("rdo_civil", ""),
+        "rdo_prof": st.session_state.get("rdo_prof", ""), "rdo_doc": st.session_state.get("rdo_doc", ""),
+        **{f"rdo_{c}": st.session_state.get(f"rdo_{c}", "") for c in CAMPOS_ENDERECO},
+        "narrativa": st.session_state["narrativa"],
+        "fatos": st.session_state["fatos_edit"], "peca": st.session_state["peca_edit"],
+        "pend": st.session_state["pend"], "alertas": st.session_state["alertas"],
+        "usadas": st.session_state["usadas"],
+    }
+
+
+def _salvar_automatico():
+    nome = st.session_state.get("nome_caso", "").strip()
+    if not nome:
+        st.info("Para salvar sozinho(a), dê um nome à peça em ➕ **Nova peça** (lateral).")
+        return
+    try:
+        caminho = motor.salvar_caso(nome, _dados_caso())
+        st.success(f"✅ Peça salva automaticamente em: **{caminho.stem}**")
+    except Exception as e:
+        st.error(f"Não consegui salvar automaticamente: {e}")
+
+
+st.title("⚖️ Sistema de Peças Judiciais")
+st.caption("A IA só cita o que está na BASE LEGAL. Confira sempre os alertas antes de protocolar.")
+
+if motor.modo_uso()["uso_pago"]:
+    st.success("🔒 Conta declarada como **paga/Vertex**: o provedor não usa seus dados para treinar modelos.", icon="🔒")
+else:
+    st.warning(
+        "⚠️ **Modo gratuito**: a cota grátis do Gemini PODE usar seus dados para treinamento e ser lida por "
+        "revisores humanos. Para dados reais de cliente, mantenha o **Modo seguro** ligado (lateral) e/ou "
+        "ative faturamento ou use Vertex AI nas **Configurações**."
+    )
+
+# ------------------------------------------------------------------ barra lateral
+with st.sidebar:
+    st.markdown(
+        "<div style='text-align:center; font-size:34px; line-height:1; margin-bottom:4px;'>⚖️</div>",
+        unsafe_allow_html=True,
+    )
+    st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
+    if st.button("🚪 Sair do sistema", width="stretch"):
+        st.session_state["autenticado"] = False
+        st.rerun()
+    st.divider()
+
+    st.header("📁 Casos salvos")
+    casos = motor.listar_casos()
+    if casos:
+        escolhido = st.selectbox("Abrir caso", ["—"] + casos, key="caso_escolhido")
+        c1, c2 = st.columns(2)
+        if c1.button("Abrir", width="stretch") and escolhido != "—":
+            caso = motor.carregar_caso(escolhido)
+            st.session_state.update(
+                f_rotulo=caso.get("f_rotulo", "Requerente / Requerido"),
+                f_juizo=caso.get("f_juizo", ""),
+                f_outros=caso.get("f_outros", caso.get("dados", "")),
+                req_nome=caso.get("req_nome") or caso.get("f_autor", ""),
+                req_civil=caso.get("req_civil", ""), req_prof=caso.get("req_prof", ""),
+                req_doc=caso.get("req_doc", ""),
+                **{f"req_{c}": caso.get(f"req_{c}", "") for c in CAMPOS_ENDERECO},
+                req_compl=caso.get("req_compl") or caso.get("req_endr", ""),
+                rdo_nome=caso.get("rdo_nome") or caso.get("f_reu", ""),
+                rdo_civil=caso.get("rdo_civil", ""), rdo_prof=caso.get("rdo_prof", ""),
+                rdo_doc=caso.get("rdo_doc", ""),
+                **{f"rdo_{c}": caso.get(f"rdo_{c}", "") for c in CAMPOS_ENDERECO},
+                rdo_compl=caso.get("rdo_compl") or caso.get("rdo_endr", ""),
+                narrativa=caso.get("narrativa", ""),
+                fatos_edit=caso.get("fatos", ""), peca_edit=caso.get("peca") or "",
+                pend=caso.get("pend", ""), alertas=caso.get("alertas", []), usadas=caso.get("usadas", []),
+            )
+            st.session_state["dados"] = compor_dados()
+            st.rerun()
+        if c2.button("Apagar", width="stretch") and escolhido != "—":
+            motor.apagar_caso(escolhido)
+            st.rerun()
+    else:
+        st.caption("Nenhum caso salvo ainda.")
+
+    st.divider()
+    st.subheader("➕ Nova peça")
+    nova_peca_nome = st.text_input("Nome da nova peça", key="nova_peca_nome",
+                                   placeholder="ex.: Voo FTL→SP – M. Souza")
+    if st.button("Começar nova peça", width="stretch"):
+        nome = (nova_peca_nome or "").strip()
+        if not nome:
+            st.warning("Dê um nome para a nova peça.")
+        else:
+            caminho = motor.salvar_caso(nome, {})
+            iniciar_limpo(caminho.stem)
+            st.rerun()
+
+    st.divider()
+    st.subheader("📝 Gerar peça")
+    modelo_nome = st.selectbox("Modelo da peça", motor.listar_modelos(), key="modelo_nome")
+    st.caption("Sugerido conforme os fatos; você pode trocar.")
+    base_nome = st.selectbox("Base legal", motor.listar_bases(), key="base_nome")
+    with st.expander("Ver a base legal carregada"):
+        for item in motor.carregar_base(base_nome):
+            st.markdown(f"**{item['referencia']}** — status: `{item['status']}`")
+            st.write(item["texto"])
+    if st.button("📝 Gerar a peça", type="primary", width="stretch"):
+        fatos = st.session_state["fatos_edit"]
+        if not fatos.strip():
+            st.warning("Não há fatos ainda. Preencha o relato e use 'Limpar fatos' na aba 2️⃣.")
+        else:
+            st.session_state.update(peca_edit="", alertas=[], usadas=[])
+            st.session_state.pop("export_docx", None)
+            st.session_state.pop("export_pdf", None)
+            base = motor.carregar_base(base_nome)
+            with st.status("Redigindo a peça...", expanded=False) as s:
+                bruto = tentar(motor.gerar_peca, motor.carregar_modelo(modelo_nome),
+                               st.session_state["dados"], fatos, base, anonimizador)
+                if bruto:
+                    conf = motor.conferir_citacoes(bruto, base, f"{st.session_state['dados']}\n{fatos}")
+                    st.session_state.update(peca_edit=conf["texto"], alertas=conf["alertas"], usadas=conf["usadas"])
+                    s.update(label="Peça gerada e conferida", state="complete")
+                else:
+                    s.update(label="Falha ao gerar", state="error")
+
+    st.divider()
+    nome_caso = st.text_input("Nome do caso (para salvar)", key="nome_caso")
+    if st.button("💾 Salvar caso atual", width="stretch"):
+        if not nome_caso.strip():
+            st.warning("Dê um nome antes de salvar.")
+        else:
+            caminho = motor.salvar_caso(nome_caso, _dados_caso())
+            st.success(f"Salvo: {caminho.stem}")
+
+    st.divider()
+    st.subheader("🛡️ Segurança (LGPD)")
+    st.checkbox("Modo seguro: anonimizar antes de enviar", value=True, key="modo_seguro",
+                help="Troca nomes, CPF, e-mails etc. por marcadores antes de enviar à IA e restaura na peça final.")
+
+    st.divider()
+    with st.expander("⚙️ Configurações do provedor"):
+        _m = motor.modo_uso()
+        pago = st.selectbox("A conta Google tem faturamento (pago)?", ["não", "sim"],
+                            index=1 if _m["uso_pago"] else 0, key="cfg_pago")
+        chave_modo = st.selectbox("Modo da chave", ["gemini", "vertex"],
+                                  index=0 if _m["modo_chave"] == "gemini" else 1, key="cfg_modo")
+        regiao = st.text_input("Região (Vertex AI)", value=_m["regiao"],
+                               placeholder="ex.: southamerica-east1", key="cfg_regiao")
+        modelo_edit = st.text_input("Modelo", value=_m["modelo"], key="cfg_modelo")
+        if st.button("💾 Salvar configurações"):
+            motor.atualizar_env({
+                "USO_PAGO": "sim" if pago == "sim" else "nao",
+                "MODO_CHAVE": chave_modo,
+                "REGIAO": regiao.strip(),
+                "MODELO": modelo_edit.strip(),
+            })
+            st.success("Configurações salvas no .env.")
+            st.rerun()
+
+    with st.expander("🗝️ Trocar usuário / senha"):
+        st.caption("O acesso fica gravado no .env (senha com hash; vale também para a nuvem).")
+        novo_usuario = st.text_input("Usuário", value=st.session_state.get("usuario", ""),
+                                     key="acesso_usuario")
+        nova1 = st.text_input("Nova senha", type="password", key="senha_nova1")
+        nova2 = st.text_input("Repita a nova senha", type="password", key="senha_nova2")
+        if st.button("Salvar acesso"):
+            if not novo_usuario.strip():
+                st.error("Informe o usuário.")
+            elif not nova1 or nova1 != nova2:
+                st.error("As senhas não conferem.")
+            else:
+                try:
+                    motor.definir_acesso(novo_usuario, nova1)
+                    st.session_state["usuario"] = novo_usuario.strip()
+                    st.success("Acesso atualizado no .env.")
+                except Exception as e:
+                    st.error(str(e))
+
+    st.divider()
+    _m = motor.modo_uso()
+    _extra = f" · Região: **{_m['regiao']}**" if _m["regiao"] else ""
+    st.caption(f"Provedor: **{_m['provedor']}** · Modelo: **{_m['modelo'] or '(definir no .env)'}**{_extra}")
+
+
+anonimizador = None
+if st.session_state.get("modo_seguro", True):
+    anonimizador = motor.Anonimizador([])
+
+
+# ------------------------------------------------------------------ componentes
+def aba_base():
+    st.subheader("🗂️ Curadoria da base legal")
+    st.caption("Só o que estiver aqui pode ser citado. Mantenha o status em 'verificado' após conferir o texto oficial.")
+    bases = motor.listar_bases()
+    if not bases:
+        st.info("Nenhuma base encontrada.")
+        return
+    base_nome = st.selectbox("Base", bases, key="base_editor_nome")
+    itens = motor.carregar_base(base_nome)
+    df = pd.DataFrame(itens or [{"id": "", "referencia": "", "status": "conferir", "texto": "", "fonte": ""}])
+    editado = st.data_editor(
+        df, num_rows="dynamic", width="stretch", hide_index=True,
+        column_config={
+            "status": st.column_config.SelectboxColumn("status", options=list(motor.STATUS_VALIDOS), required=True),
+            "texto": st.column_config.TextColumn("texto", width="large"),
+            "fonte": st.column_config.LinkColumn("fonte"),
+        },
+    )
+    c1, c2 = st.columns([1, 3])
+    if c1.button("💾 Salvar base"):
+        registros = editado.fillna("").to_dict("records")
+        ids = [r["id"].strip() for r in registros if r["id"].strip()]
+        if len(ids) != len(set(ids)):
+            st.error("Há IDs repetidos na base. Cada item precisa de um ID único.")
+        elif not ids:
+            st.error("A base precisa de pelo menos um item com ID.")
+        elif tentar(motor.salvar_base, base_nome, registros) is not None:
+            st.success("Base salva.")
+    with c2.expander("Criar nova base"):
+        nova = st.text_input("Nome da nova base (sem espaços)", key="nova_base")
+        if st.button("Criar base vazia"):
+            if tentar(motor.salvar_base, nova, []) is not None:
+                st.success(f"Base '{nova}' criada.")
+                st.rerun()
+
+
+def aba_conferencia():
+    st.subheader("🔎 Conferência automática (anti-invenção)")
+    if not st.session_state["alertas"]:
+        st.info("Gere uma peça para rodar a conferência.")
+        return
+    erros = sum(1 for n, _ in st.session_state["alertas"] if n == "erro")
+    c1, c2 = st.columns(2)
+    c1.metric("Erros graves", erros)
+    c2.metric("Alertas a revisar", sum(1 for n, _ in st.session_state["alertas"] if n == "aviso"))
+    for n, m in st.session_state["alertas"]:
+        alerta(n, m)
+    if erros:
+        st.error("Corrija os erros graves antes de protocolar: a IA citou algo que não existe na base.")
+    elif any(n == "aviso" for n, _ in st.session_state["alertas"]):
+        st.warning("Há pontos a revisar manualmente.")
+    else:
+        st.success("Passou na conferência automática. Ainda assim, revise.")
+
+    st.write("**Fontes usadas:**")
+    for i in st.session_state["usadas"]:
+        st.write(f"- {i['referencia']} — `{i['status']}` — {i.get('fonte', '')}")
+
+
+def exportar(texto):
+    stamp = f"{datetime.now():%Y%m%d_%H%M%S}"
+    c1, c2 = st.columns(2)
+    if c1.button("💾 Exportar Word (.docx)"):
+        if tentar(motor.salvar_docx, texto, motor.PASTA_SAIDA / f"peca_{stamp}.docx"):
+            st.session_state["export_docx"] = str(motor.PASTA_SAIDA / f"peca_{stamp}.docx")
+            _salvar_automatico()
+    if c2.button("💾 Exportar PDF"):
+        if tentar(motor.salvar_pdf, texto, motor.PASTA_SAIDA / f"peca_{stamp}.pdf"):
+            st.session_state["export_pdf"] = str(motor.PASTA_SAIDA / f"peca_{stamp}.pdf")
+            _salvar_automatico()
+    d1, d2 = st.columns(2)
+    for coluna, chave in ((d1, "export_docx"), (d2, "export_pdf")):
+        caminho = st.session_state.get(chave)
+        if caminho and Path(caminho).exists():
+            p = Path(caminho)
+            coluna.download_button(f"⬇️ Baixar {p.suffix}", p.read_bytes(),
+                                   file_name=p.name, key=f"dl_{chave}")
+
+
+# ------------------------------------------------------------------ abas principais
+aba_caso, aba_fatos, aba_peca, aba_conf, aba_base_ui, aba_anexo = st.tabs(
+    ["1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência", "🗂️ Base legal", "📎 Anexo/Análise"]
+)
+
+with aba_caso:
+    st.subheader("Dados da peça")
+    st.caption("Preencha como no cabeçalho da peça. O que ficar em branco, a IA identifica nos fatos na hora "
+               "de redigir; no final tudo sai junto no cabeçalho.")
+    st.text_input("Juízo / Vara / Tribunal", key="f_juizo",
+                  placeholder="ex.: Juizado Especial Cível da Comarca de Fortaleza/CE")
+
+    st.selectbox("Como chamar as partes", list(ROTULOS_PARTES), key="f_rotulo",
+                 help="Requerente/Requerido no geral; Autor/Réu em ação criminal; Recorrente/Recorrido em recurso; etc.")
+    r1, r2 = ROTULOS_PARTES[st.session_state.get("f_rotulo", "Requerente / Requerido")]
+    c1, c2 = st.columns(2)
+    with c1:
+        _cadastro_parte("req", r1)
+    with c2:
+        _cadastro_parte("rdo", r2)
+    st.text_area("Demais dados (datas, valores, números, o que mais importar)", key="f_outros", height=100)
+    st.session_state["dados"] = compor_dados()
+    with st.expander("Ver bloco de dados que vai para a IA"):
+        st.code(st.session_state["dados"] or "(vazio)")
+
+with aba_anexo:
+    st.subheader("📎 Anexar documento e analisar (triagem)")
+    st.caption("A IA lê o documento (PDF/DOCX/TXT digital), identifica o tipo de peça cabível e aponta "
+               "possíveis erros, indicando a fundamentação A CONFERIR. É um apoio; não substitui sua análise.")
+    up = st.file_uploader("Anexe o documento", type=["pdf", "docx", "txt", "md"])
+    if up is not None:
+        st.caption(f"📄 {up.name} — {max(1, len(up.getvalue()) // 1024)} KB")
+        if st.button("🔎 Ler e analisar documento", type="primary"):
+            texto_doc = tentar(motor.extrair_texto_anexo, up.name, up.getvalue())
+            if texto_doc is not None and not texto_doc.strip():
+                st.error("Não consegui extrair texto (PDF pode ser escaneado/imagem — não suportado nesta versão).")
+            elif texto_doc:
+                bases = motor.listar_bases()
+                base_nome = st.session_state.get("base_nome") or (bases[0] if bases else None)
+                base = motor.carregar_base(base_nome) if base_nome else []
+                with st.status("Analisando o documento...", expanded=False) as s:
+                    rel = tentar(motor.analisar_documento, texto_doc, st.session_state["dados"], base, anonimizador)
+                    s.update(label="Relatório pronto" if rel else "Falha",
+                             state="complete" if rel else "error")
+                if rel:
+                    conf = motor.conferir_citacoes(rel, base, "")
+                    st.session_state["analise_doc"] = conf["texto"]
+                    st.session_state["analise_alertas"] = conf["alertas"]
+    if st.session_state["analise_doc"]:
+        c1, c2 = st.columns([1, 4])
+        if c1.button("🗑️ Apagar relatório", width="stretch"):
+            st.session_state["analise_doc"] = ""
+            st.session_state["analise_alertas"] = []
+            st.rerun()
+        c2.caption("Dá para editar ou remover trechos direto no quadro abaixo, e também trocar/remover o anexo no 'x'.")
+        st.text_area("Relatório (editável)", key="analise_doc", height=420)
+        with st.expander("Ver relatório formatado"):
+            st.markdown(st.session_state["analise_doc"])
+        if st.session_state.get("analise_alertas"):
+            with st.expander("Alertas da conferência"):
+                for n, m in st.session_state["analise_alertas"]:
+                    alerta(n, m)
+        st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba 🗂️ Base legal (status 'verificado').")
+
+with aba_fatos:
+    st.subheader("Relato do cliente")
+    audio = st.audio_input("🎙️ Grave o relato (opcional)")
+    if audio is not None and st.button("Transcrever"):
+        with st.status("Transcrevendo...", expanded=False) as s:
+            texto = tentar(motor.transcrever_audio, audio.getvalue(), audio.type or "audio/wav")
+            s.update(label="Transcrição concluída" if texto else "Falha",
+                     state="complete" if texto else "error")
+        if texto:
+            atual = st.session_state["narrativa"].strip()
+            st.session_state["narrativa"] = f"{atual}\n{texto}".strip() if atual else texto
+            st.rerun()
+    st.text_area("Relato (dite ou escreva o que o cliente contou)", key="narrativa", height=150,
+                 placeholder="ex.: 'A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026...'")
+    if st.button("🧹 Limpar fatos e listar pendências", type="primary"):
+        if not st.session_state["narrativa"].strip():
+            st.warning("Escreva ou dite o relato primeiro.")
+        else:
+            with st.status("Organizando os fatos...", expanded=False) as s:
+                resultado = tentar(motor.limpar_fatos, st.session_state["dados"],
+                                   st.session_state["narrativa"], anonimizador)
+                s.update(label="Fatos organizados" if resultado else "Falha",
+                         state="complete" if resultado else "error")
+            if resultado:
+                st.session_state["fatos_edit"] = resultado[0]
+                st.session_state["pend"] = resultado[1]
+                sugerido = motor.identificar_modelo(resultado[0], motor.listar_modelos())
+                if sugerido and sugerido != st.session_state.get("modelo_nome"):
+                    st.session_state["modelo_nome"] = sugerido
+                st.success(f"Fatos organizados abaixo. Modelo sugerido: **{sugerido or '—'}** (confira na barra lateral).")
+
+    st.divider()
+    st.subheader("Fatos organizados (edite à vontade)")
+    if not st.session_state["fatos_edit"]:
+        st.info("Escreva o relato acima, clique em 'Limpar fatos' e os fatos aparecerão aqui.")
+    else:
+        st.text_area("Fatos", key="fatos_edit", height=280)
+    st.caption("Quando estiver pronto, gere a peça pelo botão **📝 Gerar peça** na barra lateral.")
+
+    perguntas = [p.strip().lstrip("-").strip()
+                 for p in st.session_state["pend"].splitlines() if p.strip()]
+    if perguntas:
+        st.divider()
+        st.warning("Perguntas pendentes — responda logo abaixo de cada uma:")
+        blocos = []
+        for i, pergunta in enumerate(perguntas):
+            st.markdown(f"**{i + 1}. {pergunta}**")
+            resp = st.text_area("Resposta", key=f"resp_{i}", height=80,
+                                label_visibility="collapsed",
+                                placeholder="Escreva a resposta aqui...")
+            if resp.strip():
+                blocos.append(f"PERGUNTA: {pergunta}\nRESPOSTA: {resp.strip()}")
+        if st.button("🔄 Incorporar respostas aos fatos"):
+            if not blocos:
+                st.warning("Escreva ao menos uma resposta.")
+            else:
+                respostas = "\n\n".join(blocos)
+                with st.status("Atualizando os fatos...", expanded=False) as s:
+                    r = tentar(motor.incorporar_respostas, st.session_state["dados"],
+                               st.session_state["fatos_edit"], st.session_state["pend"],
+                               respostas, anonimizador)
+                    s.update(label="Fatos atualizados" if r else "Falha",
+                             state="complete" if r else "error")
+                if r:
+                    st.session_state["_p_fatos"] = r[0]
+                    st.session_state["_p_pend"] = r[1]
+                    st.session_state["_limpar_respostas"] = True
+                    st.rerun()
+
+with aba_peca:
+    st.subheader("Peça gerada (edite à vontade)")
+    if not st.session_state["peca_edit"]:
+        st.info("Gere a peça na aba 2️⃣.")
+    else:
+        texto = st.text_area("Texto da peça", key="peca_edit", height=520)
+        exportar(texto)
+
+with aba_conf:
+    st.subheader("🔍 Sugestões de jurisprudência (conferir)")
+    st.warning(
+        "A IA sugere **fontes para você CONFERIR** na origem. Nada entra na peça automaticamente. "
+        "Confirme tribunal, número e tese no site oficial antes de citar."
+    )
+    if st.button("🔍 Buscar sugestões conforme os fatos", type="primary"):
+        fatos = st.session_state["fatos_edit"]
+        if not fatos.strip():
+            st.warning("Organize os fatos primeiro (aba 2️⃣).")
+        else:
+            bases = motor.listar_bases()
+            base_nome = st.session_state.get("base_nome") or (bases[0] if bases else None)
+            base = motor.carregar_base(base_nome) if base_nome else []
+            with st.status("Procurando fontes...", expanded=False) as s:
+                texto = tentar(motor.sugerir_jurisprudencia, st.session_state["dados"], fatos, base, anonimizador)
+                s.update(label="Sugestões geradas" if texto else "Falha",
+                         state="complete" if texto else "error")
+            if texto:
+                st.session_state["juris_sugerida"] = texto
+    if st.session_state["juris_sugerida"]:
+        c1, c2 = st.columns([1, 4])
+        if c1.button("🗑️ Apagar sugestões", width="stretch"):
+            st.session_state["juris_sugerida"] = ""
+            st.rerun()
+        c2.caption("Você pode editar ou remover sugestões direto no quadro abaixo.")
+        st.text_area("Sugestões (editável)", key="juris_sugerida", height=360)
+        with st.expander("Ver sugestões formatadas"):
+            st.markdown(st.session_state["juris_sugerida"])
+        st.caption("Depois de conferir no site oficial, cadastre na aba 🗂️ Base legal com status "
+                   "'verificado' para a IA poder citar na peça.")
+    st.divider()
+    aba_conferencia()
+
+with aba_base_ui:
+    aba_base()
