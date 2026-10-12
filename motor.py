@@ -39,6 +39,17 @@ if not _LOG.handlers:
 STATUS_VALIDOS = ("verificado", "conferir", "vazio")
 
 
+def _backup_drive(caminho, subpasta="pecas"):
+    """Copia o arquivo salvo para o Google Drive (se configurado). Nunca quebra o app."""
+    try:
+        import drive
+
+        if drive.disponivel():
+            drive.enviar(caminho, subpasta)
+    except Exception:
+        _LOG.warning("Backup no Google Drive falhou (%s)", caminho, exc_info=True)
+
+
 # ---------------------------------------------------------------- configuração
 PROVEDOR = os.getenv("PROVEDOR", "gemini").strip().lower()
 _MODELOS_PADRAO = {"gemini": "gemini-2.5-flash", "anthropic": "claude-sonnet-4-5"}
@@ -245,6 +256,7 @@ def salvar_base(nome, itens):
     caminho = PASTA_BASE / f"{nome}.json"
     caminho.write_text(json.dumps(itens, ensure_ascii=False, indent=2), encoding="utf-8")
     _LOG.info("Base salva: %s (%d itens)", nome, len(itens))
+    _backup_drive(caminho, "bases")
     return caminho
 
 
@@ -757,6 +769,7 @@ def salvar_docx(texto, caminho):
 
     doc.save(str(caminho))
     _LOG.info("DOCX salvo: %s", caminho)
+    _backup_drive(caminho, "pecas")
     return caminho
 
 
@@ -798,6 +811,7 @@ def salvar_pdf(texto, caminho):
 
     pdf.output(str(caminho))
     _LOG.info("PDF salvo: %s", caminho)
+    _backup_drive(caminho, "pecas")
     return caminho
 
 
@@ -808,6 +822,7 @@ def salvar_caso(nome, dados):
     dados = dict(dados)
     dados["_salvo_em"] = datetime.now().isoformat(timespec="seconds")
     caminho.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
+    _backup_drive(caminho, "casos")
     return caminho
 
 

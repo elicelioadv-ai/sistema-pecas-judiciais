@@ -289,6 +289,7 @@ def _dados_caso():
         "fatos": st.session_state["fatos_edit"], "peca": st.session_state["peca_edit"],
         "pend": st.session_state["pend"], "alertas": st.session_state["alertas"],
         "usadas": st.session_state["usadas"],
+        "base_nome": st.session_state.get("base_nome", ""),
     }
 
 
@@ -354,6 +355,10 @@ with st.sidebar:
                 pend=caso.get("pend", ""), alertas=caso.get("alertas", []), usadas=caso.get("usadas", []),
             )
             st.session_state["dados"] = compor_dados()
+            base_salva = caso.get("base_nome", "")
+            if base_salva and base_salva in motor.listar_bases():
+                st.session_state["base_nome"] = base_salva
+                st.session_state["base_editor_nome"] = base_salva
             st.rerun()
         if c2.button("Apagar", width="stretch") and escolhido != "—":
             motor.apagar_caso(escolhido)
@@ -372,6 +377,11 @@ with st.sidebar:
         else:
             caminho = motor.salvar_caso(nome, {})
             iniciar_limpo(caminho.stem)
+            base_novo = caminho.stem
+            if base_novo not in motor.listar_bases():
+                motor.salvar_base(base_novo, [])
+            st.session_state["base_nome"] = base_novo
+            st.session_state["base_editor_nome"] = base_novo
             st.rerun()
 
     st.divider()
