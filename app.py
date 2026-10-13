@@ -57,10 +57,12 @@ div[data-testid="stForm"] {
     box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
 }
 div[data-testid="stForm"] label { color: #e5e7eb !important; font-weight: 600; }
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"],
 div[data-testid="stForm"] div[data-baseweb="input"] {
-    background: #e9ecef !important; border: 1px solid #ccd1d7 !important;
+    background: #f4f5f6 !important; border: 1px solid #d2d7dd !important;
     border-radius: 10px !important;
 }
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] input,
 div[data-testid="stForm"] div[data-baseweb="input"] input {
     background: transparent !important; color: #1f2937 !important;
 }
@@ -68,9 +70,10 @@ div[data-testid="stForm"] button {
     border-radius: 10px; font-weight: 700; background: #1f6feb; color: #ffffff; border: none;
 }
 div[data-testid="stForm"] button:hover { background: #155ecb; color: #ffffff; }
-div[data-testid="stForm"] div[data-baseweb="input"] button {
-    background: transparent !important; border: none !important;
-    color: #4b515b !important; box-shadow: none !important; padding: 0 6px !important;
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button[aria-label="Show password"],
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button[aria-label="Hide password"] {
+    background: transparent !important; border: 0 !important; box-shadow: none !important;
+    min-height: 0 !important; padding: 0 6px !important; color: #6b7280 !important;
 }
 </style>
 """
