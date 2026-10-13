@@ -7,6 +7,7 @@ Para abrir:  streamlit run app.py
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import html
+import importlib
 import json
 import random
 
@@ -15,6 +16,27 @@ import streamlit as st
 
 import decisoes
 import motor
+
+# O Streamlit guarda os módulos importados em cache entre execuções. Recarregamos
+# `decisoes` a cada execução para garantir que as funções mais novas do arquivo
+# (ex.: links_processo_nome) estejam disponíveis logo após um novo deploy.
+importlib.reload(decisoes)
+
+
+def _links_processo(alias, numero, grau=None):
+    """Links oficiais do processo; tolera um `decisoes` antigo em cache."""
+    fn = getattr(decisoes, "links_processo", None)
+    if fn:
+        return fn(alias, numero, grau)
+    return [("🔗 Abrir no site do tribunal", decisoes.link_processo(alias, numero))]
+
+
+def _links_processo_nome(alias, nome):
+    """Links oficiais de busca por nome; tolera um `decisoes` antigo em cache."""
+    fn = getattr(decisoes, "links_processo_nome", None)
+    if fn:
+        return fn(alias, nome)
+    return [("🔎 Buscar por nome no site do tribunal", decisoes.link_processo_nome(alias, nome))]
 
 st.set_page_config(page_title="Sistema de Peças Judiciais", page_icon="⚖️", layout="wide")
 
@@ -815,7 +837,7 @@ def aba_processos():
             st.info("Digite o número e clique em **🔍 Consultar processo**.")
         for p in procs:
             st.markdown(f"### {p['numero']} — {p['tribunal']} ({p['grau']})")
-            for rotulo_link, url_link in decisoes.links_processo(alias, p["numero"], p.get("grau")):
+            for rotulo_link, url_link in _links_processo(alias, p["numero"], p.get("grau")):
                 st.link_button(rotulo_link, url_link)
             if p["classe"]:
                 st.markdown(f"**Classe:** {p['classe']}")
@@ -840,7 +862,7 @@ def aba_processos():
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
         if nome_parte.strip():
-            for rotulo_link, url_link in decisoes.links_processo_nome(alias, nome_parte):
+            for rotulo_link, url_link in _links_processo_nome(alias, nome_parte):
                 st.link_button(rotulo_link, url_link)
         else:
             st.info("Digite o nome da parte e clique em **🔎 Buscar por nome no site do tribunal**.")
