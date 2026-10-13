@@ -666,6 +666,21 @@ def aba_decisoes():
             st.caption("Processos em segredo de justiça não aparecem. Confirme no site do tribunal.")
 
     with t_links:
+        st.markdown("### 📚 Buscar legislação")
+        st.caption("Digite o assunto, o nome do código ou a lei (ex.: civil, penal, trabalho, "
+                   "consumidor, licitação, improbidade...). O botão abre o **texto oficial** no Planalto.")
+        termo_lei = st.text_input("Pesquisar lei, código ou assunto", key="lei_busca",
+                                  placeholder="ex.: código civil · penal · CLT · consumidor · tributário")
+        achados = decisoes.buscar_legislacao(termo_lei)
+        if not achados:
+            st.info("Nada encontrado. Tente outra palavra (ex.: 'civil', 'penal', 'trabalho', 'tributário').")
+        else:
+            colunas = st.columns(3)
+            for j, item in enumerate(achados):
+                colunas[j % 3].link_button(item["nome"], item["url"], width="stretch")
+
+        st.divider()
+        st.markdown("### 🔗 Atalhos oficiais dos tribunais")
         st.caption("Não existe um feed automático oficial para todos os tribunais. Estes atalhos abrem "
                    "a busca no site do próprio órgão, que é o repositório oficial da jurisprudência.")
         for grupo, itens in decisoes.ATALHOS:

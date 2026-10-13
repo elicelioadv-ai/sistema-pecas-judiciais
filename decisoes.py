@@ -15,6 +15,7 @@ import io
 import json
 import os
 import re
+import unicodedata
 import urllib.error
 import urllib.request
 import zipfile
@@ -107,30 +108,109 @@ DATAJUD_RAMOS = {
 
 # Atalhos oficiais (não é "feed": abre a busca no site do próprio órgão)
 ATALHOS = [
-    ("STF", [
-        ("STF - Pesquisa de jurisprudência e súmulas", "https://jurisprudencia.stf.jus.br/pages/search"),
+    ("⚖️ Tribunais superiores", [
+        ("STF — jurisprudência e súmulas", "https://jurisprudencia.stf.jus.br/pages/search"),
+        ("STF — Corte Aberta (dados abertos)", "https://portal.stf.jus.br/corteaberta/"),
+        ("STJ — pesquisa de jurisprudência (SCON)", "https://scon.stj.jus.br/SCON/"),
+        ("TST — jurisprudência", "https://www.tst.jus.br/jurisprudencia"),
+        ("TSE — jurisprudência", "https://jurisprudencia.tse.jus.br/"),
+        ("STM — jurisprudência", "https://jurisprudencia.stm.jus.br/"),
     ]),
-    ("STJ", [
-        ("STJ - Pesquisa de jurisprudência (SCON)", "https://scon.stj.jus.br/SCON/"),
-        ("STJ - Portal de Dados Abertos (acórdãos em JSON)", "https://dadosabertos.web.stj.jus.br/"),
+    ("🧾 Tribunais de Contas", [
+        ("TCU — pesquisa de acórdãos", "https://pesquisa.apps.tcu.gov.br/#/pesquisa/acordao-completo"),
+        ("TCE-CE — consulta de jurisprudência", "https://www.tce.ce.gov.br/jurisdicionado/jurisprudencia/consulta"),
     ]),
-    ("CNJ", [
-        ("CNJ - Portal", "https://www.cnj.jus.br/"),
-        ("CNJ - DataJud (processos)", "https://www.cnj.jus.br/sistemas/datajud/"),
-    ]),
-    ("TJCE", [
-        ("TJCE - Consulta de jurisprudência (e-SAJ)", "https://esaj.tjce.jus.br/cjsg/resultadoCompleta.do"),
-        ("TJCE - Informativo de jurisprudência", "https://www.tjce.jus.br/informativo-jurisprudencia/"),
-    ]),
-    ("Federal / Trabalho / Eleitoral", [
+    ("🏛️ Justiça no Ceará e Federal", [
+        ("TJCE — jurisprudência (e-SAJ)", "https://esaj.tjce.jus.br/cjsg/consultaCompleta.do"),
+        ("TJCE — informativo de jurisprudência", "https://www.tjce.jus.br/institucional/informativo-de-jurisprudencia"),
         ("TRF 5ª Região", "https://www.trf5.jus.br/"),
-        ("TRT 7ª Região", "https://www.trt7.jus.br/"),
+        ("TRT 7ª Região (CE)", "https://www.trt7.jus.br/"),
         ("TRE do Ceará", "https://www.tre-ce.jus.br/"),
     ]),
-    ("Leis", [
-        ("Constituição Federal", "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm"),
-        ("Legislação federal (Planalto)", "https://www.planalto.gov.br/ccivil_03/"),
+    ("🇧🇷 Portais e dados oficiais", [
+        ("CNJ — Portal", "https://www.cnj.jus.br/"),
+        ("CNJ — DataJud (processos)", "https://www.cnj.jus.br/sistemas/datajud/"),
+        ("STJ — Portal de Dados Abertos", "https://dadosabertos.web.stj.jus.br/"),
+        ("Planalto — legislação federal", "https://www.planalto.gov.br/ccivil_03/"),
     ]),
+]
+
+# Legislação federal (texto oficial no Planalto). "tags" são palavras extras de busca.
+LEGISLACAO = [
+    {"nome": "Constituição Federal de 1988", "tags": "cf constituicao emenda",
+     "url": "https://www.planalto.gov.br/ccivil_03/constituicao/constituicao.htm"},
+    {"nome": "Código Civil (Lei 10.406/2002)", "tags": "cc civil",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm"},
+    {"nome": "Código de Processo Civil (Lei 13.105/2015)", "tags": "cpc processo civil",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13105.htm"},
+    {"nome": "Código Penal (Decreto-Lei 2.848/1940)", "tags": "cp penal crime",
+     "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del2848compilado.htm"},
+    {"nome": "Código de Processo Penal (Decreto-Lei 3.689/1941)", "tags": "cpp processo penal",
+     "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del3689compilado.htm"},
+    {"nome": "CLT — Consolidação das Leis do Trabalho", "tags": "clt trabalho",
+     "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del5452.htm"},
+    {"nome": "Código Tributário Nacional (Lei 5.172/1966)", "tags": "ctn tributario imposto",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l5172compilado.htm"},
+    {"nome": "Código de Defesa do Consumidor (Lei 8.078/1990)", "tags": "cdc consumidor",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l8078compilado.htm"},
+    {"nome": "ECA — Estatuto da Criança e do Adolescente (Lei 8.069/1990)", "tags": "eca crianca adolescente",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l8069.htm"},
+    {"nome": "Estatuto da Pessoa Idosa (Lei 10.741/2003)", "tags": "idoso",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/2003/l10.741.htm"},
+    {"nome": "Estatuto da Pessoa com Deficiência (Lei 13.146/2015)", "tags": "pcd deficiencia",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2015/lei/l13146.htm"},
+    {"nome": "Estatuto da Cidade (Lei 10.257/2001)", "tags": "urbanistico cidade",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/leis_2001/l10257.htm"},
+    {"nome": "Servidores Públicos Civis da União (Lei 8.112/1990)", "tags": "servidor administrativo",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l8112cons.htm"},
+    {"nome": "Código de Trânsito Brasileiro (Lei 9.503/1997)", "tags": "ctb transito",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l9503compilado.htm"},
+    {"nome": "Lei de Licitações e Contratos (Lei 14.133/2021)", "tags": "licitacao contrato administrativo",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm"},
+    {"nome": "Lei de Improbidade Administrativa (Lei 8.429/1992)", "tags": "improbidade administrativa",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l8429.htm"},
+    {"nome": "Lei de Execução Penal (Lei 7.210/1984)", "tags": "lep execucao penal",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l7210.htm"},
+    {"nome": "Lei Maria da Penha (Lei 11.340/2006)", "tags": "violencia domestica mulher",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11340.htm"},
+    {"nome": "Lei de Drogas (Lei 11.343/2006)", "tags": "drogas entorpecentes",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2004-2006/2006/lei/l11343.htm"},
+    {"nome": "Lei do Mandado de Segurança (Lei 12.016/2009)", "tags": "mandado seguranca",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2007-2010/2009/lei/l12016.htm"},
+    {"nome": "Lei da Ação Civil Pública (Lei 7.347/1985)", "tags": "acp coletivo",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l7347orig.htm"},
+    {"nome": "Lei de Crimes Ambientais (Lei 9.605/1998)", "tags": "ambiental meio ambiente",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l9605.htm"},
+    {"nome": "Código Florestal (Lei 12.651/2012)", "tags": "florestal ambiental",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2012/lei/l12651.htm"},
+    {"nome": "Lei de Arbitragem (Lei 9.307/1996)", "tags": "arbitragem",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l9307.htm"},
+    {"nome": "Lei do Inquilinato (Lei 8.245/1991)", "tags": "locacao inquilino aluguel",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l8245.htm"},
+    {"nome": "Lei de Alimentos (Lei 5.478/1968)", "tags": "alimentos pensao",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l5478.htm"},
+    {"nome": "Lei do Divórcio (Lei 6.515/1977)", "tags": "divorcio familia",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l6515.htm"},
+    {"nome": "Processo Administrativo Federal (Lei 9.784/1999)", "tags": "processo administrativo",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l9784.htm"},
+    {"nome": "LINDB (Decreto-Lei 4.657/1942)", "tags": "lindb introducao normas",
+     "url": "https://www.planalto.gov.br/ccivil_03/decreto-lei/del4657compilado.htm"},
+    {"nome": "Estatuto da Advocacia (Lei 8.906/1994)", "tags": "advocacia oab",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l8906.htm"},
+    {"nome": "Lei das S.A. (Lei 6.404/1976)", "tags": "sociedades anonimas empresa",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l6404consol.htm"},
+    {"nome": "Lei de Execução Fiscal (Lei 6.830/1980)", "tags": "execucao fiscal divida ativa",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l6830.htm"},
+    {"nome": "Lei de Registros Públicos (Lei 6.015/1973)", "tags": "registros publicos",
+     "url": "https://www.planalto.gov.br/ccivil_03/leis/l6015compilada.htm"},
+    {"nome": "Marco Civil da Internet (Lei 12.965/2014)", "tags": "internet marco civil",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l12965.htm"},
+    {"nome": "LGPD (Lei 13.709/2018)", "tags": "lgpd dados privacidade",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm"},
+    {"nome": "Lei Anticorrupção (Lei 12.846/2013)", "tags": "anticorrupcao",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/lei/l12846.htm"},
+    {"nome": "Lei de Acesso à Informação (Lei 12.527/2011)", "tags": "lai informacao",
+     "url": "https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2011/lei/l12527.htm"},
 ]
 
 
@@ -145,6 +225,26 @@ def formatar_numero(numero):
     if len(n) != 20:
         return numero
     return f"{n[0:7]}-{n[7:9]}.{n[9:13]}.{n[13]}.{n[14:16]}.{n[16:20]}"
+
+
+def sem_acento(texto):
+    """Minúsculas e sem acentos, para busca tolerante (ex.: 'licitacao' acha 'Licitação')."""
+    normal = unicodedata.normalize("NFKD", texto or "")
+    return "".join(c for c in normal if not unicodedata.combining(c)).lower()
+
+
+def buscar_legislacao(termo):
+    """Filtra LEGISLACAO pelo termo (nome ou palavras-chave), ignorando acentos."""
+    alvo = sem_acento(termo).strip()
+    if not alvo:
+        return list(LEGISLACAO)
+    palavras = alvo.split()
+    achados = []
+    for item in LEGISLACAO:
+        texto = sem_acento(f"{item['nome']} {item.get('tags', '')}")
+        if all(p in texto for p in palavras):
+            achados.append(item)
+    return achados
 
 
 def _data_br(valor):
