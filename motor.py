@@ -126,15 +126,15 @@ def verificar_senha(senha):
     import hmac
 
     if armazenada.startswith("sha256:"):
-        return hmac.compare_digest(_hash_senha(senha or ""), armazenada)
-    return hmac.compare_digest(senha or "", armazenada)
+        return hmac.compare_digest(_hash_senha((senha or "").strip()), armazenada)
+    return hmac.compare_digest((senha or "").strip(), armazenada)
 
 
 def verificar_acesso(usuario, senha):
     """Confere usuário e senha juntos no portão de entrada."""
     import hmac
 
-    usuario_ok = hmac.compare_digest((usuario or "").strip(), usuario_acesso())
+    usuario_ok = hmac.compare_digest((usuario or "").strip().casefold(), usuario_acesso().strip().casefold())
     return usuario_ok and verificar_senha(senha)
 
 
