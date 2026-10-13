@@ -489,10 +489,33 @@ FONTES_JURIS = [
     "STM — Superior Tribunal Militar",
     "TCU — Tribunal de Contas da União",
     "TCE-CE — Tribunal de Contas do Estado do Ceará",
-    "TJCE — Tribunal de Justiça do Ceará",
     "TJAC — Tribunal de Justiça do Acre",
+    "TJAL — Tribunal de Justiça de Alagoas",
+    "TJAP — Tribunal de Justiça do Amapá",
+    "TJAM — Tribunal de Justiça do Amazonas",
+    "TJBA — Tribunal de Justiça da Bahia",
+    "TJCE — Tribunal de Justiça do Ceará",
+    "TJDFT — Tribunal de Justiça do Distrito Federal e Territórios",
+    "TJES — Tribunal de Justiça do Espírito Santo",
+    "TJGO — Tribunal de Justiça de Goiás",
+    "TJMA — Tribunal de Justiça do Maranhão",
+    "TJMT — Tribunal de Justiça de Mato Grosso",
     "TJMS — Tribunal de Justiça de Mato Grosso do Sul",
+    "TJMG — Tribunal de Justiça de Minas Gerais",
+    "TJPA — Tribunal de Justiça do Pará",
+    "TJPB — Tribunal de Justiça da Paraíba",
+    "TJPR — Tribunal de Justiça do Paraná",
+    "TJPE — Tribunal de Justiça de Pernambuco",
+    "TJPI — Tribunal de Justiça do Piauí",
+    "TJRJ — Tribunal de Justiça do Rio de Janeiro",
+    "TJRN — Tribunal de Justiça do Rio Grande do Norte",
+    "TJRS — Tribunal de Justiça do Rio Grande do Sul",
+    "TJRO — Tribunal de Justiça de Rondônia",
+    "TJRR — Tribunal de Justiça de Roraima",
+    "TJSC — Tribunal de Justiça de Santa Catarina",
     "TJSP — Tribunal de Justiça de São Paulo",
+    "TJSE — Tribunal de Justiça de Sergipe",
+    "TJTO — Tribunal de Justiça do Tocantins",
 ]
 
 # Domínio oficial usado quando não há link direto de busca (fallback via Google).
@@ -522,9 +545,14 @@ def link_juris(fonte="", termos="", colegiado=""):
     if "STF" in alvo:
         return f"https://jurisprudencia.stf.jus.br/pages/search?base=acordaos&queryString={q}"
     m = re.search(r"TJ\s*-?\s*([A-Z]{2})", alvo)
-    if m and m.group(1) in _ESAJ_JURIS:
-        return (f"https://esaj.{_ESAJ_JURIS[m.group(1)]}.jus.br/cjsg/resultadoCompleta.do?"
-                f"dados.buscaInteiroTeor={q}&dados.pesquisarComSinonimos=S")
+    if m:
+        sig = m.group(1)
+        if sig in _ESAJ_JURIS:
+            return (f"https://esaj.{_ESAJ_JURIS[sig]}.jus.br/cjsg/resultadoCompleta.do?"
+                    f"dados.buscaInteiroTeor={q}&dados.pesquisarComSinonimos=S")
+        dom = f"tj{sig.lower()}.jus.br"
+        consulta = urllib.parse.quote(f'"{termos}" jurisprudência site:{dom}')
+        return f"https://www.google.com/search?q={consulta}"
     dom = next((d for sigla, d in _DOMINIOS_JURIS if sigla in alvo), "jus.br")
     consulta = urllib.parse.quote(f'"{termos}" jurisprudência site:{dom}')
     return f"https://www.google.com/search?q={consulta}"
