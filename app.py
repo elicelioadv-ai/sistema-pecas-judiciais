@@ -882,14 +882,14 @@ def aba_processos():
                     st.link_button(f"🔗 Abrir {numero}",
                                    _links_processo(alias, numero)[0][1])
                 if len(achados) > 10:
-                    st.caption(f"Mostrando 10 de {len(achados)}. Abra a busca completa no site:")
-            elif achados is not None:
-                st.warning(f"Não encontrei “{alvo}” no e-SAJ. Procure no PJe abaixo.")
-            st.caption("Busca completa no site oficial:")
-            links = _links_processo_nome(alias, alvo)
-            colunas = st.columns(len(links))
-            for coluna, (rotulo_link, url_link) in zip(colunas, links):
-                coluna.link_button(rotulo_link, url_link)
+                    st.caption(f"Mostrando 10 de {len(achados)}. Refine o nome para ver menos.")
+            else:
+                if achados is not None:
+                    st.warning(f"Não encontrei “{alvo}” no e-SAJ. Procure no PJe:")
+                links = _links_processo_nome(alias, alvo)
+                colunas = st.columns(len(links))
+                for coluna, (rotulo_link, url_link) in zip(colunas, links):
+                    coluna.link_button(rotulo_link, url_link)
         else:
             st.info("Digite o nome da parte e clique em **🔍 Buscar por nome**.")
 
