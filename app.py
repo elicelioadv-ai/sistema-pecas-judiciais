@@ -40,7 +40,7 @@ _CSS_LEIS = """
 _CSS_LOGIN = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&display=swap');
-.stApp, [data-testid="stAppViewContainer"] { background: #ebdde2 !important; }
+.stApp, [data-testid="stAppViewContainer"] { background: #c9c9c9 !important; }
 [data-testid="stHeader"] { background: transparent !important; }
 .login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
