@@ -38,6 +38,12 @@ def _links_processo_nome(alias, nome):
         return fn(alias, nome)
     return [("🔎 Buscar por nome no site do tribunal", decisoes.link_processo_nome(alias, nome))]
 
+
+def _buscar_nome_esaj(alias, nome):
+    """Consulta o e-SAJ pelo nome; tolera um `decisoes` antigo em cache."""
+    fn = getattr(decisoes, "buscar_nome_esaj", None)
+    return fn(alias, nome) if fn else None
+
 st.set_page_config(page_title="Sistema de Peças Judiciais", page_icon="⚖️", layout="wide")
 
 _CSS_LEIS = """
@@ -863,12 +869,24 @@ def aba_processos():
         nome_parte = st.text_input("Nome da parte (requerente/autor ou requerido/réu)",
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
-        if st.button("🔍 Buscar por nome"):
+        if st.button("🔍 Buscar por nome", type="primary"):
             st.session_state["dj_nome_busca"] = nome_parte.strip()
         alvo = st.session_state.get("dj_nome_busca", "")
         if alvo:
+            with st.spinner("Procurando o nome nos sites oficiais..."):
+                achados = _buscar_nome_esaj(alias, alvo)
+            if achados:
+                st.success(f"✅ Encontrei {len(achados)} processo(s) em nome de “{alvo}” "
+                           f"no e-SAJ:")
+                for numero in achados[:10]:
+                    st.link_button(f"🔗 Abrir {numero}",
+                                   _links_processo(alias, numero)[0][1])
+                if len(achados) > 10:
+                    st.caption(f"Mostrando 10 de {len(achados)}. Abra a busca completa no site:")
+            elif achados is not None:
+                st.warning(f"Não encontrei “{alvo}” no e-SAJ. Procure no PJe abaixo.")
+            st.caption("Busca completa no site oficial:")
             links = _links_processo_nome(alias, alvo)
-            st.success(f"Procure o processo em nome de \u201c{alvo}\u201d em:")
             colunas = st.columns(len(links))
             for coluna, (rotulo_link, url_link) in zip(colunas, links):
                 coluna.link_button(rotulo_link, url_link)

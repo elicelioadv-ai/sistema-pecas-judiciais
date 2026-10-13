@@ -15,6 +15,7 @@ import io
 import json
 import os
 import re
+import ssl
 import unicodedata
 import urllib.error
 import urllib.parse
@@ -453,6 +454,41 @@ def _esaj_nome(sigla, nome):
     return (f"https://esaj.{sigla}.jus.br/cpopg/search.do?cbPesquisa=NMPARTE"
             f"&dadosConsulta.valorConsulta={urllib.parse.quote(nome)}"
             f"&dadosConsulta.tipoNuProcesso=UNIFICADO")
+
+
+def _get_texto(url, timeout=30):
+    # Alguns sites (ex.: e-SAJ) recusam o handshake TLS padrão do Python; com um
+    # nível de segurança menor o handshake é aceito (usado só p/ baixar HTML).
+    ctx = ssl.create_default_context()
+    ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+    req = urllib.request.Request(url, headers=_CABECALHO)
+    with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+        dados = resp.read()
+    try:
+        return dados.decode("utf-8")
+    except UnicodeDecodeError:
+        return dados.decode("latin-1", "replace")
+
+
+def buscar_nome_esaj(alias, nome):
+    """Consulta o e-SAJ pelo nome da parte e devolve os números encontrados.
+
+    Devolve None quando o tribunal não usa e-SAJ ou quando a consulta falha;
+    devolve uma lista (possivelmente vazia) quando o e-SAJ respondeu.
+    """
+    sig = DATAJUD_ESAJ.get(alias)
+    nome = (nome or "").strip()
+    if not sig or not nome:
+        return None
+    try:
+        texto = _get_texto(_esaj_nome(sig, nome))
+    except Exception:
+        return None
+    achados = []
+    for numero in re.findall(r"\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}", texto):
+        if numero not in achados:
+            achados.append(numero)
+    return achados
 
 
 def links_processo(alias, numero, grau=None):
