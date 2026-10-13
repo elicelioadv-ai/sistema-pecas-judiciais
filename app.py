@@ -862,8 +862,11 @@ def aba_processos():
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
         if nome_parte.strip():
-            _rot, _url = _links_processo_nome(alias, nome_parte)[0]
-            st.link_button(_rot, _url)
+            links = _links_processo_nome(alias, nome_parte)
+            st.caption("Buscar o nome da parte em:")
+            colunas = st.columns(len(links))
+            for coluna, (rotulo_link, url_link) in zip(colunas, links):
+                coluna.link_button(rotulo_link, url_link)
         else:
             st.info("Digite o nome da parte e clique em **🔎 Buscar por nome no site do tribunal**.")
 

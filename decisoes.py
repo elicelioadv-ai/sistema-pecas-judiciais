@@ -499,10 +499,11 @@ def links_processo_nome(alias, nome):
         saida.append(("🔎 Buscar por nome no e-SAJ", _esaj_nome(sig, nome)))
     pje = PJE_CONSULTA.get(alias)
     if pje:
-        saida.append(("🔎 Buscar por nome no PJe (Consulta Pública)", pje))
-    consulta = urllib.parse.quote(f'"{nome}" processo site:jus.br')
-    saida.append(("🔎 Localizar no site oficial (Google)",
-                  f"https://www.google.com/search?q={consulta}"))
+        saida.append(("🔎 Buscar por nome no PJe", pje))
+    if not saida:
+        consulta = urllib.parse.quote(f'"{nome}" processo site:jus.br')
+        saida.append(("🔎 Buscar no site oficial (Google)",
+                      f"https://www.google.com/search?q={consulta}"))
     return saida
 
 
