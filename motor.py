@@ -50,6 +50,17 @@ def _backup_drive(caminho, subpasta="pecas"):
         _LOG.warning("Backup no Google Drive falhou (%s)", caminho, exc_info=True)
 
 
+def _backup_remover(nome_arquivo, subpasta="casos"):
+    """Remove do Drive o arquivo apagado aqui (mantém o backup fiel). Nunca quebra o app."""
+    try:
+        import drive
+
+        if drive.disponivel():
+            drive.remover(nome_arquivo, subpasta)
+    except Exception:
+        _LOG.warning("Remoção no Google Drive falhou (%s)", nome_arquivo, exc_info=True)
+
+
 # ---------------------------------------------------------------- configuração
 PROVEDOR = os.getenv("PROVEDOR", "gemini").strip().lower()
 _MODELOS_PADRAO = {"gemini": "gemini-2.5-flash", "anthropic": "claude-sonnet-4-5"}
@@ -839,3 +850,4 @@ def apagar_caso(nome):
     caminho = PASTA_HISTORICO / f"{nome}.json"
     if caminho.exists():
         caminho.unlink()
+        _backup_remover(caminho.name, "casos")

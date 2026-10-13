@@ -16,6 +16,10 @@ Opcional:
   DRIVE_FOLDER_ID  (se vazio, usa/cria a pasta "Sistema de Peças Judiciais" na raiz)
 
 Se as variáveis não estiverem definidas, tudo fica desativado (no-op).
+
+Escopo: usa "drive.file" (NÃO-sensível). O app só vê/cria os arquivos dele
+mesmo, então não pede verificação e o token não expira a cada 7 dias quando o
+app está publicado em produção no Google Cloud.
 """
 from __future__ import annotations
 
@@ -25,6 +29,7 @@ import time
 import urllib.parse
 import urllib.request
 import uuid
+from datetime import datetime
 from pathlib import Path
 
 TOKEN_URL = "https://oauth2.googleapis.com/token"
@@ -175,3 +180,52 @@ def enviar_texto(nome: str, texto: str, subpasta: str = "outros"):
     else:
         info = _upload({"name": nome, "parents": [destino]}, conteudo, "text/plain")
     return info.get("webViewLink")
+
+
+def _delete(url: str):
+    req = urllib.request.Request(url, method="DELETE",
+                                 headers={"Authorization": f"Bearer {_access_token()}"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return resp.status
+
+
+def remover(nome: str, subpasta: str = "casos") -> bool:
+    """Manda para a lixeira do Drive o arquivo com esse nome (se existir)."""
+    if not disponivel():
+        return False
+    try:
+        raiz = _pasta_raiz()
+        destino = _id_pasta(subpasta, raiz) if subpasta else raiz
+        file_id = _id_arquivo(nome, destino)
+        if not file_id:
+            return False
+        _delete(f"{API}/files/{file_id}")
+        return True
+    except Exception:
+        return False
+
+
+def status() -> dict:
+    """Situação do backup, para mostrar na tela. Nunca levanta exceção."""
+    c = _cfg()
+    return {
+        "ativo": disponivel(),
+        "tem_client": bool(c["client_id"] and c["client_secret"]),
+        "tem_token": bool(c["refresh_token"]),
+        "pasta_id": c["folder_id"],
+    }
+
+
+def testar():
+    """Envia um arquivo pequeno de teste. Devolve (ok, mensagem)."""
+    if not disponivel():
+        return False, "Backup não configurado (faltam GOOGLE_CLIENT_ID / _SECRET / _REFRESH_TOKEN)."
+    try:
+        marca = datetime.now().strftime("%Y%m%d_%H%M%S")
+        link = enviar_texto(f"teste_backup_{marca}.txt",
+                            f"Backup funcionando. Teste em {datetime.now():%d/%m/%Y %H:%M:%S}.", "testes")
+        if link:
+            return True, f"Backup OK! Arquivo de teste enviado ao Drive: {link}"
+        return False, "O envio não retornou link. Verifique as credenciais."
+    except Exception as e:
+        return False, f"Falhou ao enviar: {e}"

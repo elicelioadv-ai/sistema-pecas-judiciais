@@ -488,6 +488,22 @@ def _salvar_automatico():
         st.error(f"Não consegui salvar automaticamente: {e}")
 
 
+def _drive_status():
+    try:
+        import drive
+        return drive.status()
+    except Exception:
+        return {"ativo": False}
+
+
+def _drive_testar():
+    try:
+        import drive
+        return drive.testar()
+    except Exception as e:
+        return False, f"Backup indisponível: {e}"
+
+
 st.title("⚖️ Sistema de Peças Judiciais")
 st.caption("A IA só cita o que está na BASE LEGAL. Confira sempre os alertas antes de protocolar.")
 
@@ -628,6 +644,19 @@ with st.sidebar:
             })
             st.success("Configurações salvas no .env.")
             st.rerun()
+
+    with st.expander("☁️ Backup no Google Drive (nuvem → seu PC)"):
+        _bk = _drive_status()
+        if _bk.get("ativo"):
+            st.success("Backup ATIVADO. Cada caso/peça/base salvo(a) vai para o seu Google Drive e o "
+                       "**Google Drive para Desktop** sincroniza sozinho no seu PC.")
+            if st.button("🔌 Testar backup agora"):
+                ok, msg = _drive_testar()
+                (st.success if ok else st.error)(msg)
+        else:
+            st.info("Backup DESATIVADO. Ligue-o configurando **GOOGLE_CLIENT_ID**, "
+                    "**GOOGLE_CLIENT_SECRET** e **GOOGLE_REFRESH_TOKEN** nos *Secrets* (nuvem) ou no `.env` (PC). "
+                    "O passo a passo está no arquivo LEIA-ME.")
 
     with st.expander("🗝️ Trocar usuário / senha"):
         st.caption("O acesso fica gravado no .env (senha com hash; vale também para a nuvem).")
