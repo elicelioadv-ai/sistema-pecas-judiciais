@@ -823,6 +823,7 @@ def aba_processos():
             st.session_state.pop("dj_erro", None)
             st.session_state.pop("dj_nome_busca", None)
             st.rerun()
+            st.rerun()
         if consultar:
             if not numero.strip():
                 st.warning("Digite o número do processo.")
@@ -869,8 +870,13 @@ def aba_processos():
         nome_parte = st.text_input("Nome da parte (requerente/autor ou requerido/réu)",
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
-        if st.button("🔍 Buscar por nome", type="primary"):
+        n1, n2 = st.columns([2, 1])
+        if n1.button("🔍 Buscar por nome", type="primary"):
             st.session_state["dj_nome_busca"] = nome_parte.strip()
+        if n2.button("🧹 Limpar / nova busca"):
+            st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
+            st.session_state.pop("dj_nome_busca", None)
+            st.rerun()
         alvo = st.session_state.get("dj_nome_busca", "")
         if alvo:
             with st.spinner("Procurando o nome nos sites oficiais..."):
