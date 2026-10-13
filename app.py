@@ -736,9 +736,17 @@ def aba_decisoes():
         idx = next((j for j, (_, a) in enumerate(opcoes) if a == preferido), 0)
         tribunal_rot = c2.selectbox("Tribunal", [r for r, _ in opcoes], index=idx, key="dj_tribunal")
         alias = dict(opcoes)[tribunal_rot]
-        numero = st.text_input("Número do processo (formato CNJ)", key="dj_numero",
+        numero = st.text_input("Número do processo (formato CNJ)",
+                               key=f"dj_numero_{st.session_state.get('dj_versao', 0)}",
                                placeholder="ex.: 3000867-89.2026.8.06.0000")
-        if st.button("🔍 Consultar processo", type="primary"):
+        b1, b2 = st.columns([2, 1])
+        consultar = b1.button("🔍 Consultar processo", type="primary")
+        if b2.button("🧹 Limpar / nova consulta"):
+            st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
+            st.session_state.pop("dj_procs", None)
+            st.session_state.pop("dj_erro", None)
+            st.rerun()
+        if consultar:
             if not numero.strip():
                 st.warning("Digite o número do processo.")
             else:
