@@ -815,6 +815,7 @@ def aba_processos():
             st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
             st.session_state.pop("dj_procs", None)
             st.session_state.pop("dj_erro", None)
+            st.session_state.pop("dj_nome_busca", None)
             st.rerun()
         if consultar:
             if not numero.strip():
@@ -837,8 +838,9 @@ def aba_processos():
             st.info("Digite o número e clique em **🔍 Consultar processo**.")
         for p in procs:
             st.markdown(f"### {p['numero']} — {p['tribunal']} ({p['grau']})")
-            _rot, _url = _links_processo(alias, p["numero"], p.get("grau"))[0]
-            st.link_button(_rot, _url)
+            st.caption("Abrir o processo direto no site oficial:")
+            for rotulo_link, url_link in _links_processo(alias, p["numero"], p.get("grau")):
+                st.link_button(rotulo_link, url_link)
             if p["classe"]:
                 st.markdown(f"**Classe:** {p['classe']}")
             if p["orgao"]:
@@ -861,14 +863,17 @@ def aba_processos():
         nome_parte = st.text_input("Nome da parte (requerente/autor ou requerido/réu)",
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
-        if nome_parte.strip():
-            links = _links_processo_nome(alias, nome_parte)
-            st.caption("Buscar o nome da parte em:")
+        if st.button("🔍 Buscar por nome"):
+            st.session_state["dj_nome_busca"] = nome_parte.strip()
+        alvo = st.session_state.get("dj_nome_busca", "")
+        if alvo:
+            links = _links_processo_nome(alias, alvo)
+            st.success(f"Procure o processo em nome de \u201c{alvo}\u201d em:")
             colunas = st.columns(len(links))
             for coluna, (rotulo_link, url_link) in zip(colunas, links):
                 coluna.link_button(rotulo_link, url_link)
         else:
-            st.info("Digite o nome da parte e clique em **🔎 Buscar por nome no site do tribunal**.")
+            st.info("Digite o nome da parte e clique em **🔍 Buscar por nome**.")
 
 
 def exportar(texto):
