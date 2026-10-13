@@ -141,6 +141,12 @@ input[type="password"]::-webkit-strong-password-auto-fill-button,
 input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important; visibility: hidden !important;
 }
+/* Campo de senha do login: mascarado, mas sem o navegador tratar como senha
+   (evita o "gerenciador de senhas" do Google aparecer) */
+.st-key-login_senha input,
+div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
+    -webkit-text-security: disc !important; letter-spacing: 2px !important;
+}
 </style>
 """
 
@@ -231,7 +237,7 @@ if not st.session_state.setdefault("autenticado", False):
 
     with st.form("login_form"):
         usuario_entrada = st.text_input("Usuário", key="login_usuario")
-        senha_entrada = st.text_input("Senha de acesso", type="password", key="login_senha")
+        senha_entrada = st.text_input("Senha de acesso", key="login_senha")
         entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
 
     components.html(
@@ -241,13 +247,14 @@ if not st.session_state.setdefault("autenticado", False):
           function ajustar() {
             try {
               var d = window.parent.document;
-              d.querySelectorAll('input[type="password"]').forEach(function (el) {
-                el.setAttribute('autocomplete', 'new-password');
-                el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2));
-              });
-              d.querySelectorAll('input[type="text"]').forEach(function (el) {
-                el.setAttribute('autocomplete', 'off');
-              });
+              d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"]')
+                .forEach(function (el) {
+                  el.setAttribute('autocomplete', 'off');
+                  el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2));
+                  el.setAttribute('type', 'text');
+                  el.style.webkitTextSecurity = 'disc';
+                  el.style.letterSpacing = '2px';
+                });
             } catch (e) {}
           }
           ajustar();
