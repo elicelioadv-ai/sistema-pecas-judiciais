@@ -107,24 +107,37 @@ DATAJUD_RAMOS = {
     ],
 }
 
-# Link direto para abrir o processo no site OFICIAL do tribunal (pelo número único CNJ).
+# Tribunais que usam o e-SAJ (host esaj.<sigla>.jus.br). No e-SAJ o processo abre
+# DIRETO quando passamos o número FORMATADO + cbPesquisa=NUMPROC; com só os dígitos
+# o portal apenas mostra o formulário pedindo o número de novo.
+DATAJUD_ESAJ = {
+    "api_publica_tjac": "tjac",
+    "api_publica_tjce": "tjce",
+    "api_publica_tjms": "tjms",
+    "api_publica_tjsp": "tjsp",
+}
+
+# Outros links diretos por número (sites que abrem o processo pela própria URL).
 # {dig} = número com 20 dígitos, sem pontos/traços.
 DATAJUD_SITE = {
-    "api_publica_tjac": "https://esaj.tjac.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
-    "api_publica_tjce": "https://esaj.tjce.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
-    "api_publica_tjms": "https://esaj.tjms.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
-    "api_publica_tjsp": "https://esaj.tjsp.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
     "api_publica_stj": "https://processo.stj.jus.br/processo/pesquisa/?termo={dig}",
     "api_publica_tst": "https://consultaprocessual.tst.jus.br/consultaProcessual/consultaTstNumUnica.do?numeroTst={dig}",
 }
 
-# Link para BUSCAR POR NOME DA PARTE no site oficial (quando o tribunal permite).
-# {nome} = nome já codificado para URL.
-DATAJUD_SITE_NOME = {
-    "api_publica_tjac": "https://esaj.tjac.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
-    "api_publica_tjce": "https://esaj.tjce.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
-    "api_publica_tjms": "https://esaj.tjms.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
-    "api_publica_tjsp": "https://esaj.tjsp.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+# Consulta Pública do PJe por tribunal. O PJe é um formulário (JSF) e NÃO aceita
+# nome/número pela URL, então abrimos a página para o usuário digitar o termo.
+PJE_CONSULTA = {
+    "api_publica_tjba": "https://pje.tjba.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_tjce": "https://pje.tjce.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_tjma": "https://pje.tjma.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_tjmg": "https://pje-consulta-publica.tjmg.jus.br/",
+    "api_publica_tjpa": "https://pje.tjpa.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_tjpb": "https://consultapublica.tjpb.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_tjpe": "https://pje.cloud.tjpe.jus.br/1g/ConsultaPublica/listView.seam",
+    "api_publica_tjrj": "https://tjrj.pje.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_tjrr": "https://pje.tjrr.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_trf5": "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_trt7": "https://pje.trt7.jus.br/consultaprocessual/",
 }
 
 
@@ -417,32 +430,85 @@ def consultar_processo(alias, numero):
     return [_normalizar_processo(h.get("_source") or {}) for h in hits]
 
 
-def link_processo(alias, numero):
-    """Devolve o link para abrir o processo no site oficial do tribunal.
+def _grau2(grau):
+    """True se o grau do DataJud for de 2ª instância (G2)."""
+    return str(grau or "").strip().upper() == "G2"
 
-    Quando o tribunal não tem link direto conhecido, cai numa busca restrita
-    ao domínio do Judiciário (jus.br) para localizar a página oficial.
+
+def _esaj_processo(sigla, numero, grau=None):
+    """URL do e-SAJ que abre o processo DIRETO (número formatado + NUMPROC).
+
+    Sem o número formatado e sem cbPesquisa=NUMPROC o e-SAJ mostra só o
+    formulário pedindo o número de novo.
+    """
+    servico = "cposg" if _grau2(grau) else "cpopg"
+    fmt = urllib.parse.quote(formatar_numero(numero))
+    return (f"https://esaj.{sigla}.jus.br/{servico}/search.do"
+            f"?cbPesquisa=NUMPROC&dadosConsulta.valorConsultaNuUnificado={fmt}"
+            f"&dadosConsulta.tipoNuProcesso=UNIFICADO")
+
+
+def _esaj_nome(sigla, nome):
+    """URL do e-SAJ que já busca pelo nome da parte (1º grau)."""
+    return (f"https://esaj.{sigla}.jus.br/cpopg/search.do?cbPesquisa=NMPARTE"
+            f"&dadosConsulta.valorConsulta={urllib.parse.quote(nome)}"
+            f"&dadosConsulta.tipoNuProcesso=UNIFICADO")
+
+
+def links_processo(alias, numero, grau=None):
+    """Lista de (rótulo, url) para abrir o processo nos sites oficiais.
+
+    Usa o e-SAJ (link que abre direto), outros links diretos (STJ/TST), a
+    Consulta Pública do PJe e, em último caso, uma busca restrita ao judiciário.
     """
     dig = so_digitos(numero)
+    saida = []
+    sig = DATAJUD_ESAJ.get(alias)
+    if sig:
+        grau_txt = "2º grau" if _grau2(grau) else "1º grau"
+        saida.append((f"🔗 Abrir no e-SAJ ({grau_txt})", _esaj_processo(sig, numero, grau)))
     modelo = DATAJUD_SITE.get(alias)
     if modelo:
-        return modelo.format(dig=dig)
-    consulta = urllib.parse.quote(f'"{formatar_numero(numero)}" site:jus.br')
-    return f"https://www.google.com/search?q={consulta}"
+        saida.append(("🔗 Abrir no site do tribunal", modelo.format(dig=dig)))
+    pje = PJE_CONSULTA.get(alias)
+    if pje:
+        saida.append(("🔗 Consulta Pública do PJe", pje))
+    if not saida:
+        consulta = urllib.parse.quote(f'"{formatar_numero(numero)}" site:jus.br')
+        saida.append(("🔗 Localizar no site oficial (Google)",
+                      f"https://www.google.com/search?q={consulta}"))
+    return saida
+
+
+def link_processo(alias, numero, grau=None):
+    """(Compat) Primeiro link para abrir o processo no site oficial."""
+    return links_processo(alias, numero, grau)[0][1]
+
+
+def links_processo_nome(alias, nome):
+    """Lista de (rótulo, url) para buscar o NOME DA PARTE nos sites oficiais.
+
+    O DataJud não expõe nomes (LGPD). Buscamos no e-SAJ (link direto por nome) e
+    na Consulta Pública do PJe (quando o tribunal usa PJe), além de uma busca
+    restrita ao domínio do Judiciário (Google) como alternativa.
+    """
+    nome = (nome or "").strip()
+    saida = []
+    sig = DATAJUD_ESAJ.get(alias)
+    if sig:
+        saida.append(("🔎 Buscar por nome no e-SAJ", _esaj_nome(sig, nome)))
+    pje = PJE_CONSULTA.get(alias)
+    if pje:
+        saida.append(("🔎 Buscar por nome no PJe (Consulta Pública)", pje))
+    consulta = urllib.parse.quote(f'"{nome}" processo site:jus.br')
+    saida.append(("🔎 Localizar no site oficial (Google)",
+                  f"https://www.google.com/search?q={consulta}"))
+    return saida
 
 
 def link_processo_nome(alias, nome):
-    """Link para buscar por NOME DA PARTE no site oficial do tribunal.
-
-    O DataJud não expõe nomes (LGPD); quando o tribunal não tem busca por nome
-    mapeada, cai numa busca restrita ao domínio do Judiciário (jus.br).
-    """
-    nome = (nome or "").strip()
-    modelo = DATAJUD_SITE_NOME.get(alias)
-    if modelo:
-        return modelo.format(nome=urllib.parse.quote(nome))
-    consulta = urllib.parse.quote(f'"{nome}" processo site:jus.br')
-    return f"https://www.google.com/search?q={consulta}"
+    """(Compat) Primeiro link para buscar por nome no site oficial."""
+    return links_processo_nome(alias, nome)[0][1]
 
 
 # ------------------------------------------------------------------ busca de jurisprudência

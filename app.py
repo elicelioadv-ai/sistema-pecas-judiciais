@@ -815,7 +815,8 @@ def aba_processos():
             st.info("Digite o número e clique em **🔍 Consultar processo**.")
         for p in procs:
             st.markdown(f"### {p['numero']} — {p['tribunal']} ({p['grau']})")
-            st.link_button("🔗 Abrir no site do tribunal", decisoes.link_processo(alias, p["numero"]))
+            for rotulo_link, url_link in decisoes.links_processo(alias, p["numero"], p.get("grau")):
+                st.link_button(rotulo_link, url_link)
             if p["classe"]:
                 st.markdown(f"**Classe:** {p['classe']}")
             if p["orgao"]:
@@ -839,8 +840,8 @@ def aba_processos():
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
         if nome_parte.strip():
-            st.link_button("🔎 Buscar por nome no site do tribunal",
-                           decisoes.link_processo_nome(alias, nome_parte))
+            for rotulo_link, url_link in decisoes.links_processo_nome(alias, nome_parte):
+                st.link_button(rotulo_link, url_link)
         else:
             st.info("Digite o nome da parte e clique em **🔎 Buscar por nome no site do tribunal**.")
 
