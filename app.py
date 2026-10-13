@@ -44,9 +44,9 @@ _CSS_LOGIN = """
 [data-testid="stHeader"] { background: transparent !important; }
 .login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
-.login-title {
+.login-head .login-title, .login-title {
     margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: .2px;
-    color: #000000;
+    color: #000000 !important;
 }
 .login-saudacao { font-size: 2.1rem; font-weight: 700; color: #000000; margin: 18px 0 6px 0; font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
 .login-sub { color: #000000; font-size: 0.95rem; margin: 2px 0 0 0; }
