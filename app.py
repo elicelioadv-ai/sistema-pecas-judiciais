@@ -885,8 +885,10 @@ def aba_processos():
                 st.success(f"✅ Encontrei {len(achados)} processo(s) em nome de “{alvo}” "
                            f"no e-SAJ:")
                 for numero in achados[:10]:
-                    st.link_button(f"🔗 Abrir {numero}",
-                                   _links_processo(alias, numero)[0][1])
+                    st.markdown(f"**{numero}**")
+                    opcoes = _links_processo(alias, numero)
+                    for coluna, (rotulo_link, url_link) in zip(st.columns(len(opcoes)), opcoes):
+                        coluna.link_button(rotulo_link, url_link)
                 if len(achados) > 10:
                     st.caption(f"Mostrando 10 de {len(achados)}. Refine o nome para ver menos.")
             else:
