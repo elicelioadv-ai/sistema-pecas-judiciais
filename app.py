@@ -39,7 +39,8 @@ _CSS_LEIS = """
 
 _CSS_LOGIN = """
 <style>
-.stApp, [data-testid="stAppViewContainer"] { background: #eef0f3 !important; }
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&display=swap');
+.stApp, [data-testid="stAppViewContainer"] { background: #b5b5b5 !important; }
 [data-testid="stHeader"] { background: transparent !important; }
 .login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
@@ -47,7 +48,7 @@ _CSS_LOGIN = """
     margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: .2px;
     color: #000000;
 }
-.login-saudacao { font-size: 1.9rem; font-weight: 800; color: #000000; margin: 18px 0 6px 0; }
+.login-saudacao { font-size: 2.1rem; font-weight: 700; color: #000000; margin: 18px 0 6px 0; font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
 .login-sub { color: #000000; font-size: 0.95rem; margin: 2px 0 0 0; }
 .login-msg { color: #000000; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
 div[data-testid="stForm"] {
