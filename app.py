@@ -62,10 +62,31 @@ div[data-testid="stForm"] div[data-baseweb="input"] {
     background: #ffffff !important; border: 1px solid #cbd2d9 !important;
     border-radius: 10px !important;
 }
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"]:focus-within,
+div[data-testid="stForm"] div[data-baseweb="input"]:focus-within {
+    background: #ffffff !important; border-color: #cbd2d9 !important;
+}
+div[data-testid="stForm"] input,
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] input,
 div[data-testid="stForm"] div[data-baseweb="input"] input {
-    background: transparent !important; color: #000000 !important;
+    background: #ffffff !important; color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important; caret-color: #000000 !important;
 }
+div[data-testid="stForm"] input:focus,
+div[data-testid="stForm"] input:active,
+div[data-testid="stForm"] input:hover {
+    background: #ffffff !important; color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+div[data-testid="stForm"] input:-webkit-autofill,
+div[data-testid="stForm"] input:-webkit-autofill:hover,
+div[data-testid="stForm"] input:-webkit-autofill:focus,
+div[data-testid="stForm"] input:-webkit-autofill:active {
+    -webkit-text-fill-color: #000000 !important;
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+div[data-testid="stForm"] ::selection { background: #cfe2ff; color: #000000; }
 div[data-testid="stForm"] button {
     border-radius: 10px; font-weight: 700; background: #1f6feb; color: #ffffff; border: none;
 }
