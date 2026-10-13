@@ -443,3 +443,95 @@ def link_processo_nome(alias, nome):
         return modelo.format(nome=urllib.parse.quote(nome))
     consulta = urllib.parse.quote(f'"{nome}" processo site:jus.br')
     return f"https://www.google.com/search?q={consulta}"
+
+
+# ------------------------------------------------------------------ busca de jurisprudência
+# Colegiados do STJ: rótulo no app -> termo usado no filtro do SCON.
+STJ_COLEGIADOS = {
+    "Corte Especial": "CORTE ESPECIAL",
+    "1ª Seção": "PRIMEIRA SEÇÃO",
+    "2ª Seção": "SEGUNDA SEÇÃO",
+    "3ª Seção": "TERCEIRA SEÇÃO",
+    "1ª Turma": "PRIMEIRA TURMA",
+    "2ª Turma": "SEGUNDA TURMA",
+    "3ª Turma": "TERCEIRA TURMA",
+    "4ª Turma": "QUARTA TURMA",
+    "5ª Turma": "QUINTA TURMA",
+    "6ª Turma": "SEXTA TURMA",
+}
+
+
+def link_stj(colegiado="", termos=""):
+    """Link para a pesquisa oficial de jurisprudência do STJ (SCON).
+
+    ``colegiado`` filtra pelo órgão julgador (ex.: '5ª Turma'); ``termos`` são as
+    palavras a pesquisar. Sem nada, abre a página de busca do SCON.
+    """
+    partes = []
+    termos = (termos or "").strip()
+    if termos:
+        partes.append(f"({termos})")
+    org = STJ_COLEGIADOS.get((colegiado or "").strip())
+    if org:
+        partes.append(f'("{org}" inpath (//ORG))')
+    base = "https://scon.stj.jus.br/SCON/pesquisar.jsp?b=ACOR&O=JT&thesaurus=JURIDICO"
+    if partes:
+        base += "&livre=" + urllib.parse.quote(" and ".join(partes))
+    return base
+
+
+def link_busca_juris(tribunal="", termos="", fonte=""):
+    """Link para abrir a busca de um julgado no site OFICIAL de origem.
+
+    A IA sugere o tribunal e os termos; aqui montamos o link de pesquisa no site
+    correspondente (STJ/STF/TJ e-SAJ). Sem correspondência, cai numa busca
+    restrita ao domínio do Judiciário (jus.br).
+    """
+    termos = (termos or "").strip()
+    alvo = f"{tribunal} {fonte}".upper()
+    q = urllib.parse.quote(termos)
+    if "STJ" in alvo or "SCON" in alvo:
+        return link_stj("", termos)
+    if "STF" in alvo:
+        return f"https://jurisprudencia.stf.jus.br/pages/search?base=acordaos&queryString={q}"
+    m = re.search(r"\bTJ\s*-?\s*([A-Z]{2})\b", alvo)
+    esaj = {"CE": "tjce", "AC": "tjac", "MS": "tjms", "SP": "tjsp"}
+    if m and m.group(1) in esaj:
+        return (f"https://esaj.{esaj[m.group(1)]}.jus.br/cjsg/resultadoCompleta.do?"
+                f"dados.buscaInteiroTeor={q}&dados.pesquisarComSinonimos=S")
+    consulta = urllib.parse.quote(f'"{termos}" jurisprudência site:jus.br')
+    return f"https://www.google.com/search?q={consulta}"
+
+
+def parse_sugestoes_juris(texto):
+    """Separa o texto sugerido pela IA em itens com tribunal, tese, busca e link.
+
+    Espera blocos no formato da instrução (cabeçalho, ``Tese:``, ``Identificação:``,
+    ``Busca:``, ``Fonte:``), separados por linha em branco. Tolerante a variações.
+    """
+    itens = []
+    for bloco in re.split(r"\n\s*\n", texto or ""):
+        bloco = bloco.strip()
+        if not bloco:
+            continue
+        linhas = [l.strip() for l in bloco.splitlines() if l.strip()]
+        item = {"cabecalho": linhas[0], "tese": "", "identificacao": "",
+                "busca": "", "fonte": "", "texto": bloco}
+        for l in linhas[1:]:
+            chave, _, valor = l.partition(":")
+            chave = chave.strip().lower()
+            valor = valor.strip()
+            if chave.startswith("tese"):
+                item["tese"] = valor
+            elif chave.startswith("identifica"):
+                item["identificacao"] = valor
+            elif chave.startswith("busca"):
+                item["busca"] = valor
+            elif chave.startswith("fonte"):
+                item["fonte"] = valor
+        cab = item["cabecalho"]
+        item["tribunal"] = re.split(r"\s[—–-]\s", cab)[0].strip("[] ").strip()
+        alvo = (item["busca"] or item["tese"] or item["tribunal"]).strip()
+        item["url"] = link_busca_juris(item["tribunal"], alvo, item["fonte"])
+        itens.append(item)
+    return itens

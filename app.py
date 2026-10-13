@@ -669,57 +669,68 @@ def aba_decisoes():
     )
 
     with t_stj:
-        st.caption("Baixa o arquivo mais recente de cada órgão e mostra as decisões mais novas. "
-                   "Mais órgãos = mais demorado (na primeira vez).")
-        rotulos = [r for r, _ in decisoes.ORGAOS_STJ]
-        sel = st.multiselect("Órgãos do STJ", rotulos,
-                             default=["Corte Especial", "1ª Seção", "2ª Seção", "3ª Seção"],
-                             key="stj_orgaos")
-        c1, c2 = st.columns([1, 2])
-        limite = c1.selectbox("Quantas decisões", [30, 60, 100, 200], index=1, key="stj_limite")
-        filtro = c2.text_input("Filtrar (palavra na ementa, nº do processo, relator)", key="stj_filtro")
-        if st.button("🔄 Buscar acórdãos recentes", type="primary"):
-            mapa = dict(decisoes.ORGAOS_STJ)
-            datasets = tuple(mapa[r] for r in sel)
-            if not datasets:
-                st.warning("Escolha ao menos um órgão.")
+        st.caption("Escolha o **colegiado** e, se quiser, os **termos** do caso. O botão abre a "
+                   "**pesquisa oficial de jurisprudência do STJ (SCON)** já apontada para o colegiado.")
+        termo_stj = st.text_input("Termos da pesquisa (opcional)", key="stj_termo",
+                                  placeholder="ex.: responsabilidade civil, dano moral, nexo causal")
+        colegiado = st.selectbox("Colegiado", ["Todos os órgãos"] + list(decisoes.STJ_COLEGIADOS),
+                                 key="stj_colegiado")
+        st.link_button("🔎 Abrir busca no STJ (SCON)",
+                       decisoes.link_stj("" if colegiado == "Todos os órgãos" else colegiado, termo_stj))
+        st.caption("A busca abre no site oficial do STJ. Confira sempre o inteiro teor antes de citar.")
+
+        with st.expander("Ver também: acórdãos recentes (Portal de Dados Abertos do STJ)"):
+            st.caption("Baixa o arquivo mais recente de cada órgão e mostra as decisões mais novas. "
+                       "Mais órgãos = mais demorado (na primeira vez).")
+            rotulos = [r for r, _ in decisoes.ORGAOS_STJ]
+            sel = st.multiselect("Órgãos do STJ", rotulos,
+                                 default=["Corte Especial", "1ª Seção", "2ª Seção", "3ª Seção"],
+                                 key="stj_orgaos")
+            c1, c2 = st.columns([1, 2])
+            limite = c1.selectbox("Quantas decisões", [30, 60, 100, 200], index=1, key="stj_limite")
+            filtro = c2.text_input("Filtrar (palavra na ementa, nº do processo, relator)", key="stj_filtro")
+            if st.button("🔄 Buscar acórdãos recentes", type="primary"):
+                mapa = dict(decisoes.ORGAOS_STJ)
+                datasets = tuple(mapa[r] for r in sel)
+                if not datasets:
+                    st.warning("Escolha ao menos um órgão.")
+                else:
+                    with st.status("Baixando acórdãos do STJ...", expanded=False) as s:
+                        lista, erros = _stj_acordaos(datasets, limite)
+                        s.update(label=f"{len(lista)} acórdão(ões) carregado(s)",
+                                 state="complete" if lista else "error")
+                    st.session_state["stj_lista"] = lista
+                    st.session_state["stj_erros"] = erros
+            for e in st.session_state.get("stj_erros", []):
+                st.warning(f"Não consegui ler um conjunto: {e}")
+            lista = st.session_state.get("stj_lista") or []
+            if not lista:
+                st.info("Clique em **🔄 Buscar acórdãos recentes** para carregar as decisões.")
             else:
-                with st.status("Baixando acórdãos do STJ...", expanded=False) as s:
-                    lista, erros = _stj_acordaos(datasets, limite)
-                    s.update(label=f"{len(lista)} acórdão(ões) carregado(s)",
-                             state="complete" if lista else "error")
-                st.session_state["stj_lista"] = lista
-                st.session_state["stj_erros"] = erros
-        for e in st.session_state.get("stj_erros", []):
-            st.warning(f"Não consegui ler um conjunto: {e}")
-        lista = st.session_state.get("stj_lista") or []
-        if not lista:
-            st.info("Clique em **🔄 Buscar acórdãos recentes** para carregar as decisões.")
-        else:
-            termo = (filtro or "").strip().lower()
-            mostrados = 0
-            for a in lista:
-                alvo = (f"{a['processo']} {a['relator']} {a['orgao']} {a['classe']} "
-                        f"{a['ementa']} {a['tese']} {a['tema']}").lower()
-                if termo and termo not in alvo:
-                    continue
-                mostrados += 1
-                titulo = f"{a['data'] or '—'} · {a['orgao']} · {a['processo']} — {a['classe']}"
-                with st.expander(titulo):
-                    st.markdown(f"**Relator(a):** {a['relator'] or '—'}")
-                    if a["tema"]:
-                        st.markdown(f"**Tema / repetitivo:** {a['tema']}")
-                    if a["tese"]:
-                        st.markdown(f"**Tese firmada:** {a['tese']}")
-                    st.markdown("**Ementa:**")
-                    st.write(a["ementa"] or "(sem ementa)")
-                    if a["processo"]:
-                        st.link_button(
-                            "Ver o processo no STJ",
-                            f"https://processo.stj.jus.br/processo/pesquisa/?termo={a['processo']}",
-                        )
-            if mostrados == 0:
-                st.info("Nenhuma decisão casou com o filtro.")
+                termo = (filtro or "").strip().lower()
+                mostrados = 0
+                for a in lista:
+                    alvo = (f"{a['processo']} {a['relator']} {a['orgao']} {a['classe']} "
+                            f"{a['ementa']} {a['tese']} {a['tema']}").lower()
+                    if termo and termo not in alvo:
+                        continue
+                    mostrados += 1
+                    titulo = f"{a['data'] or '—'} · {a['orgao']} · {a['processo']} — {a['classe']}"
+                    with st.expander(titulo):
+                        st.markdown(f"**Relator(a):** {a['relator'] or '—'}")
+                        if a["tema"]:
+                            st.markdown(f"**Tema / repetitivo:** {a['tema']}")
+                        if a["tese"]:
+                            st.markdown(f"**Tese firmada:** {a['tese']}")
+                        st.markdown("**Ementa:**")
+                        st.write(a["ementa"] or "(sem ementa)")
+                        if a["processo"]:
+                            st.link_button(
+                                "Ver o processo no STJ",
+                                f"https://processo.stj.jus.br/processo/pesquisa/?termo={a['processo']}",
+                            )
+                if mostrados == 0:
+                    st.info("Nenhuma decisão casou com o filtro.")
 
     with t_links:
         st.markdown("### 📚 Buscar legislação")
@@ -1019,8 +1030,19 @@ with aba_conf:
             st.rerun()
         c2.caption("Você pode editar ou remover sugestões direto no quadro abaixo.")
         st.text_area("Sugestões (editável)", key="juris_sugerida", height=360)
-        with st.expander("Ver sugestões formatadas"):
-            st.markdown(st.session_state["juris_sugerida"])
+        st.markdown("**🔗 Abrir cada sugestão na fonte oficial** (clique para pesquisar no site do tribunal):")
+        itens = decisoes.parse_sugestoes_juris(st.session_state["juris_sugerida"])
+        if not itens:
+            st.caption("Não consegui separar as sugestões automaticamente — use o quadro editável acima.")
+        for it in itens:
+            with st.expander(it["cabecalho"] or "Sugestão"):
+                if it["tese"]:
+                    st.markdown(f"**Tese:** {it['tese']}")
+                if it["identificacao"]:
+                    st.markdown(f"**Identificação:** {it['identificacao']}")
+                if it["busca"]:
+                    st.markdown(f"**Busca:** {it['busca']}")
+                st.link_button("🔎 Abrir busca na fonte oficial", it["url"])
         st.caption("Depois de conferir no site oficial, cadastre na aba 🗂️ Base legal com status "
                    "'verificado' para a IA poder citar na peça.")
     st.divider()
