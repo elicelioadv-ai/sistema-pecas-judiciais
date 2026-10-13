@@ -6,6 +6,7 @@ Para abrir:  streamlit run app.py
 """
 from datetime import datetime
 from pathlib import Path
+import html
 import json
 
 import pandas as pd
@@ -15,6 +16,25 @@ import decisoes
 import motor
 
 st.set_page_config(page_title="Sistema de Peças Judiciais", page_icon="⚖️", layout="wide")
+
+_CSS_LEIS = """
+<style>
+.lei-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.lei-grid a {
+    display: inline-block;
+    background: #1f6feb;
+    color: #ffffff !important;
+    text-decoration: none;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    border: 1px solid #1057c4;
+    line-height: 1.2;
+}
+.lei-grid a:hover { background: #1057c4; }
+</style>
+"""
 
 
 def _carregar_municipios():
@@ -675,9 +695,13 @@ def aba_decisoes():
         if not achados:
             st.info("Nada encontrado. Tente outra palavra (ex.: 'civil', 'penal', 'trabalho', 'tributário').")
         else:
-            colunas = st.columns(3)
-            for j, item in enumerate(achados):
-                colunas[j % 3].link_button(item["nome"], item["url"], width="stretch")
+            st.markdown(_CSS_LEIS, unsafe_allow_html=True)
+            itens = "".join(
+                f'<a href="{item["url"]}" target="_blank" rel="noopener">'
+                f'{html.escape(item["nome"])}</a>'
+                for item in achados
+            )
+            st.markdown(f'<div class="lei-grid">{itens}</div>', unsafe_allow_html=True)
 
         st.divider()
         st.markdown("### 🔗 Atalhos oficiais dos tribunais")
