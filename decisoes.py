@@ -17,6 +17,7 @@ import os
 import re
 import unicodedata
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 
@@ -106,9 +107,29 @@ DATAJUD_RAMOS = {
     ],
 }
 
+# Link direto para abrir o processo no site OFICIAL do tribunal (pelo número único CNJ).
+# {dig} = número com 20 dígitos, sem pontos/traços.
+DATAJUD_SITE = {
+    "api_publica_tjac": "https://esaj.tjac.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+    "api_publica_tjce": "https://esaj.tjce.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+    "api_publica_tjms": "https://esaj.tjms.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+    "api_publica_tjsp": "https://esaj.tjsp.jus.br/cpopg/search.do?dadosConsulta.valorConsultaNuUnificado={dig}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+    "api_publica_stj": "https://processo.stj.jus.br/processo/pesquisa/?termo={dig}",
+    "api_publica_tst": "https://consultaprocessual.tst.jus.br/consultaProcessual/consultaTstNumUnica.do?numeroTst={dig}",
+}
+
+# Link para BUSCAR POR NOME DA PARTE no site oficial (quando o tribunal permite).
+# {nome} = nome já codificado para URL.
+DATAJUD_SITE_NOME = {
+    "api_publica_tjac": "https://esaj.tjac.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+    "api_publica_tjce": "https://esaj.tjce.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+    "api_publica_tjms": "https://esaj.tjms.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+    "api_publica_tjsp": "https://esaj.tjsp.jus.br/cpopg/search.do?cbPesquisa=NMPARTE&dadosConsulta.valorConsulta={nome}&dadosConsulta.tipoNuProcesso=UNIFICADO",
+}
+
+
 # Atalhos oficiais (não é "feed": abre a busca no site do próprio órgão)
-ATALHOS = [
-    ("⚖️ Tribunais superiores", [
+ATALHOS = [    ("⚖️ Tribunais superiores", [
         ("STF — jurisprudência e súmulas", "https://jurisprudencia.stf.jus.br/pages/search"),
         ("STF — Corte Aberta (dados abertos)", "https://portal.stf.jus.br/corteaberta/"),
         ("STJ — pesquisa de jurisprudência (SCON)", "https://scon.stj.jus.br/SCON/"),
@@ -394,3 +415,31 @@ def consultar_processo(alias, numero):
         raise RuntimeError(f"Não consegui falar com o DataJud (verifique a internet): {e.reason}") from e
     hits = (dados.get("hits") or {}).get("hits") or []
     return [_normalizar_processo(h.get("_source") or {}) for h in hits]
+
+
+def link_processo(alias, numero):
+    """Devolve o link para abrir o processo no site oficial do tribunal.
+
+    Quando o tribunal não tem link direto conhecido, cai numa busca restrita
+    ao domínio do Judiciário (jus.br) para localizar a página oficial.
+    """
+    dig = so_digitos(numero)
+    modelo = DATAJUD_SITE.get(alias)
+    if modelo:
+        return modelo.format(dig=dig)
+    consulta = urllib.parse.quote(f'"{formatar_numero(numero)}" site:jus.br')
+    return f"https://www.google.com/search?q={consulta}"
+
+
+def link_processo_nome(alias, nome):
+    """Link para buscar por NOME DA PARTE no site oficial do tribunal.
+
+    O DataJud não expõe nomes (LGPD); quando o tribunal não tem busca por nome
+    mapeada, cai numa busca restrita ao domínio do Judiciário (jus.br).
+    """
+    nome = (nome or "").strip()
+    modelo = DATAJUD_SITE_NOME.get(alias)
+    if modelo:
+        return modelo.format(nome=urllib.parse.quote(nome))
+    consulta = urllib.parse.quote(f'"{nome}" processo site:jus.br')
+    return f"https://www.google.com/search?q={consulta}"

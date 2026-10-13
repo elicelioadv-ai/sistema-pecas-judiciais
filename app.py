@@ -736,53 +736,69 @@ def aba_decisoes():
         idx = next((j for j, (_, a) in enumerate(opcoes) if a == preferido), 0)
         tribunal_rot = c2.selectbox("Tribunal", [r for r, _ in opcoes], index=idx, key="dj_tribunal")
         alias = dict(opcoes)[tribunal_rot]
-        numero = st.text_input("Número do processo (formato CNJ)",
-                               key=f"dj_numero_{st.session_state.get('dj_versao', 0)}",
-                               placeholder="ex.: 3000867-89.2026.8.06.0000")
-        b1, b2 = st.columns([2, 1])
-        consultar = b1.button("🔍 Consultar processo", type="primary")
-        if b2.button("🧹 Limpar / nova consulta"):
-            st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
-            st.session_state.pop("dj_procs", None)
-            st.session_state.pop("dj_erro", None)
-            st.rerun()
-        if consultar:
-            if not numero.strip():
-                st.warning("Digite o número do processo.")
+        modo = st.radio("Buscar por",
+                        ["Número do processo (CNJ)", "Nome da parte (no site do tribunal)"],
+                        horizontal=True, key="dj_modo")
+        if modo.startswith("Número"):
+            numero = st.text_input("Número do processo (formato CNJ)",
+                                   key=f"dj_numero_{st.session_state.get('dj_versao', 0)}",
+                                   placeholder="ex.: 3000867-89.2026.8.06.0000")
+            b1, b2 = st.columns([2, 1])
+            consultar = b1.button("🔍 Consultar processo", type="primary")
+            if b2.button("🧹 Limpar / nova consulta"):
+                st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
+                st.session_state.pop("dj_procs", None)
+                st.session_state.pop("dj_erro", None)
+                st.rerun()
+            if consultar:
+                if not numero.strip():
+                    st.warning("Digite o número do processo.")
+                else:
+                    try:
+                        with st.status("Consultando o DataJud...", expanded=False) as s:
+                            procs = _datajud_consultar(alias, numero)
+                            s.update(label=f"{len(procs)} processo(s) encontrado(s)",
+                                     state="complete" if procs else "error")
+                        st.session_state["dj_procs"] = procs
+                        st.session_state["dj_erro"] = ""
+                    except Exception as e:
+                        st.session_state["dj_procs"] = []
+                        st.session_state["dj_erro"] = str(e)
+            if st.session_state.get("dj_erro"):
+                st.error(st.session_state["dj_erro"])
+            procs = st.session_state.get("dj_procs") or []
+            if not procs and not st.session_state.get("dj_erro"):
+                st.info("Digite o número e clique em **🔍 Consultar processo**.")
+            for p in procs:
+                st.markdown(f"### {p['numero']} — {p['tribunal']} ({p['grau']})")
+                st.link_button("🔗 Abrir no site do tribunal", decisoes.link_processo(alias, p["numero"]))
+                if p["classe"]:
+                    st.markdown(f"**Classe:** {p['classe']}")
+                if p["orgao"]:
+                    st.markdown(f"**Órgão julgador:** {p['orgao']}")
+                if p["ajuizamento"]:
+                    st.markdown(f"**Ajuizamento:** {p['ajuizamento']}")
+                if p["assuntos"]:
+                    st.markdown("**Assuntos:** " + "; ".join(p["assuntos"]))
+                st.markdown(f"**Movimentações ({len(p['movimentos'])})** — mais recentes primeiro:")
+                for m in p["movimentos"][:20]:
+                    st.markdown(f"- `{m['data']}` — {m['nome']}")
+                if len(p["movimentos"]) > 20:
+                    with st.expander(f"Ver as demais {len(p['movimentos']) - 20} movimentações"):
+                        for m in p["movimentos"][20:]:
+                            st.markdown(f"- `{m['data']}` — {m['nome']}")
+                st.caption("Processos em segredo de justiça não aparecem. Confirme no site do tribunal.")
+        else:
+            st.caption("O **DataJud (CNJ)** não divulga nomes de partes. A busca por nome é feita no "
+                       "**site oficial do tribunal** escolhido acima (com o nome completo ou parte dele).")
+            nome_parte = st.text_input("Nome da parte (requerente/autor ou requerido/réu)",
+                                       key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
+                                       placeholder="ex.: Maria da Silva")
+            if nome_parte.strip():
+                st.link_button("🔎 Buscar por nome no site do tribunal",
+                               decisoes.link_processo_nome(alias, nome_parte))
             else:
-                try:
-                    with st.status("Consultando o DataJud...", expanded=False) as s:
-                        procs = _datajud_consultar(alias, numero)
-                        s.update(label=f"{len(procs)} processo(s) encontrado(s)",
-                                 state="complete" if procs else "error")
-                    st.session_state["dj_procs"] = procs
-                    st.session_state["dj_erro"] = ""
-                except Exception as e:
-                    st.session_state["dj_procs"] = []
-                    st.session_state["dj_erro"] = str(e)
-        if st.session_state.get("dj_erro"):
-            st.error(st.session_state["dj_erro"])
-        procs = st.session_state.get("dj_procs") or []
-        if not procs and not st.session_state.get("dj_erro"):
-            st.info("Digite o número e clique em **🔍 Consultar processo**.")
-        for p in procs:
-            st.markdown(f"### {p['numero']} — {p['tribunal']} ({p['grau']})")
-            if p["classe"]:
-                st.markdown(f"**Classe:** {p['classe']}")
-            if p["orgao"]:
-                st.markdown(f"**Órgão julgador:** {p['orgao']}")
-            if p["ajuizamento"]:
-                st.markdown(f"**Ajuizamento:** {p['ajuizamento']}")
-            if p["assuntos"]:
-                st.markdown("**Assuntos:** " + "; ".join(p["assuntos"]))
-            st.markdown(f"**Movimentações ({len(p['movimentos'])})** — mais recentes primeiro:")
-            for m in p["movimentos"][:20]:
-                st.markdown(f"- `{m['data']}` — {m['nome']}")
-            if len(p["movimentos"]) > 20:
-                with st.expander(f"Ver as demais {len(p['movimentos']) - 20} movimentações"):
-                    for m in p["movimentos"][20:]:
-                        st.markdown(f"- `{m['data']}` — {m['nome']}")
-            st.caption("Processos em segredo de justiça não aparecem. Confirme no site do tribunal.")
+                st.info("Digite o nome da parte e clique em **🔎 Buscar por nome no site do tribunal**.")
 
     with t_links:
         st.markdown("### 📚 Buscar legislação")
