@@ -39,32 +39,32 @@ _CSS_LEIS = """
 
 _CSS_LOGIN = """
 <style>
-.stApp, [data-testid="stAppViewContainer"] { background: #40464f !important; }
+.stApp, [data-testid="stAppViewContainer"] { background: #eef0f3 !important; }
 [data-testid="stHeader"] { background: transparent !important; }
 .login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
 .login-title {
     margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: .2px;
-    background: linear-gradient(90deg, #5b9dff, #a06bff);
+    background: linear-gradient(90deg, #2f6fed, #7c3aed);
     -webkit-background-clip: text; background-clip: text; color: transparent;
 }
-.login-saudacao { font-size: 1.9rem; font-weight: 800; color: #ffffff; margin: 18px 0 6px 0; }
-.login-sub { color: #c7ccd4; font-size: 0.95rem; margin: 2px 0 0 0; }
-.login-msg { color: #9aa3af; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
+.login-saudacao { font-size: 1.9rem; font-weight: 800; color: #111827; margin: 18px 0 6px 0; }
+.login-sub { color: #374151; font-size: 0.95rem; margin: 2px 0 0 0; }
+.login-msg { color: #6b7280; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
 div[data-testid="stForm"] {
-    max-width: 470px; margin: 16px auto 0 auto; background: #4b515b;
-    border: 1px solid #5c636e; border-radius: 18px; padding: 24px 26px 20px 26px;
-    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
+    max-width: 470px; margin: 16px auto 0 auto; background: #ffffff;
+    border: 1px solid #d5d9de; border-radius: 18px; padding: 24px 26px 20px 26px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
 }
-div[data-testid="stForm"] label { color: #e5e7eb !important; font-weight: 600; }
+div[data-testid="stForm"] label { color: #111827 !important; font-weight: 600; }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"],
 div[data-testid="stForm"] div[data-baseweb="input"] {
-    background: #f4f5f6 !important; border: 1px solid #d2d7dd !important;
+    background: #ffffff !important; border: 1px solid #cbd2d9 !important;
     border-radius: 10px !important;
 }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] input,
 div[data-testid="stForm"] div[data-baseweb="input"] input {
-    background: transparent !important; color: #1f2937 !important;
+    background: transparent !important; color: #111827 !important;
 }
 div[data-testid="stForm"] button {
     border-radius: 10px; font-weight: 700; background: #1f6feb; color: #ffffff; border: none;
