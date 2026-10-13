@@ -1,6 +1,10 @@
 # Segredos / configuracao local (NUNCA subir)
 .env
 .streamlit/secrets.toml
+segredos_para_o_streamlit.txt
+token_drive.json
+client_secret*.json
+*.zip
 
 # Python
 __pycache__/

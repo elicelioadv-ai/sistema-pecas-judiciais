@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 import html
 import json
+import random
 
 import pandas as pd
 import streamlit as st
@@ -35,6 +36,63 @@ _CSS_LEIS = """
 .lei-grid a:hover { background: #1057c4; }
 </style>
 """
+
+_CSS_LOGIN = """
+<style>
+.stApp, [data-testid="stAppViewContainer"] { background: #40464f !important; }
+[data-testid="stHeader"] { background: transparent !important; }
+.login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
+.login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
+.login-title {
+    margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: .2px;
+    background: linear-gradient(90deg, #5b9dff, #a06bff);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.login-saudacao { font-size: 1.9rem; font-weight: 800; color: #ffffff; margin: 18px 0 6px 0; }
+.login-sub { color: #c7ccd4; font-size: 0.95rem; margin: 2px 0 0 0; }
+.login-msg { color: #9aa3af; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
+div[data-testid="stForm"] {
+    max-width: 470px; margin: 16px auto 0 auto; background: #4b515b;
+    border: 1px solid #5c636e; border-radius: 18px; padding: 24px 26px 20px 26px;
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.35);
+}
+div[data-testid="stForm"] label { color: #e5e7eb !important; font-weight: 600; }
+div[data-testid="stForm"] div[data-baseweb="input"] {
+    background: #e9ecef !important; border: 1px solid #ccd1d7 !important;
+    border-radius: 10px !important;
+}
+div[data-testid="stForm"] div[data-baseweb="input"] input {
+    background: transparent !important; color: #1f2937 !important;
+}
+div[data-testid="stForm"] button {
+    border-radius: 10px; font-weight: 700; background: #1f6feb; color: #ffffff; border: none;
+}
+div[data-testid="stForm"] button:hover { background: #155ecb; color: #ffffff; }
+div[data-testid="stForm"] div[data-baseweb="input"] button {
+    background: transparent !important; border: none !important;
+    color: #4b515b !important; box-shadow: none !important; padding: 0 6px !important;
+}
+</style>
+"""
+
+MENSAGENS_ABERTURA = [
+    "Bem-vindo(a) de volta! Que seu trabalho hoje flua leve e produtivo.",
+    "Pronto(a) para transformar fatos em uma peça impecável? Vamos começar!",
+    "Deixe a parte chata com o sistema e concentre-se no Direito.",
+    "Cada peça bem feita constrói a sua reputação. Bons trabalhos!",
+    "Organização agora, tranquilidade depois. Mãos à obra!",
+    "Um ótimo trabalho começa com uma boa ferramenta nas mãos.",
+    "Foco, clareza e agilidade: você cuida do caso, o sistema cuida da forma.",
+]
+
+
+def _saudacao():
+    hora = datetime.now().hour
+    if 5 <= hora < 12:
+        return "Bom dia"
+    if 12 <= hora < 18:
+        return "Boa tarde"
+    return "Boa noite"
 
 
 def _carregar_municipios():
@@ -88,16 +146,19 @@ if st.session_state.pop("_limpar_respostas", False):
 
 # ---------------------------------------------------------------- portão de acesso (senha)
 if not st.session_state.setdefault("autenticado", False):
+    if "msg_abertura" not in st.session_state:
+        st.session_state["msg_abertura"] = random.choice(MENSAGENS_ABERTURA)
+    st.markdown(_CSS_LOGIN, unsafe_allow_html=True)
     st.markdown(
-        "<div style='text-align:center; font-size:clamp(70px,18vw,130px); line-height:1; "
-        "margin-bottom:6px;'>⚖️</div>",
+        "<div class='login-head'>"
+        "<div class='login-logo'>⚖️</div>"
+        "<h1 class='login-title'>Sistema de Peças Judiciais</h1>"
+        f"<div class='login-saudacao'>{_saudacao()}!</div>"
+        f"<p class='login-msg'>{html.escape(st.session_state['msg_abertura'])}</p>"
+        "<p class='login-sub'>Acesse com seu usuário e senha.</p>"
+        "</div>",
         unsafe_allow_html=True,
     )
-    st.markdown(
-        "<h1 style='text-align:center;'>Sistema de Peças Judiciais</h1>",
-        unsafe_allow_html=True,
-    )
-    st.markdown("Para acessar o sistema, informe seu **usuário** e **senha**.")
 
     with st.form("login_form"):
         usuario_entrada = st.text_input("Usuário", key="login_usuario")
