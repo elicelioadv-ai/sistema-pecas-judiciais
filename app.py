@@ -13,6 +13,7 @@ import random
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 import decisoes
 import motor
@@ -130,6 +131,16 @@ div[data-testid="stForm"] [data-baseweb="input"] [role="button"] {
     outline: none !important; min-height: 0 !important; height: auto !important;
     min-width: 0 !important; padding: 0 4px !important; color: #000000 !important;
 }
+/* Esconde o "olhinho"/opções de senha (Streamlit e navegador) */
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button,
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [role="button"],
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear,
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-strong-password-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+    display: none !important; visibility: hidden !important;
+}
 </style>
 """
 
@@ -222,6 +233,31 @@ if not st.session_state.setdefault("autenticado", False):
         usuario_entrada = st.text_input("Usuário", key="login_usuario")
         senha_entrada = st.text_input("Senha de acesso", type="password", key="login_senha")
         entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
+
+    components.html(
+        """
+        <script>
+        (function () {
+          function ajustar() {
+            try {
+              var d = window.parent.document;
+              d.querySelectorAll('input[type="password"]').forEach(function (el) {
+                el.setAttribute('autocomplete', 'new-password');
+                el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2));
+              });
+              d.querySelectorAll('input[type="text"]').forEach(function (el) {
+                el.setAttribute('autocomplete', 'off');
+              });
+            } catch (e) {}
+          }
+          ajustar();
+          setTimeout(ajustar, 500);
+          setTimeout(ajustar, 1500);
+        })();
+        </script>
+        """,
+        height=0,
+    )
 
     if not motor.senha_ativa() or not motor.usuario_acesso():
         st.warning("Nenhum acesso configurado ainda. Defina agora (vale para a nuvem também).")
