@@ -4,7 +4,7 @@ app.py - a TELA do programa (Streamlit).
 Fluxo: Caso -> Fatos -> Peça -> Conferência, além de histórico e editor da base legal.
 Para abrir:  streamlit run app.py
 """
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import html
 import json
@@ -117,7 +117,7 @@ MENSAGENS_ABERTURA = [
 
 
 def _saudacao():
-    hora = datetime.now().hour
+    hora = datetime.now(timezone(timedelta(hours=-3))).hour
     if 5 <= hora < 12:
         return "Bom dia"
     if 12 <= hora < 18:
