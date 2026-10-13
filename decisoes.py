@@ -480,27 +480,62 @@ def link_stj(colegiado="", termos=""):
     return base
 
 
+# Onde o usuário pode pesquisar jurisprudência (rótulos exibidos no app).
+FONTES_JURIS = [
+    "STJ — Superior Tribunal de Justiça",
+    "STF — Supremo Tribunal Federal",
+    "TST — Tribunal Superior do Trabalho",
+    "TSE — Tribunal Superior Eleitoral",
+    "STM — Superior Tribunal Militar",
+    "TCU — Tribunal de Contas da União",
+    "TCE-CE — Tribunal de Contas do Estado do Ceará",
+    "TJCE — Tribunal de Justiça do Ceará",
+    "TJAC — Tribunal de Justiça do Acre",
+    "TJMS — Tribunal de Justiça de Mato Grosso do Sul",
+    "TJSP — Tribunal de Justiça de São Paulo",
+]
+
+# Domínio oficial usado quando não há link direto de busca (fallback via Google).
+_DOMINIOS_JURIS = [
+    ("TCE-CE", "tce.ce.gov.br"),
+    ("TST", "tst.jus.br"),
+    ("TSE", "tse.jus.br"),
+    ("STM", "stm.jus.br"),
+    ("TCU", "tcu.gov.br"),
+]
+
+# TJs (e-SAJ) com busca de jurisprudência por inteiro teor mapeada.
+_ESAJ_JURIS = {"CE": "tjce", "AC": "tjac", "MS": "tjms", "SP": "tjsp"}
+
+
+def link_juris(fonte="", termos="", colegiado=""):
+    """Link de pesquisa de jurisprudência na fonte OFICIAL escolhida.
+
+    ``fonte`` é o tribunal (ex.: 'STJ', 'TJCE'); ``termos`` são as palavras a
+    pesquisar; ``colegiado`` (opcional) filtra o órgão julgador no STJ.
+    """
+    termos = (termos or "").strip()
+    alvo = (fonte or "").upper()
+    q = urllib.parse.quote(termos)
+    if "STJ" in alvo or "SCON" in alvo:
+        return link_stj(colegiado, termos)
+    if "STF" in alvo:
+        return f"https://jurisprudencia.stf.jus.br/pages/search?base=acordaos&queryString={q}"
+    m = re.search(r"TJ\s*-?\s*([A-Z]{2})", alvo)
+    if m and m.group(1) in _ESAJ_JURIS:
+        return (f"https://esaj.{_ESAJ_JURIS[m.group(1)]}.jus.br/cjsg/resultadoCompleta.do?"
+                f"dados.buscaInteiroTeor={q}&dados.pesquisarComSinonimos=S")
+    dom = next((d for sigla, d in _DOMINIOS_JURIS if sigla in alvo), "jus.br")
+    consulta = urllib.parse.quote(f'"{termos}" jurisprudência site:{dom}')
+    return f"https://www.google.com/search?q={consulta}"
+
+
 def link_busca_juris(tribunal="", termos="", fonte=""):
     """Link para abrir a busca de um julgado no site OFICIAL de origem.
 
-    A IA sugere o tribunal e os termos; aqui montamos o link de pesquisa no site
-    correspondente (STJ/STF/TJ e-SAJ). Sem correspondência, cai numa busca
-    restrita ao domínio do Judiciário (jus.br).
+    Usada pelos cards de sugestão da IA: junta o tribunal e a fonte indicada.
     """
-    termos = (termos or "").strip()
-    alvo = f"{tribunal} {fonte}".upper()
-    q = urllib.parse.quote(termos)
-    if "STJ" in alvo or "SCON" in alvo:
-        return link_stj("", termos)
-    if "STF" in alvo:
-        return f"https://jurisprudencia.stf.jus.br/pages/search?base=acordaos&queryString={q}"
-    m = re.search(r"\bTJ\s*-?\s*([A-Z]{2})\b", alvo)
-    esaj = {"CE": "tjce", "AC": "tjac", "MS": "tjms", "SP": "tjsp"}
-    if m and m.group(1) in esaj:
-        return (f"https://esaj.{esaj[m.group(1)]}.jus.br/cjsg/resultadoCompleta.do?"
-                f"dados.buscaInteiroTeor={q}&dados.pesquisarComSinonimos=S")
-    consulta = urllib.parse.quote(f'"{termos}" jurisprudência site:jus.br')
-    return f"https://www.google.com/search?q={consulta}"
+    return link_juris(f"{tribunal} {fonte}", termos)
 
 
 def parse_sugestoes_juris(texto):

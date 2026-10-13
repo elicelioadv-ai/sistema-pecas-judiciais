@@ -661,23 +661,27 @@ def _datajud_consultar(alias, numero):
 def aba_decisoes():
     st.subheader("📰 Decisões & Processos")
     st.caption(
-        "Fontes **oficiais e gratuitas**: acórdãos recentes do STJ (Portal de Dados Abertos). "
+        "Pesquisa de jurisprudência nas **fontes oficiais** (STJ, STF, TST, TJs...) e atalhos. "
         "O sistema só reúne e organiza — confira sempre no site oficial antes de citar."
     )
     t_stj, t_links = st.tabs(
-        ["🗞️ STJ — acórdãos recentes", "🔗 Atalhos oficiais"]
+        ["🔎 Pesquisar jurisprudência", "🔗 Atalhos oficiais"]
     )
 
     with t_stj:
-        st.caption("Escolha o **colegiado** e, se quiser, os **termos** do caso. O botão abre a "
-                   "**pesquisa oficial de jurisprudência do STJ (SCON)** já apontada para o colegiado.")
-        termo_stj = st.text_input("Termos da pesquisa (opcional)", key="stj_termo",
+        st.caption("Escolha **onde pesquisar** e, se quiser, os **termos** do caso. O botão abre a "
+                   "pesquisa **oficial** de jurisprudência no site do órgão escolhido.")
+        fonte = st.selectbox("Onde pesquisar", decisoes.FONTES_JURIS, key="jur_fonte")
+        termo_jur = st.text_input("Termos da pesquisa (opcional)", key="jur_termo",
                                   placeholder="ex.: responsabilidade civil, dano moral, nexo causal")
-        colegiado = st.selectbox("Colegiado", ["Todos os órgãos"] + list(decisoes.STJ_COLEGIADOS),
-                                 key="stj_colegiado")
-        st.link_button("🔎 Abrir busca no STJ (SCON)",
-                       decisoes.link_stj("" if colegiado == "Todos os órgãos" else colegiado, termo_stj))
-        st.caption("A busca abre no site oficial do STJ. Confira sempre o inteiro teor antes de citar.")
+        colegiado = ""
+        if fonte.upper().startswith("STJ"):
+            sel_col = st.selectbox("Colegiado (STJ)", ["Todos os órgãos"] + list(decisoes.STJ_COLEGIADOS),
+                                   key="jur_colegiado")
+            colegiado = "" if sel_col == "Todos os órgãos" else sel_col
+        st.link_button("🔎 Abrir busca de jurisprudência",
+                       decisoes.link_juris(fonte, termo_jur, colegiado))
+        st.caption("A busca abre no site oficial do órgão. Confira sempre o inteiro teor antes de citar.")
 
         with st.expander("Ver também: acórdãos recentes (Portal de Dados Abertos do STJ)"):
             st.caption("Baixa o arquivo mais recente de cada órgão e mostra as decisões mais novas. "
