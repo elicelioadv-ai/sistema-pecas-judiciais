@@ -45,18 +45,17 @@ _CSS_LOGIN = """
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
 .login-title {
     margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: .2px;
-    background: linear-gradient(90deg, #2f6fed, #7c3aed);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+    color: #000000;
 }
-.login-saudacao { font-size: 1.9rem; font-weight: 800; color: #111827; margin: 18px 0 6px 0; }
-.login-sub { color: #374151; font-size: 0.95rem; margin: 2px 0 0 0; }
-.login-msg { color: #6b7280; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
+.login-saudacao { font-size: 1.9rem; font-weight: 800; color: #000000; margin: 18px 0 6px 0; }
+.login-sub { color: #000000; font-size: 0.95rem; margin: 2px 0 0 0; }
+.login-msg { color: #000000; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
 div[data-testid="stForm"] {
     max-width: 470px; margin: 16px auto 0 auto; background: #ffffff;
     border: 1px solid #d5d9de; border-radius: 18px; padding: 24px 26px 20px 26px;
     box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
 }
-div[data-testid="stForm"] label { color: #111827 !important; font-weight: 600; }
+div[data-testid="stForm"] label { color: #000000 !important; font-weight: 600; }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"],
 div[data-testid="stForm"] div[data-baseweb="input"] {
     background: #ffffff !important; border: 1px solid #cbd2d9 !important;
@@ -64,16 +63,22 @@ div[data-testid="stForm"] div[data-baseweb="input"] {
 }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] input,
 div[data-testid="stForm"] div[data-baseweb="input"] input {
-    background: transparent !important; color: #111827 !important;
+    background: transparent !important; color: #000000 !important;
 }
 div[data-testid="stForm"] button {
     border-radius: 10px; font-weight: 700; background: #1f6feb; color: #ffffff; border: none;
 }
 div[data-testid="stForm"] button:hover { background: #155ecb; color: #ffffff; }
-div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button[aria-label="Show password"],
-div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button[aria-label="Hide password"] {
-    background: transparent !important; border: 0 !important; box-shadow: none !important;
-    min-height: 0 !important; padding: 0 6px !important; color: #6b7280 !important;
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button,
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button *,
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [data-baseweb="button"],
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [role="button"],
+div[data-testid="stForm"] [data-baseweb="input"] button,
+div[data-testid="stForm"] [data-baseweb="input"] [role="button"] {
+    background: transparent !important; background-color: transparent !important;
+    border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+    outline: none !important; min-height: 0 !important; height: auto !important;
+    min-width: 0 !important; padding: 0 4px !important; color: #000000 !important;
 }
 </style>
 """
