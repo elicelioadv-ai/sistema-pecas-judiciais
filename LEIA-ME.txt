@@ -43,6 +43,30 @@ SEGURANCA (LGPD) - MODO SEGURO:
      Vertex AI, em "Configuracoes do provedor" (marca USO_PAGO=sim no .env).
    - Nada disso substitui a revisao do advogado nem a avaliacao de conformidade.
 
+BACKUP NO GOOGLE DRIVE (nuvem -> PC):
+   Cada caso/peca/base salvo(a) vai para o seu Google Drive, e o "Google Drive
+   para Desktop" (instalado no PC) baixa sozinho na pasta do computador.
+
+   Ativar (uma vez so):
+   1. Crie um projeto em console.cloud.google.com.
+   2. Ative a "Google Drive API".
+   3. Em "OAuth consent screen": tipo External; preencha o basico e ponha seu
+      e-mail em "Test users".
+   4. Em "Credentials": crie um OAuth client tipo "Desktop app" e baixe o JSON
+      (client_secret....json).
+   5. NO PC, rode:  python autorizar_drive.py   (autorize no navegador).
+      Isso cria o arquivo token_drive.json.
+   6. Copie os 3 valores (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+      GOOGLE_REFRESH_TOKEN) para os Secrets do Streamlit (e/ou para o .env).
+   7. Volte em "OAuth consent screen" e clique em "PUBLISH APP" (producao).
+      Sem isso, o Google invalida o token a cada 7 dias.
+   8. Instale o "Google Drive para Desktop" no PC e deixe sincronizando.
+   9. Confira em "Configuracoes do provedor" -> "Backup no Google Drive" e use
+      o botao "Testar backup agora".
+
+   Obs.: o escopo drive.file so acessa os arquivos que o proprio sistema cria;
+   ele NAO enxerga o resto do seu Drive.
+
 RODAR OS TESTES:
    python -m unittest discover -s tests
 
