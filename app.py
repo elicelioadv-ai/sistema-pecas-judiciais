@@ -64,17 +64,17 @@ _CSS_LEIS = """
 .lei-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .lei-grid a {
     display: inline-block;
-    background: #1F4E78;
+    background: #1f6feb;
     color: #ffffff !important;
     text-decoration: none;
     padding: 9px 14px;
     border-radius: 8px;
     font-size: 0.92rem;
     font-weight: 600;
-    border: 1px solid #15406a;
+    border: 1px solid #1057c4;
     line-height: 1.2;
 }
-.lei-grid a:hover { background: #2d6aa3; }
+.lei-grid a:hover { background: #1057c4; }
 </style>
 """
 
@@ -173,76 +173,6 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 .olho-login svg { width: 20px; height: 20px; display: block; }
 </style>
 """
-
-_CSS_TEMA = """
-<style>
-:root {
-    --pri:#1B4F8A; --pri-hover:#2A6299; --pri-dark:#143D6B; --accent:#C79A3A;
-    --bg:#F7FAFC; --surface:#FFFFFF; --zebra:#F1F5F9; --border:#DCE3EB;
-    --text:#1F2933; --text2:#4B5B72; --info:#1B5FAA; --navy:#111827;
-}
-/* fundo claro do interior */
-.stApp, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
-/* barra lateral azul-marinho, letras claras */
-[data-testid="stSidebar"] {
-    background: var(--navy) !important;
-    border-right: 1px solid var(--pri-dark) !important;
-}
-[data-testid="stSidebar"] * { color: #F1F5F9; }
-[data-testid="stSidebar"] a { color: #FFFFFF !important; }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.18) !important; }
-[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-[data-testid="stSidebar"] div[data-baseweb="input"] { background: #FFFFFF !important; }
-[data-testid="stSidebar"] div[data-baseweb="select"] *,
-[data-testid="stSidebar"] div[data-baseweb="input"] * { color: #1F2933 !important; }
-/* títulos */
-h1, h2, h3 { color: var(--pri) !important; }
-/* cartelas/expansores */
-[data-testid="stExpander"] details {
-    border: 1px solid var(--border) !important; border-radius: 10px !important;
-    background: var(--surface) !important;
-}
-[data-testid="stExpander"] summary { color: var(--pri) !important; font-weight: 600 !important; }
-[data-testid="stExpander"] summary:hover { color: var(--pri-hover) !important; }
-/* links e divisores */
-[data-testid="stMarkdownContainer"] a { color: var(--info) !important; }
-hr { border-color: var(--border) !important; }
-/* campos brancos */
-div[data-baseweb="input"], div[data-baseweb="select"] > div,
-div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
-[data-testid="stNumberInputContainer"] {
-    background: var(--surface) !important; border-color: var(--border) !important;
-}
-/* abas: fundo branco, aba ativa azul-marinho */
-[data-baseweb="tab-list"] {
-    background: #FFFFFF !important; border-radius: 10px 10px 0 0; padding: 5px 6px; gap: 4px;
-    border-bottom: 1px solid var(--border) !important;
-}
-[data-baseweb="tab"] { color: #33465E !important; border-radius: 6px !important; }
-[data-baseweb="tab"][aria-selected="true"] { color: #FFFFFF !important; background: var(--pri) !important; }
-[data-baseweb="tab-highlight"], [data-baseweb="tab-border"] { background: transparent !important; }
-/* botões */
-.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
-    border-radius: 8px !important; font-weight: 600 !important;
-}
-.stButton > button[kind="primary"], .stFormSubmitButton > button,
-[data-testid="stDownloadButton"] > button {
-    background: var(--pri) !important; color: #ffffff !important;
-    border: 1px solid var(--pri-dark) !important;
-}
-.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover {
-    background: var(--pri-hover) !important; border-color: var(--pri-hover) !important;
-}
-.stButton > button[kind="secondary"] {
-    background: var(--surface) !important; color: var(--pri) !important;
-    border: 1px solid var(--border) !important;
-}
-.stButton > button[kind="secondary"]:hover {
-    border-color: var(--pri) !important; color: var(--pri) !important; background: #EEF2F7 !important;
-}
-</style>
-"""
-
 
 MENSAGENS_ABERTURA = [
     "Bem-vindo(a) de volta! Que seu trabalho hoje flua leve e produtivo.",
@@ -405,8 +335,6 @@ if not st.session_state.setdefault("autenticado", False):
             st.error("Usuário ou senha incorretos.")
 
     st.stop()
-
-st.markdown(_CSS_TEMA, unsafe_allow_html=True)
 
 
 def alerta(nivel, msg):
