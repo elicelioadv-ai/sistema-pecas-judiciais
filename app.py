@@ -178,14 +178,14 @@ _CSS_TEMA = """
 <style>
 :root {
     --pri:#1B365D; --pri-hover:#27487A; --pri-dark:#0F2240;
-    --accent:#8A6420; --bg:#F2F4F7; --surface:#FFFFFF; --zebra:#F8F9FB;
+    --accent:#8A6420; --bg:#D0D9E4; --surface:#FFFFFF; --zebra:#F8F9FB;
     --border:#D9DEE6; --text:#1B2A41; --text2:#4B5B72; --info:#1B5FAA;
 }
 /* fundo do interior do sistema */
 .stApp, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
 /* barra lateral: azul leve */
 [data-testid="stSidebar"] {
-    background: #E6F0FB !important;
+    background: #B7CCE6 !important;
     border-right: 1px solid var(--border) !important;
 }
 [data-testid="stSidebar"] * { color: var(--text); }
@@ -202,6 +202,11 @@ h1, h2, h3 { color: var(--pri) !important; }
 /* links e divisores */
 [data-testid="stMarkdownContainer"] a { color: var(--info) !important; }
 hr { border-color: var(--border) !important; }
+/* campos brancos sobre o fundo */
+div[data-baseweb="input"], div[data-baseweb="select"] > div,
+div[data-baseweb="base-input"], [data-testid="stNumberInputContainer"] {
+    background: var(--surface) !important;
+}
 /* botões */
 .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
     border-radius: 8px !important; font-weight: 600 !important;
