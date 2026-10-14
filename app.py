@@ -419,7 +419,7 @@ def _qualificacao(nome, civil, prof, doc, endr):
     if prof:
         itens.append(f"profissão: {prof}")
     if doc:
-        itens.append(f"cadastro (CPF/CNPJ/RG/OAB): {doc}")
+        itens.append(f"CPF: {doc}")
     if endr:
         itens.append(f"endereço: {endr}")
     return "; ".join(itens)
@@ -432,7 +432,7 @@ def _cadastro_parte(prefixo, rotulo):
         c1, c2 = st.columns(2)
         c1.text_input("Estado civil", key=f"{prefixo}_civil", placeholder="ex.: casado(a)")
         c2.text_input("Profissão", key=f"{prefixo}_prof", placeholder="ex.: vendedor(a)")
-        st.text_input("CPF / CNPJ / RG", key=f"{prefixo}_doc", placeholder="nº ...")
+        st.text_input("CPF", key=f"{prefixo}_doc", placeholder="000.000.000-00")
         st.markdown("**Endereço**")
         l1, l2 = st.columns([3, 1])
         l1.text_input("Rua", key=f"{prefixo}_rua", placeholder="Av. ...")
