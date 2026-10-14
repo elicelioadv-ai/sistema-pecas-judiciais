@@ -224,8 +224,10 @@ DEFAULTS = {
     "analise_doc": "", "analise_alertas": [],
     "f_juizo": "", "f_outros": "", "f_rotulo": "Requerente / Requerido",
     "mem_ruas": [], "mem_bairros": [], "mem_ceps": [],
-    "req_nome": "", "req_civil": "", "req_prof": "", "req_doc": "",
-    "rdo_nome": "", "rdo_civil": "", "rdo_prof": "", "rdo_doc": "",
+    "req_nome": "", "req_civil": "", "req_prof": "",
+    "req_cpf": "", "req_cnpj": "", "req_rg": "",
+    "rdo_nome": "", "rdo_civil": "", "rdo_prof": "",
+    "rdo_cpf": "", "rdo_cnpj": "", "rdo_rg": "",
     **{f"req_{c}": "" for c in CAMPOS_ENDERECO},
     **{f"rdo_{c}": "" for c in CAMPOS_ENDERECO},
 }
@@ -410,7 +412,7 @@ def _endereco_resumo(prefixo):
     return ", ".join(partes)
 
 
-def _qualificacao(nome, civil, prof, doc, endr):
+def _qualificacao(nome, civil, prof, docs, endr):
     itens = []
     if nome:
         itens.append(f"nome: {nome}")
@@ -418,11 +420,40 @@ def _qualificacao(nome, civil, prof, doc, endr):
         itens.append(f"estado civil: {civil}")
     if prof:
         itens.append(f"profissão: {prof}")
-    if doc:
-        itens.append(f"CPF: {doc}")
+    for d in (docs or []):
+        itens.append(d)
     if endr:
         itens.append(f"endereço: {endr}")
     return "; ".join(itens)
+
+
+def _documentos(prefixo):
+    """Documentos separados (CPF, CNPJ, RG) de uma parte."""
+    docs = []
+    cpf = _g(f"{prefixo}_cpf")
+    if cpf:
+        docs.append(f"CPF: {cpf}")
+    cnpj = _g(f"{prefixo}_cnpj")
+    if cnpj:
+        docs.append(f"CNPJ: {cnpj}")
+    rg = _g(f"{prefixo}_rg")
+    if rg:
+        docs.append(f"RG: {rg}")
+    return docs
+
+
+def _doc_do_caso(caso, prefixo):
+    """Lê os documentos do caso salvo, migrando o antigo campo único (doc)."""
+    cpf = caso.get(f"{prefixo}_cpf", "")
+    cnpj = caso.get(f"{prefixo}_cnpj", "")
+    rg = caso.get(f"{prefixo}_rg", "")
+    antigo = str(caso.get(f"{prefixo}_doc", "") or "").strip()
+    if not (cpf or cnpj or rg) and antigo:
+        if "/" in antigo:
+            cnpj = antigo
+        else:
+            cpf = antigo
+    return cpf, cnpj, rg
 
 
 def _cadastro_parte(prefixo, rotulo):
@@ -432,7 +463,10 @@ def _cadastro_parte(prefixo, rotulo):
         c1, c2 = st.columns(2)
         c1.text_input("Estado civil", key=f"{prefixo}_civil", placeholder="ex.: casado(a)")
         c2.text_input("Profissão", key=f"{prefixo}_prof", placeholder="ex.: vendedor(a)")
-        st.text_input("CPF", key=f"{prefixo}_doc", placeholder="000.000.000-00")
+        d1, d2, d3 = st.columns(3)
+        d1.text_input("CPF", key=f"{prefixo}_cpf", placeholder="000.000.000-00")
+        d2.text_input("CNPJ", key=f"{prefixo}_cnpj", placeholder="00.000.000/0001-00")
+        d3.text_input("RG", key=f"{prefixo}_rg", placeholder="nº ...")
         st.markdown("**Endereço**")
         l1, l2 = st.columns([3, 1])
         l1.text_input("Rua", key=f"{prefixo}_rua", placeholder="Av. ...")
@@ -458,11 +492,11 @@ def compor_dados():
     if _g("f_juizo"):
         partes.append(f"Juízo/Vara: {_g('f_juizo')}")
     endr1 = _endereco_resumo("req")
-    q1 = _qualificacao(_g("req_nome"), _g("req_civil"), _g("req_prof"), _g("req_doc"), endr1)
+    q1 = _qualificacao(_g("req_nome"), _g("req_civil"), _g("req_prof"), _documentos("req"), endr1)
     if q1:
         partes.append(f"{r1}: {q1}")
     endr2 = _endereco_resumo("rdo")
-    q2 = _qualificacao(_g("rdo_nome"), _g("rdo_civil"), _g("rdo_prof"), _g("rdo_doc"), endr2)
+    q2 = _qualificacao(_g("rdo_nome"), _g("rdo_civil"), _g("rdo_prof"), _documentos("rdo"), endr2)
     if q2:
         partes.append(f"{r2}: {q2}")
     if _g("f_outros"):
@@ -506,10 +540,14 @@ def _dados_caso():
         "f_outros": st.session_state.get("f_outros", ""),
         "f_rotulo": st.session_state.get("f_rotulo", "Requerente / Requerido"),
         "req_nome": st.session_state.get("req_nome", ""), "req_civil": st.session_state.get("req_civil", ""),
-        "req_prof": st.session_state.get("req_prof", ""), "req_doc": st.session_state.get("req_doc", ""),
+        "req_prof": st.session_state.get("req_prof", ""),
+        "req_cpf": st.session_state.get("req_cpf", ""), "req_cnpj": st.session_state.get("req_cnpj", ""),
+        "req_rg": st.session_state.get("req_rg", ""),
         **{f"req_{c}": st.session_state.get(f"req_{c}", "") for c in CAMPOS_ENDERECO},
         "rdo_nome": st.session_state.get("rdo_nome", ""), "rdo_civil": st.session_state.get("rdo_civil", ""),
-        "rdo_prof": st.session_state.get("rdo_prof", ""), "rdo_doc": st.session_state.get("rdo_doc", ""),
+        "rdo_prof": st.session_state.get("rdo_prof", ""),
+        "rdo_cpf": st.session_state.get("rdo_cpf", ""), "rdo_cnpj": st.session_state.get("rdo_cnpj", ""),
+        "rdo_rg": st.session_state.get("rdo_rg", ""),
         **{f"rdo_{c}": st.session_state.get(f"rdo_{c}", "") for c in CAMPOS_ENDERECO},
         "narrativa": st.session_state["narrativa"],
         "fatos": st.session_state["fatos_edit"], "peca": st.session_state["peca_edit"],
@@ -578,18 +616,20 @@ with st.sidebar:
         c1, c2 = st.columns(2)
         if c1.button("Abrir", width="stretch") and escolhido != "—":
             caso = motor.carregar_caso(escolhido)
+            _cpf1, _cnpj1, _rg1 = _doc_do_caso(caso, "req")
+            _cpf2, _cnpj2, _rg2 = _doc_do_caso(caso, "rdo")
             st.session_state.update(
                 f_rotulo=caso.get("f_rotulo", "Requerente / Requerido"),
                 f_juizo=caso.get("f_juizo", ""),
                 f_outros=caso.get("f_outros", caso.get("dados", "")),
                 req_nome=caso.get("req_nome") or caso.get("f_autor", ""),
                 req_civil=caso.get("req_civil", ""), req_prof=caso.get("req_prof", ""),
-                req_doc=caso.get("req_doc", ""),
+                req_cpf=_cpf1, req_cnpj=_cnpj1, req_rg=_rg1,
                 **{f"req_{c}": caso.get(f"req_{c}", "") for c in CAMPOS_ENDERECO},
                 req_compl=caso.get("req_compl") or caso.get("req_endr", ""),
                 rdo_nome=caso.get("rdo_nome") or caso.get("f_reu", ""),
                 rdo_civil=caso.get("rdo_civil", ""), rdo_prof=caso.get("rdo_prof", ""),
-                rdo_doc=caso.get("rdo_doc", ""),
+                rdo_cpf=_cpf2, rdo_cnpj=_cnpj2, rdo_rg=_rg2,
                 **{f"rdo_{c}": caso.get(f"rdo_{c}", "") for c in CAMPOS_ENDERECO},
                 rdo_compl=caso.get("rdo_compl") or caso.get("rdo_endr", ""),
                 narrativa=caso.get("narrativa", ""),
