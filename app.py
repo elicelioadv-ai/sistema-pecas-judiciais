@@ -177,47 +177,35 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 _CSS_TEMA = """
 <style>
 :root {
-    --pri:#3E6AA8; --pri-hover:#5282C4; --pri-dark:#0C1829; --accent:#D4A85A;
-    --bg:#0F1B2D; --surface:#16263B; --zebra:#1A2C44; --border:#2A3B52;
-    --text:#E6EBF2; --text2:#A9B6C8; --info:#82B8F5; --navy:#1B365D;
+    --pri:#1B365D; --pri-hover:#27487A; --pri-dark:#0F2240;
+    --accent:#8A6420; --bg:#D0D9E4; --surface:#FFFFFF; --zebra:#F8F9FB;
+    --border:#D9DEE6; --text:#1B2A41; --text2:#4B5B72; --info:#1B5FAA;
 }
-/* fundo escuro do interior do sistema */
+/* fundo do interior do sistema */
 .stApp, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
-/* barra lateral: azul-marinho com letras brandas */
+/* barra lateral: azul leve */
 [data-testid="stSidebar"] {
-    background: var(--navy) !important;
+    background: #B7CCE6 !important;
     border-right: 1px solid var(--border) !important;
 }
-[data-testid="stSidebar"] * { color: #D9E4F2; }
-[data-testid="stSidebar"] a { color: #BFD4EE !important; }
-/* títulos e textos */
-h1, h2, h3 { color: var(--text) !important; }
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] li { color: var(--text); }
-[data-testid="stMarkdownContainer"] a { color: var(--info) !important; }
-hr { border-color: var(--border) !important; }
-/* abas: fundo branco, aba ativa azul-marinho */
-[data-baseweb="tab-list"] {
-    background: #FFFFFF !important; border-radius: 10px 10px 0 0; padding: 5px 6px; gap: 4px;
-    border-bottom: 1px solid var(--border) !important;
-}
-[data-baseweb="tab"] { color: #33465E !important; border-radius: 6px !important; }
-[data-baseweb="tab"][aria-selected="true"] { color: #FFFFFF !important; background: #1B365D !important; }
-[data-baseweb="tab-highlight"], [data-baseweb="tab-border"] { background: transparent !important; }
+[data-testid="stSidebar"] * { color: var(--text); }
+[data-testid="stSidebar"] a { color: var(--pri) !important; }
+/* títulos */
+h1, h2, h3 { color: var(--pri) !important; }
 /* cartelas/expansores */
 [data-testid="stExpander"] details {
     border: 1px solid var(--border) !important; border-radius: 10px !important;
     background: var(--surface) !important;
 }
-[data-testid="stExpander"] summary { color: var(--text) !important; font-weight: 600 !important; }
-[data-testid="stExpander"] summary:hover { color: var(--info) !important; }
-/* links */
+[data-testid="stExpander"] summary { color: var(--pri) !important; font-weight: 600 !important; }
+[data-testid="stExpander"] summary:hover { color: var(--pri-hover) !important; }
+/* links e divisores */
 [data-testid="stMarkdownContainer"] a { color: var(--info) !important; }
-/* campos escuros */
+hr { border-color: var(--border) !important; }
+/* campos brancos sobre o fundo */
 div[data-baseweb="input"], div[data-baseweb="select"] > div,
-div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
-[data-testid="stNumberInputContainer"] {
-    background: var(--surface) !important; border-color: var(--border) !important;
+div[data-baseweb="base-input"], [data-testid="stNumberInputContainer"] {
+    background: var(--surface) !important;
 }
 /* botões */
 .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
@@ -232,11 +220,11 @@ div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
     background: var(--pri-hover) !important; border-color: var(--pri-hover) !important;
 }
 .stButton > button[kind="secondary"] {
-    background: transparent !important; color: var(--text) !important;
+    background: var(--surface) !important; color: var(--pri) !important;
     border: 1px solid var(--border) !important;
 }
 .stButton > button[kind="secondary"]:hover {
-    border-color: var(--pri) !important; color: #ffffff !important; background: rgba(255, 255, 255, 0.06) !important;
+    border-color: var(--pri) !important; color: var(--pri) !important; background: #EEF2F7 !important;
 }
 </style>
 """
