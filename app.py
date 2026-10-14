@@ -174,6 +174,57 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 </style>
 """
 
+_CSS_TEMA = """
+<style>
+:root {
+    --pri:#1B365D; --pri-hover:#27487A; --pri-dark:#0F2240;
+    --accent:#8A6420; --bg:#F2F4F7; --surface:#FFFFFF; --zebra:#F8F9FB;
+    --border:#D9DEE6; --text:#1B2A41; --text2:#4B5B72; --info:#1B5FAA;
+}
+/* fundo do interior do sistema */
+.stApp, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
+/* barra lateral: azul leve */
+[data-testid="stSidebar"] {
+    background: #E6F0FB !important;
+    border-right: 1px solid var(--border) !important;
+}
+[data-testid="stSidebar"] * { color: var(--text); }
+[data-testid="stSidebar"] a { color: var(--pri) !important; }
+/* títulos */
+h1, h2, h3 { color: var(--pri) !important; }
+/* cartelas/expansores */
+[data-testid="stExpander"] details {
+    border: 1px solid var(--border) !important; border-radius: 10px !important;
+    background: var(--surface) !important;
+}
+[data-testid="stExpander"] summary { color: var(--pri) !important; font-weight: 600 !important; }
+[data-testid="stExpander"] summary:hover { color: var(--pri-hover) !important; }
+/* links e divisores */
+[data-testid="stMarkdownContainer"] a { color: var(--info) !important; }
+hr { border-color: var(--border) !important; }
+/* botões */
+.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
+    border-radius: 8px !important; font-weight: 600 !important;
+}
+.stButton > button[kind="primary"], .stFormSubmitButton > button,
+[data-testid="stDownloadButton"] > button {
+    background: var(--pri) !important; color: #ffffff !important;
+    border: 1px solid var(--pri-dark) !important;
+}
+.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover {
+    background: var(--pri-hover) !important; border-color: var(--pri-hover) !important;
+}
+.stButton > button[kind="secondary"] {
+    background: var(--surface) !important; color: var(--pri) !important;
+    border: 1px solid var(--border) !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    border-color: var(--pri) !important; color: var(--pri) !important; background: #EEF2F7 !important;
+}
+</style>
+"""
+
+
 MENSAGENS_ABERTURA = [
     "Bem-vindo(a) de volta! Que seu trabalho hoje flua leve e produtivo.",
     "Pronto(a) para transformar fatos em uma peça impecável? Vamos começar!",
@@ -335,6 +386,8 @@ if not st.session_state.setdefault("autenticado", False):
             st.error("Usuário ou senha incorretos.")
 
     st.stop()
+
+st.markdown(_CSS_TEMA, unsafe_allow_html=True)
 
 
 def alerta(nivel, msg):
