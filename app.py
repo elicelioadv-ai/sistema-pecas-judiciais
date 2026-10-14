@@ -64,37 +64,38 @@ _CSS_LEIS = """
 .lei-grid { display: flex; flex-wrap: wrap; gap: 8px; }
 .lei-grid a {
     display: inline-block;
-    background: #1f6feb;
+    background: #1F4E78;
     color: #ffffff !important;
     text-decoration: none;
     padding: 9px 14px;
     border-radius: 8px;
     font-size: 0.92rem;
     font-weight: 600;
-    border: 1px solid #1057c4;
+    border: 1px solid #15406a;
     line-height: 1.2;
 }
-.lei-grid a:hover { background: #1057c4; }
+.lei-grid a:hover { background: #2d6aa3; }
 </style>
 """
 
 _CSS_LOGIN = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&display=swap');
-.stApp, [data-testid="stAppViewContainer"] { background: #c9c9c9 !important; }
+.stApp, [data-testid="stAppViewContainer"] { background: #f0f4f9 !important; }
 [data-testid="stHeader"] { background: transparent !important; }
 .login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
 .login-head .login-title, .login-title {
     margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: .2px;
-    color: #000000 !important;
+    color: #1F4E78 !important;
 }
-.login-saudacao { font-size: 2.1rem; font-weight: 700; color: #000000; margin: 18px 0 6px 0; font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
+.login-saudacao { font-size: 2.1rem; font-weight: 700; color: #1F4E78; margin: 18px 0 6px 0; font-family: 'Playfair Display', Georgia, 'Times New Roman', serif; }
 .login-sub { color: #000000; font-size: 0.95rem; margin: 2px 0 0 0; }
 .login-msg { color: #000000; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
 div[data-testid="stForm"] {
     max-width: 470px; margin: 16px auto 0 auto; background: #ffffff;
-    border: 1px solid #d5d9de; border-radius: 18px; padding: 24px 26px 20px 26px;
+    border: 1px solid #d5d9de; border-top: 5px solid #1F4E78; border-radius: 14px;
+    padding: 24px 26px 20px 26px;
     box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
 }
 div[data-testid="stForm"] label { color: #000000 !important; font-weight: 600; }
@@ -129,9 +130,9 @@ div[data-testid="stForm"] input:-webkit-autofill:active {
 }
 div[data-testid="stForm"] ::selection { background: #cfe2ff; color: #000000; }
 div[data-testid="stForm"] button {
-    border-radius: 10px; font-weight: 700; background: #1f6feb; color: #ffffff; border: none;
+    border-radius: 10px; font-weight: 700; background: #1F4E78; color: #ffffff; border: none;
 }
-div[data-testid="stForm"] button:hover { background: #155ecb; color: #ffffff; }
+div[data-testid="stForm"] button:hover { background: #2d6aa3; color: #ffffff; }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button,
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button *,
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [data-baseweb="button"],
@@ -159,6 +160,17 @@ input[type="password"]::-webkit-textfield-decoration-container {
 div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
     -webkit-text-security: disc !important; letter-spacing: 2px !important;
 }
+/* Olhinho: mostrar/ocultar a senha */
+.st-key-login_senha [data-baseweb="input"],
+.st-key-login_senha [data-testid="stTextInputRootElement"] { position: relative !important; }
+.st-key-login_senha input { padding-right: 42px !important; }
+.olho-login {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: #555555; border-radius: 6px; z-index: 5;
+}
+.olho-login:hover { background: rgba(31, 78, 120, 0.10); }
+.olho-login svg { width: 20px; height: 20px; display: block; }
 </style>
 """
 
@@ -256,6 +268,8 @@ if not st.session_state.setdefault("autenticado", False):
         """
         <script>
         (function () {
+          var ABERTO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+          var FECHADO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
           function ajustar() {
             try {
               var d = window.parent.document;
@@ -267,6 +281,23 @@ if not st.session_state.setdefault("autenticado", False):
                   el.style.webkitTextSecurity = 'disc';
                   el.style.letterSpacing = '2px';
                 });
+              var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
+              if (!campo) return;
+              var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
+              if (!caixa || caixa.querySelector('.olho-login')) return;
+              caixa.style.position = 'relative';
+              var b = d.createElement('span');
+              b.className = 'olho-login';
+              b.title = 'Mostrar senha';
+              b.innerHTML = ABERTO;
+              b.onclick = function () {
+                var mostrando = campo.style.webkitTextSecurity === 'none';
+                campo.style.webkitTextSecurity = mostrando ? 'disc' : 'none';
+                campo.style.letterSpacing = mostrando ? '2px' : 'normal';
+                b.innerHTML = mostrando ? ABERTO : FECHADO;
+                b.title = mostrando ? 'Mostrar senha' : 'Ocultar senha';
+              };
+              caixa.appendChild(b);
             } catch (e) {}
           }
           ajustar();
