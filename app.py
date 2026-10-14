@@ -177,19 +177,24 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 _CSS_TEMA = """
 <style>
 :root {
-    --pri:#1B365D; --pri-hover:#27487A; --pri-dark:#0F2240;
-    --accent:#8A6420; --bg:#D0D9E4; --surface:#FFFFFF; --zebra:#F8F9FB;
-    --border:#D9DEE6; --text:#1B2A41; --text2:#4B5B72; --info:#1B5FAA;
+    --pri:#1B365D; --pri-hover:#27487A; --pri-dark:#0F2240; --accent:#8A6420;
+    --bg:#F4F6F9; --surface:#FFFFFF; --zebra:#F8FAFC; --border:#DDE3EB;
+    --text:#1F2933; --text2:#4B5B72; --info:#1B5FAA; --navy:#1B365D;
 }
-/* fundo do interior do sistema */
+/* fundo claro do interior */
 .stApp, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
-/* barra lateral: azul leve */
+/* barra lateral azul-marinho, letras claras */
 [data-testid="stSidebar"] {
-    background: #B7CCE6 !important;
-    border-right: 1px solid var(--border) !important;
+    background: var(--navy) !important;
+    border-right: 1px solid var(--pri-dark) !important;
 }
-[data-testid="stSidebar"] * { color: var(--text); }
-[data-testid="stSidebar"] a { color: var(--pri) !important; }
+[data-testid="stSidebar"] * { color: #E8EEF6; }
+[data-testid="stSidebar"] a { color: #BFD4EE !important; }
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.18) !important; }
+[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+[data-testid="stSidebar"] div[data-baseweb="input"] { background: #FFFFFF !important; }
+[data-testid="stSidebar"] div[data-baseweb="select"] *,
+[data-testid="stSidebar"] div[data-baseweb="input"] * { color: #1F2933 !important; }
 /* títulos */
 h1, h2, h3 { color: var(--pri) !important; }
 /* cartelas/expansores */
@@ -202,11 +207,20 @@ h1, h2, h3 { color: var(--pri) !important; }
 /* links e divisores */
 [data-testid="stMarkdownContainer"] a { color: var(--info) !important; }
 hr { border-color: var(--border) !important; }
-/* campos brancos sobre o fundo */
+/* campos brancos */
 div[data-baseweb="input"], div[data-baseweb="select"] > div,
-div[data-baseweb="base-input"], [data-testid="stNumberInputContainer"] {
-    background: var(--surface) !important;
+div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
+[data-testid="stNumberInputContainer"] {
+    background: var(--surface) !important; border-color: var(--border) !important;
 }
+/* abas: fundo branco, aba ativa azul-marinho */
+[data-baseweb="tab-list"] {
+    background: #FFFFFF !important; border-radius: 10px 10px 0 0; padding: 5px 6px; gap: 4px;
+    border-bottom: 1px solid var(--border) !important;
+}
+[data-baseweb="tab"] { color: #33465E !important; border-radius: 6px !important; }
+[data-baseweb="tab"][aria-selected="true"] { color: #FFFFFF !important; background: var(--pri) !important; }
+[data-baseweb="tab-highlight"], [data-baseweb="tab-border"] { background: transparent !important; }
 /* botões */
 .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
     border-radius: 8px !important; font-weight: 600 !important;
