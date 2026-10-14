@@ -663,7 +663,7 @@ with st.sidebar:
             _prov = _bk.get("provedor") or "nuvem"
             _extra = f" Repositório: **{_bk['repo']}**." if _bk.get("repo") else ""
             st.success(f"Backup ATIVADO via **{_prov}**. Cada caso/peça/base salvo(a) vai para a nuvem "
-                       "e chega ao seu PC pela sincronização (Google Drive para Desktop ou GitHub Desktop)."
+                       "e chega automaticamente ao seu PC (no GitHub, a cada ~5 min)."
                        + _extra)
             if st.button("🔌 Testar backup agora"):
                 ok, msg = _backup_testar()
