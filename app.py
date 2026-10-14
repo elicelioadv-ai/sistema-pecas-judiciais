@@ -177,9 +177,9 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 _CSS_TEMA = """
 <style>
 :root {
-    --pri:#1B365D; --pri-hover:#27487A; --pri-dark:#0F2240; --accent:#8A6420;
-    --bg:#F4F6F9; --surface:#FFFFFF; --zebra:#F8FAFC; --border:#DDE3EB;
-    --text:#1F2933; --text2:#4B5B72; --info:#1B5FAA; --navy:#1B365D;
+    --pri:#1B4F8A; --pri-hover:#2A6299; --pri-dark:#143D6B; --accent:#C79A3A;
+    --bg:#F7FAFC; --surface:#FFFFFF; --zebra:#F1F5F9; --border:#DCE3EB;
+    --text:#1F2933; --text2:#4B5B72; --info:#1B5FAA; --navy:#1B4F8A;
 }
 /* fundo claro do interior */
 .stApp, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
