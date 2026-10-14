@@ -13,6 +13,18 @@ import random
 
 import pandas as pd
 import streamlit as st
+
+# Ponte: na nuvem, copia os "Secrets" para variáveis de ambiente, para que
+# motor.py e drive.py (backup no Google Drive) enxerguem as credenciais.
+import os
+
+try:
+    for _k, _v in st.secrets.items():
+        if isinstance(_v, (str, int, float)):
+            os.environ.setdefault(str(_k), str(_v))
+except Exception:
+    pass
+
 import streamlit.components.v1 as components
 
 import decisoes

@@ -40,12 +40,13 @@ def achar_cliente():
         return sys.argv[1]
     pasta = os.path.dirname(os.path.abspath(__file__))
     candidatos = [os.path.join(pasta, "client_secret.json")]
-    baixados = os.path.join(os.path.expanduser("~"), "Downloads")
-    if os.path.isdir(baixados):
-        for nome in os.listdir(baixados):
-            if nome.lower().startswith("client_secret") and nome.lower().endswith(".json"):
-                candidatos.append(os.path.join(baixados, nome))
-        candidatos.sort(key=os.path.getmtime, reverse=True)
+    for area in ("Desktop", "Downloads"):
+        base = os.path.join(os.path.expanduser("~"), area)
+        if os.path.isdir(base):
+            achados = [os.path.join(base, n) for n in os.listdir(base)
+                       if n.lower().startswith("client_secret") and n.lower().endswith(".json")]
+            achados.sort(key=os.path.getmtime, reverse=True)
+            candidatos.extend(achados)
     for c in candidatos:
         if os.path.isfile(c):
             return c
@@ -80,7 +81,7 @@ def main():
     cliente_path = achar_cliente()
     if not cliente_path:
         print("Nao encontrei o arquivo JSON do cliente OAuth (client_secret....json).")
-        print('Coloque-o na Area de Trabalho ou passe o caminho: python autorizar_drive.py "C:\\...\\client_secret.json"')
+        print('Coloque-o na Area de Trabalho ou em Downloads, ou passe o caminho: python autorizar_drive.py "C:\\...\\client_secret.json"')
         return 1
 
     client_id, client_secret = carregar(cliente_path)
