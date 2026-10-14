@@ -40,25 +40,25 @@ STATUS_VALIDOS = ("verificado", "conferir", "vazio")
 
 
 def _backup_drive(caminho, subpasta="pecas"):
-    """Copia o arquivo salvo para o Google Drive (se configurado). Nunca quebra o app."""
+    """Copia o arquivo salvo para a nuvem (GitHub ou Drive, se configurado). Nunca quebra o app."""
     try:
-        import drive
+        import nuvem
 
-        if drive.disponivel():
-            drive.enviar(caminho, subpasta)
+        if nuvem.disponivel():
+            nuvem.enviar(caminho, subpasta)
     except Exception:
-        _LOG.warning("Backup no Google Drive falhou (%s)", caminho, exc_info=True)
+        _LOG.warning("Backup na nuvem falhou (%s)", caminho, exc_info=True)
 
 
 def _backup_remover(nome_arquivo, subpasta="casos"):
-    """Remove do Drive o arquivo apagado aqui (mantém o backup fiel). Nunca quebra o app."""
+    """Remove da nuvem o arquivo apagado aqui (mantém o backup fiel). Nunca quebra o app."""
     try:
-        import drive
+        import nuvem
 
-        if drive.disponivel():
-            drive.remover(nome_arquivo, subpasta)
+        if nuvem.disponivel():
+            nuvem.remover(nome_arquivo, subpasta)
     except Exception:
-        _LOG.warning("Remoção no Google Drive falhou (%s)", nome_arquivo, exc_info=True)
+        _LOG.warning("Remoção na nuvem falhou (%s)", nome_arquivo, exc_info=True)
 
 
 # ---------------------------------------------------------------- configuração

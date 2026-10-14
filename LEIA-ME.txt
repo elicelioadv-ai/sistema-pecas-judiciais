@@ -43,7 +43,35 @@ SEGURANCA (LGPD) - MODO SEGURO:
      Vertex AI, em "Configuracoes do provedor" (marca USO_PAGO=sim no .env).
    - Nada disso substitui a revisao do advogado nem a avaliacao de conformidade.
 
-BACKUP NO GOOGLE DRIVE (nuvem -> PC):
+BACKUP NA NUVEM (nuvem -> PC) - RECOMENDADO: GITHUB:
+   Cada caso/peca/base salvo(a) vai para um repositorio PRIVADO no seu GitHub,
+   e o "GitHub Desktop" (instalado no PC) baixa para a pasta do computador.
+   Vantagem: o token do GitHub pode ser criado SEM validade, entao o backup
+   nunca para por expiracao de credencial.
+
+   Ativar (uma vez so):
+   1. No GitHub, crie um repositorio PRIVADO (ex.: "backup-pecas"), marcando
+      "Add a README file" (para ja existir a branch "main").
+   2. Gere um token: foto -> Settings -> Developer settings ->
+      Personal access tokens -> Fine-grained tokens -> Generate new token.
+        - Expiration: "No expiration" (sem validade).
+        - Repository access: "Only select repositories" -> escolha o repositorio
+          de backup.
+        - Permissions -> Repository permissions -> "Contents" = Read and write.
+      Copie o token (comeca com "github_pat_...").
+   3. Nos Secrets do Streamlit (e/ou no .env) defina:
+        GITHUB_BACKUP_TOKEN = github_pat_...
+        GITHUB_BACKUP_REPO  = seu-usuario/backup-pecas
+        GITHUB_BACKUP_BRANCH = main
+   4. No PC, abra o GitHub Desktop, clone o repositorio de backup e use
+      "Fetch origin" / "Pull" para trazer os arquivos.
+   5. Confira em "Configuracoes do provedor" -> "Backup na nuvem" e use o botao
+      "Testar backup agora".
+
+   Obs.: se o GitHub estiver configurado, ele tem PRIORIDADE; o Google Drive
+   fica como alternativa.
+
+BACKUP NA NUVEM - ALTERNATIVA: GOOGLE DRIVE:
    Cada caso/peca/base salvo(a) vai para o seu Google Drive, e o "Google Drive
    para Desktop" (instalado no PC) baixa sozinho na pasta do computador.
 
@@ -60,6 +88,8 @@ BACKUP NO GOOGLE DRIVE (nuvem -> PC):
       GOOGLE_REFRESH_TOKEN) para os Secrets do Streamlit (e/ou para o .env).
    7. Volte em "OAuth consent screen" e clique em "PUBLISH APP" (producao).
       Sem isso, o Google invalida o token a cada 7 dias.
+      ATENCAO: o Google esta com um bug que impede publicar em alguns projetos.
+      Por isso, prefira o backup pelo GITHUB (secao acima).
    8. Instale o "Google Drive para Desktop" no PC e deixe sincronizando.
    9. Confira em "Configuracoes do provedor" -> "Backup no Google Drive" e use
       o botao "Testar backup agora".

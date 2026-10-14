@@ -500,18 +500,18 @@ def _salvar_automatico():
         st.error(f"Não consegui salvar automaticamente: {e}")
 
 
-def _drive_status():
+def _backup_status():
     try:
-        import drive
-        return drive.status()
+        import nuvem
+        return nuvem.status()
     except Exception:
         return {"ativo": False}
 
 
-def _drive_testar():
+def _backup_testar():
     try:
-        import drive
-        return drive.testar()
+        import nuvem
+        return nuvem.testar()
     except Exception as e:
         return False, f"Backup indisponível: {e}"
 
@@ -657,17 +657,21 @@ with st.sidebar:
             st.success("Configurações salvas no .env.")
             st.rerun()
 
-    with st.expander("☁️ Backup no Google Drive (nuvem → seu PC)"):
-        _bk = _drive_status()
+    with st.expander("☁️ Backup na nuvem (nuvem → seu PC)"):
+        _bk = _backup_status()
         if _bk.get("ativo"):
-            st.success("Backup ATIVADO. Cada caso/peça/base salvo(a) vai para o seu Google Drive e o "
-                       "**Google Drive para Desktop** sincroniza sozinho no seu PC.")
+            _prov = _bk.get("provedor") or "nuvem"
+            _extra = f" Repositório: **{_bk['repo']}**." if _bk.get("repo") else ""
+            st.success(f"Backup ATIVADO via **{_prov}**. Cada caso/peça/base salvo(a) vai para a nuvem "
+                       "e chega ao seu PC pela sincronização (Google Drive para Desktop ou GitHub Desktop)."
+                       + _extra)
             if st.button("🔌 Testar backup agora"):
-                ok, msg = _drive_testar()
+                ok, msg = _backup_testar()
                 (st.success if ok else st.error)(msg)
         else:
-            st.info("Backup DESATIVADO. Ligue-o configurando **GOOGLE_CLIENT_ID**, "
-                    "**GOOGLE_CLIENT_SECRET** e **GOOGLE_REFRESH_TOKEN** nos *Secrets* (nuvem) ou no `.env` (PC). "
+            st.info("Backup DESATIVADO. Recomendado: **GITHUB_BACKUP_TOKEN** + **GITHUB_BACKUP_REPO** "
+                    "(token que não expira). Alternativa: **GOOGLE_CLIENT_ID**, **GOOGLE_CLIENT_SECRET** e "
+                    "**GOOGLE_REFRESH_TOKEN**. Configure nos *Secrets* (nuvem) ou no `.env` (PC). "
                     "O passo a passo está no arquivo LEIA-ME.")
 
     with st.expander("🗝️ Trocar usuário / senha"):
