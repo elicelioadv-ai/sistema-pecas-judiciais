@@ -179,7 +179,7 @@ _CSS_TEMA = """
 :root {
     --pri:#1B4F8A; --pri-hover:#2A6299; --pri-dark:#143D6B; --accent:#C79A3A;
     --bg:#F7FAFC; --surface:#FFFFFF; --zebra:#F1F5F9; --border:#DCE3EB;
-    --text:#1F2933; --text2:#4B5B72; --info:#1B5FAA; --navy:#1B4F8A;
+    --text:#1F2933; --text2:#4B5B72; --info:#1B5FAA; --navy:#111827;
 }
 /* fundo claro do interior */
 .stApp, [data-testid="stAppViewContainer"] { background: var(--bg) !important; }
@@ -188,8 +188,8 @@ _CSS_TEMA = """
     background: var(--navy) !important;
     border-right: 1px solid var(--pri-dark) !important;
 }
-[data-testid="stSidebar"] * { color: #E8EEF6; }
-[data-testid="stSidebar"] a { color: #BFD4EE !important; }
+[data-testid="stSidebar"] * { color: #F1F5F9; }
+[data-testid="stSidebar"] a { color: #FFFFFF !important; }
 [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.18) !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] > div,
 [data-testid="stSidebar"] div[data-baseweb="input"] { background: #FFFFFF !important; }
