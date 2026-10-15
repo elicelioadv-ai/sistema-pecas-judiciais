@@ -248,7 +248,7 @@ input::placeholder, textarea::placeholder { color: var(--placeholder) !important
 /* cartelas/expansores */
 [data-testid="stExpander"] details {
     border: 1px solid var(--botao-busca) !important; border-radius: 8px !important;
-    background: #FFFFFF !important;
+    background: #ECEFF1 !important;
 }
 [data-testid="stExpander"] summary { color: var(--azul-escuro) !important; font-weight: 600 !important; }
 /* botões */
