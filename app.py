@@ -212,22 +212,6 @@ hr { border-color: var(--botao-busca) !important; }
 [data-testid="stSidebar"] div[data-baseweb="input"] * {
     color: #1F2933 !important;
 }
-[data-testid="stSidebar"] .stButton > button, [data-testid="stSidebar"] .stDownloadButton > button,
-[data-testid="stSidebar"] .stFormSubmitButton > button,
-[data-testid="stSidebar"] button[kind="primary"], [data-testid="stSidebar"] button:not([kind]),
-[data-testid="stSidebar"] button[data-baseweb="button"]:not([kind]),
-[data-testid="stSidebar"] div[data-testid="stButton"] > button,
-[data-testid="stSidebar"] a[role="button"] {
-    background: var(--azul-escuro) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.25) !important;
-    border-radius: 8px !important; font-weight: 600 !important;
-}
-[data-testid="stSidebar"] .stButton > button:hover, [data-testid="stSidebar"] button:not([kind]):hover,
-[data-testid="stSidebar"] button[data-baseweb="button"]:not([kind]):hover,
-[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover,
-[data-testid="stSidebar"] a[role="button"]:hover {
-    background: var(--azul-petroleo) !important;
-}
 /* campos brancos */
 div[data-baseweb="input"], div[data-baseweb="select"] > div,
 div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
@@ -251,24 +235,37 @@ input::placeholder, textarea::placeholder { color: var(--placeholder) !important
     background: #ECEFF1 !important;
 }
 [data-testid="stExpander"] summary { color: var(--azul-escuro) !important; font-weight: 600 !important; }
-/* botões */
-.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
+/* botões: tudo em azul corporativo (principal, secundário e links) */
+.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button,
+[data-testid="stLinkButton"] > a {
+    background: var(--azul-escuro) !important; color: #FFFFFF !important;
+    border: 1px solid var(--azul-aviso) !important;
     border-radius: 8px !important; font-weight: 600 !important;
 }
-.stButton > button[kind="primary"], .stFormSubmitButton > button,
-[data-testid="stDownloadButton"] > button {
-    background: var(--azul-escuro) !important; color: #ffffff !important;
-    border: 1px solid var(--azul-aviso) !important;
-}
-.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover {
+.stButton > button:hover, .stDownloadButton > button:hover,
+.stFormSubmitButton > button:hover, [data-testid="stLinkButton"] > a:hover {
     background: var(--azul-petroleo) !important; border-color: var(--azul-petroleo) !important;
+    color: #FFFFFF !important;
 }
-.stButton > button[kind="secondary"] {
-    background: var(--botao) !important; color: var(--texto-menu) !important;
-    border: 1px solid var(--botao-busca) !important;
+[data-testid="stLinkButton"] > a { text-decoration: none !important; }
+/* barra lateral: mesmos botões azuis */
+[data-testid="stSidebar"] .stButton > button,
+[data-testid="stSidebar"] .stDownloadButton > button,
+[data-testid="stSidebar"] .stFormSubmitButton > button,
+[data-testid="stSidebar"] button[data-baseweb="button"],
+[data-testid="stSidebar"] div[data-testid="stButton"] > button,
+[data-testid="stSidebar"] .stButton > button[kind="secondary"],
+[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+    background: var(--azul-escuro) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
+    border-radius: 8px !important; font-weight: 600 !important;
 }
-.stButton > button[kind="secondary"]:hover {
-    background: var(--botao-busca) !important; color: var(--texto-menu) !important;
+[data-testid="stSidebar"] .stButton > button:hover,
+[data-testid="stSidebar"] button[data-baseweb="button"]:hover,
+[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover,
+[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+    background: var(--azul-petroleo) !important; border-color: var(--azul-petroleo) !important;
+    color: #FFFFFF !important;
 }
 </style>
 """
