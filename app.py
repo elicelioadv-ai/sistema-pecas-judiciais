@@ -215,6 +215,7 @@ hr { border-color: var(--botao-busca) !important; }
 [data-testid="stSidebar"] .stButton > button, [data-testid="stSidebar"] .stDownloadButton > button,
 [data-testid="stSidebar"] .stFormSubmitButton > button,
 [data-testid="stSidebar"] button[kind="primary"], [data-testid="stSidebar"] button:not([kind]),
+[data-testid="stSidebar"] button[data-baseweb="button"]:not([kind]),
 [data-testid="stSidebar"] div[data-testid="stButton"] > button,
 [data-testid="stSidebar"] a[role="button"] {
     background: var(--azul-escuro) !important; color: #FFFFFF !important;
@@ -222,6 +223,7 @@ hr { border-color: var(--botao-busca) !important; }
     border-radius: 8px !important; font-weight: 600 !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover, [data-testid="stSidebar"] button:not([kind]):hover,
+[data-testid="stSidebar"] button[data-baseweb="button"]:not([kind]):hover,
 [data-testid="stSidebar"] div[data-testid="stButton"] > button:hover,
 [data-testid="stSidebar"] a[role="button"]:hover {
     background: var(--azul-petroleo) !important;
