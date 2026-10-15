@@ -181,26 +181,53 @@ _CSS_TEMA = """
 :root {
     --azul-escuro:#003F65; --azul-aviso:#004164; --azul-petroleo:#00658A;
     --vermelho:#B2101D; --roxo:#694467; --amarelo:#F5AF00;
-    --fundo:#F8F9F9; --header:#EEEFF0; --botao:#E4E9EC; --botao-busca:#C3D1D9;
+    --fundo:#F8F9F9; --header:#2B576E; --botao:#E4E9EC; --botao-busca:#C3D1D9;
     --aba-ativa:#D2D4D5; --aba:#DCDEDF;
-    --texto-menu:#414F55; --texto-aba:#575756; --link:#3B5C7D; --placeholder:#6C757D;
+    --texto-menu:#FFFFFF; --texto-menu-sec:#EEF3F6; --texto-aba:#575756; --link:#3B5C7D; --placeholder:#6C757D;
+    --botao-menu:rgba(255,255,255,0.08); --botao-menu-ativo:rgba(255,255,255,0.15);
 }
 /* fundo do interior */
 .stApp, [data-testid="stAppViewContainer"] { background: var(--fundo) !important; }
 /* barra lateral (menu) */
 [data-testid="stSidebar"] {
     background: var(--header) !important;
-    border-right: 1px solid var(--botao-busca) !important;
+    border-right: 1px solid rgba(255,255,255,0.18) !important;
 }
 [data-testid="stSidebar"] * { color: var(--texto-menu); }
-[data-testid="stSidebar"] a { color: var(--link) !important; }
-[data-testid="stSidebar"] hr { border-color: var(--botao-busca) !important; }
+[data-testid="stSidebar"] a { color: #FFFFFF !important; }
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.18) !important; }
+[data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p,
+[data-testid="stSidebar"] div, [data-testid="stSidebar"] span { color: var(--texto-menu-sec) !important; }
 /* títulos */
 h1, h2, h3 { color: var(--azul-escuro) !important; }
 /* links */
 [data-testid="stMarkdownContainer"] a { color: var(--link) !important; }
 hr { border-color: var(--botao-busca) !important; }
-/* campos */
+[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+[data-testid="stSidebar"] div[data-baseweb="input"] {
+    background: rgba(255,255,255,0.92) !important; border: 1px solid rgba(255,255,255,0.45) !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="select"] *,
+[data-testid="stSidebar"] div[data-baseweb="input"] * {
+    color: #1F2933 !important;
+}
+[data-testid="stSidebar"] .stButton > button, [data-testid="stSidebar"] .stDownloadButton > button {
+    background: var(--botao-menu) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.18) !important;
+}
+[data-testid="stSidebar"] .stButton > button:hover {
+    background: var(--botao-menu-ativo) !important;
+}
+[data-testid="stSidebar"] .stButton > button[kind="primary"],
+[data-testid="stSidebar"] .stFormSubmitButton > button {
+    background: var(--botao-menu-ativo) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.35) !important;
+}
+[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover,
+[data-testid="stSidebar"] .stFormSubmitButton > button:hover {
+    background: rgba(255,255,255,0.25) !important;
+}
+/* campos brancos */
 div[data-baseweb="input"], div[data-baseweb="select"] > div,
 div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
 [data-testid="stNumberInputContainer"] {
