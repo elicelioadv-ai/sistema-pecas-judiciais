@@ -437,6 +437,9 @@ def _gravar_selo_pc():
 def _verificacao_captcha():
     with st.container(key="captcha_box"):
         st.markdown("## 🔒 Verificação de segurança")
+        if not st.checkbox("Não sou um robô", key="captcha_humano"):
+            st.caption("Marque a caixa acima para ver as figuras e validar.")
+            return
         if not st.session_state.get("captcha"):
             _gerar_captcha()
         dados = st.session_state["captcha"]
