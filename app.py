@@ -235,6 +235,23 @@ input::placeholder, textarea::placeholder { color: var(--placeholder) !important
     background: #ECEFF1 !important;
 }
 [data-testid="stExpander"] summary { color: var(--azul-escuro) !important; font-weight: 600 !important; }
+/* expansores da barra lateral: cabeçalho azul com letra branca */
+[data-testid="stSidebar"] [data-testid="stExpander"] details {
+    background: transparent !important; border: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    background: var(--azul-escuro) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
+    border-radius: 8px !important; font-weight: 600 !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
+    background: var(--azul-petroleo) !important; border-color: rgba(255,255,255,0.35) !important;
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [data-testid="stExpander"] summary,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary * {
+    color: #FFFFFF !important; fill: #FFFFFF !important;
+}
 /* botões: azul corporativo com letra branca (mirado pelo data-testid no Streamlit 1.65+) */
 button[data-testid^="stBaseButton-"],
 a[data-testid^="stBaseLinkButton-"] {
