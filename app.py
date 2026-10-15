@@ -212,21 +212,25 @@ hr { border-color: var(--botao-busca) !important; }
 [data-testid="stSidebar"] div[data-baseweb="input"] * {
     color: #1F2933 !important;
 }
-[data-testid="stSidebar"] .stButton > button, [data-testid="stSidebar"] .stDownloadButton > button {
+[data-testid="stSidebar"] .stButton > button, [data-testid="stSidebar"] .stDownloadButton > button,
+[data-testid="stSidebar"] button:not([kind]), [data-testid="stSidebar"] a[role="button"] {
     background: rgba(255,255,255,0.16) !important; color: #FFFFFF !important;
     border: 1px solid rgba(255,255,255,0.35) !important;
 }
-[data-testid="stSidebar"] .stButton > button:hover {
+[data-testid="stSidebar"] .stButton > button:hover,
+[data-testid="stSidebar"] button:not([kind]):hover, [data-testid="stSidebar"] a[role="button"]:hover {
     background: rgba(255,255,255,0.22) !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="primary"],
-[data-testid="stSidebar"] .stFormSubmitButton > button {
-    background: rgba(255,255,255,0.24) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.45) !important;
+[data-testid="stSidebar"] .stFormSubmitButton > button,
+[data-testid="stSidebar"] button[kind="primary"], [data-testid="stSidebar"] a[role="button"][class*="primary"] {
+    background: var(--azul-escuro) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.25) !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover,
-[data-testid="stSidebar"] .stFormSubmitButton > button:hover {
-    background: rgba(255,255,255,0.32) !important;
+[data-testid="stSidebar"] .stFormSubmitButton > button:hover,
+[data-testid="stSidebar"] button[kind="primary"]:hover, [data-testid="stSidebar"] a[role="button"][class*="primary"]:hover {
+    background: var(--azul-petroleo) !important;
 }
 /* campos brancos */
 div[data-baseweb="input"], div[data-baseweb="select"] > div,
