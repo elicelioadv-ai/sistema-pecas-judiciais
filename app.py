@@ -176,6 +176,17 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 }
 .olho-login:hover { background: rgba(31, 78, 120, 0.10); }
 .olho-login svg { width: 20px; height: 20px; display: block; }
+/* "Esqueceu a senha?": apenas o texto com o símbolo, sem caixa */
+div[data-testid="stForm"] [data-testid="stExpander"],
+div[data-testid="stForm"] [data-testid="stExpander"] details {
+    border: none !important; background: transparent !important; box-shadow: none !important;
+}
+div[data-testid="stForm"] [data-testid="stExpander"] summary {
+    justify-content: center !important; padding: 2px 0 !important;
+    color: #1F4E78 !important; font-weight: 600 !important; font-size: 0.9rem !important;
+}
+div[data-testid="stForm"] [data-testid="stExpander"] summary svg { display: none !important; }
+div[data-testid="stForm"] [data-testid="stExpander"] summary:hover { color: #2d6aa3 !important; }
 </style>
 """
 
@@ -375,10 +386,10 @@ if not st.session_state.setdefault("autenticado", False):
 
     if modo_login == "Entrar":
         with st.form("login_form"):
-            entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
             with st.container(key="login_campos"):
                 usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario")
                 senha_entrada = st.text_input("Senha de acesso", key="login_senha")
+                entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
                 with st.expander("🔑 Esqueceu a senha?"):
                     st.markdown(
                         "Sem problema. Sua senha não pode ser enviada por e-mail, mas pode ser "
@@ -470,12 +481,12 @@ if not st.session_state.setdefault("autenticado", False):
     else:
         st.caption("Crie sua conta. Ela será liberada depois que o administrador aprovar.")
         with st.form("cadastro_form"):
-            criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
             with st.container(key="cad_campos"):
                 cad_nome = st.text_input("Nome completo", key="cad_nome")
                 cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
                 cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1")
                 cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
+                criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
         if criar:
             if cad_s1 != cad_s2:
                 st.error("As senhas não conferem.")
