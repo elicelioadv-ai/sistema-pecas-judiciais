@@ -94,7 +94,11 @@ _CSS_LOGIN = """
 .login-sub { color: #000000; font-size: 0.95rem; margin: 2px 0 0 0; }
 .login-msg { color: #000000; font-size: 0.88rem; font-style: italic; margin: 12px 0 2px 0; }
 div[data-testid="stForm"] {
-    max-width: 470px; margin: 16px auto 0 auto; background: #ffffff;
+    max-width: 470px; margin: 16px auto 0 auto; background: transparent;
+    border: none; border-radius: 0; padding: 0; box-shadow: none;
+}
+.st-key-login_campos, .st-key-cad_campos {
+    background: #ffffff;
     border: 1px solid #d5d9de; border-top: 5px solid #1F4E78; border-radius: 14px;
     padding: 24px 26px 20px 26px;
     box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
@@ -371,9 +375,20 @@ if not st.session_state.setdefault("autenticado", False):
 
     if modo_login == "Entrar":
         with st.form("login_form"):
-            usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario")
-            senha_entrada = st.text_input("Senha de acesso", key="login_senha")
             entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
+            with st.container(key="login_campos"):
+                usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario")
+                senha_entrada = st.text_input("Senha de acesso", key="login_senha")
+                with st.expander("🔑 Esqueceu a senha?"):
+                    st.markdown(
+                        "Sem problema. Sua senha não pode ser enviada por e-mail, mas pode ser "
+                        "**redefinida**:\n\n"
+                        "- **Usuário do sistema:** peça ao **administrador** para criar uma nova "
+                        "senha para você (ele faz em **👥 Contas**).\n"
+                        "- **Administrador:** se você esqueceu a sua, redefina em "
+                        "**Streamlit → Manage app → Settings → Secrets** (variável "
+                        "`SENHA_ACESSO`)."
+                    )
 
         components.html(
             """
@@ -455,11 +470,12 @@ if not st.session_state.setdefault("autenticado", False):
     else:
         st.caption("Crie sua conta. Ela será liberada depois que o administrador aprovar.")
         with st.form("cadastro_form"):
-            cad_nome = st.text_input("Nome completo", key="cad_nome")
-            cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
-            cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1")
-            cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
             criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
+            with st.container(key="cad_campos"):
+                cad_nome = st.text_input("Nome completo", key="cad_nome")
+                cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
+                cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1")
+                cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
         if criar:
             if cad_s1 != cad_s2:
                 st.error("As senhas não conferem.")
@@ -780,6 +796,24 @@ with st.sidebar:
                 st.caption("Contas ativas:")
                 for u in ativos:
                     st.write(f"• {u.get('usuario', '')}")
+                st.divider()
+                st.caption("🔑 Redefinir a senha de um usuário:")
+                alvo = st.selectbox("Usuário", ["—"] + [u.get("usuario", "") for u in ativos],
+                                    key="reset_usuario")
+                with st.form("form_reset_senha"):
+                    nova = st.text_input("Nova senha (mínimo 6 caracteres)", type="password",
+                                         key="reset_nova")
+                    if st.form_submit_button("Redefinir senha"):
+                        if alvo == "—":
+                            st.warning("Escolha o usuário.")
+                        else:
+                            try:
+                                usuarios.redefinir_senha(alvo, nova)
+                                st.success(f"Senha de **{alvo}** redefinida.")
+                            except ValueError as e:
+                                st.error(str(e))
+                            except Exception as e:
+                                st.error(f"Não foi possível redefinir: {e}")
         st.divider()
 
     st.header("📁 Casos salvos")

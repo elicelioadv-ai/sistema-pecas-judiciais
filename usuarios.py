@@ -179,6 +179,23 @@ def aprovar(usuario: str) -> bool:
     return definir_status(usuario, "ativo")
 
 
+def redefinir_senha(usuario: str, nova_senha: str) -> bool:
+    """Troca a senha de uma conta (usado pelo administrador)."""
+    nova_senha = nova_senha or ""
+    if len(nova_senha) < 6:
+        raise ValueError("A senha precisa ter ao menos 6 caracteres.")
+    dados = _carregar()
+    u = _achar(dados, usuario)
+    if not u:
+        raise ValueError("Conta não encontrada.")
+    salt = secrets.token_hex(16)
+    u["salt"] = salt
+    u["hash"] = _hash_senha(nova_senha, salt)
+    u["alterado"] = datetime.now().isoformat(timespec="seconds")
+    _salvar(dados)
+    return True
+
+
 def remover(usuario: str) -> bool:
     dados = _carregar()
     alvo = (usuario or "").strip().casefold()

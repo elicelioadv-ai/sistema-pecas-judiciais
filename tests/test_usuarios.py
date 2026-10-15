@@ -61,6 +61,20 @@ class TestUsuarios(unittest.TestCase):
         self.assertNotIn("hash", item)
         self.assertNotIn("salt", item)
 
+    def test_redefinir_senha(self):
+        usuarios.criar("Maria", "maria@x.com", "segredo1")
+        usuarios.aprovar("maria@x.com")
+        usuarios.redefinir_senha("maria@x.com", "novasenha")
+        self.assertEqual(usuarios.autenticar("maria@x.com", "segredo1"), usuarios.INVALIDO)
+        self.assertEqual(usuarios.autenticar("maria@x.com", "novasenha"), usuarios.OK)
+
+    def test_redefinir_senha_curta_e_inexistente(self):
+        usuarios.criar("Maria", "maria@x.com", "segredo1")
+        with self.assertRaises(ValueError):
+            usuarios.redefinir_senha("maria@x.com", "123")
+        with self.assertRaises(ValueError):
+            usuarios.redefinir_senha("ninguem@x.com", "novasenha")
+
 
 if __name__ == "__main__":
     unittest.main()
