@@ -82,7 +82,14 @@ _CSS_LEIS = """
 _CSS_LOGIN = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,600&display=swap');
-.stApp, [data-testid="stAppViewContainer"] { background: #e8ecf1 !important; }
+.stApp, [data-testid="stAppViewContainer"] {
+    background-color: #0093AE !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1907 870'%3E%3Crect width='1907' height='870' fill='%230093AE'/%3E%3Crect width='1907' height='165' fill='%2300849F'/%3E%3Crect y='470' width='1907' height='62' fill='%2300849F'/%3E%3Crect y='835' width='1907' height='35' fill='%2300849F'/%3E%3Crect x='420' y='27' width='1680' height='80' rx='40' fill='%230093AE'/%3E%3Crect x='-200' y='530' width='450' height='305' rx='150' fill='%230093AE'/%3E%3Crect x='600' y='530' width='1500' height='305' rx='150' fill='%230093AE'/%3E%3Ccircle cx='447' cy='682' r='152' fill='%2384C2CF'/%3E%3C/svg%3E") !important;
+    background-size: cover !important;
+    background-position: center top !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+}
 [data-testid="stHeader"] { background: transparent !important; }
 .login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
@@ -190,6 +197,15 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover { color: #2d6
 /* seletor Entrar/Criar conta: na mesma coluna do cartão, abaixo da frase */
 .st-key-login_modo { max-width: 470px; margin: 14px auto 0 auto; }
 .st-key-login_modo [role="radiogroup"] { justify-content: center !important; gap: 22px !important; }
+/* captcha de figuras */
+.st-key-captcha_box {
+    max-width: 470px; margin: 14px auto 0 auto; background: #ffffff;
+    border-radius: 14px; padding: 18px 24px 20px 24px;
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+}
+.st-key-captcha_box h2 { color: #1F4E78 !important; text-align: center; margin: 0 0 6px 0; }
+.st-key-captcha_box [data-testid="stCheckbox"] label { font-size: 1.6rem; }
+.st-key-captcha_box [data-testid="stCheckbox"] label p { color: #000000 !important; }
 </style>
 """
 
@@ -380,6 +396,77 @@ if st.session_state.pop("_limpar_respostas", False):
 
 
 # ---------------------------------------------------------------- portão de acesso (senha)
+_FIGURAS_ALVO = ["⚖️", "🏛️", "📚", "📜", "🔨"]
+_FIGURAS_OUTRAS = ["🚗", "🍎", "🐶", "🌳", "⚽", "🎵", "🍕", "✈️", "🐱", "🦋",
+                   "🍀", "🎩", "🐟", "🍓", "🌙", "🚲", "🐸", "☂️", "🎁", "🍇"]
+_SELO_PC = "pecas_acesso_ok"
+
+
+def _gerar_captcha():
+    for k in [k for k in st.session_state if str(k).startswith("cap_")]:
+        del st.session_state[k]
+    alvo = random.choice(_FIGURAS_ALVO)
+    outras = random.sample(_FIGURAS_OUTRAS, 9)
+    qtd = random.randint(2, 4)
+    grade = [alvo] * qtd + outras[: 9 - qtd]
+    random.shuffle(grade)
+    st.session_state["captcha"] = {
+        "grade": grade,
+        "alvo": alvo,
+        "certos": [i for i, f in enumerate(grade) if f == alvo],
+    }
+
+
+def _selo_pc_ok():
+    try:
+        return (st.context.cookies.get(_SELO_PC) or "").strip() == "ok"
+    except Exception:
+        return False
+
+
+def _gravar_selo_pc():
+    """Marca no navegador que este PC já passou pela verificação (não repete)."""
+    components.html(
+        "<script>(function(){try{var d=window.parent.document;"
+        f"d.cookie='{_SELO_PC}=ok; max-age=31536000; path=/; SameSite=Lax';"
+        "}catch(e){}})();</script>",
+        height=0,
+    )
+
+
+def _verificacao_captcha():
+    with st.container(key="captcha_box"):
+        st.markdown("## 🔒 Verificação de segurança")
+        if not st.session_state.get("captcha"):
+            _gerar_captcha()
+        dados = st.session_state["captcha"]
+        st.markdown(
+            f"Marque **todas** as figuras iguais a **{dados['alvo']}** e clique em Confirmar."
+        )
+        colunas = st.columns(3)
+        marcados = set()
+        for i, fig in enumerate(dados["grade"]):
+            with colunas[i % 3]:
+                if st.checkbox(fig, key=f"cap_{i}"):
+                    marcados.add(i)
+        b1, b2 = st.columns(2)
+        if b1.button("✅ Confirmar", type="primary", width="stretch"):
+            if marcados == set(dados["certos"]):
+                st.session_state["captcha_ok"] = True
+                st.session_state.pop("captcha", None)
+                for k in [k for k in st.session_state if str(k).startswith("cap_")]:
+                    del st.session_state[k]
+                _gravar_selo_pc()
+                st.rerun()
+            else:
+                st.error("As figuras marcadas não conferem. Tente de novo.")
+                _gerar_captcha()
+                st.rerun()
+        if b2.button("🔄 Outras figuras", width="stretch"):
+            _gerar_captcha()
+            st.rerun()
+
+
 if not st.session_state.setdefault("autenticado", False):
     if "msg_abertura" not in st.session_state:
         st.session_state["msg_abertura"] = random.choice(MENSAGENS_ABERTURA)
@@ -394,6 +481,10 @@ if not st.session_state.setdefault("autenticado", False):
         "</div>",
         unsafe_allow_html=True,
     )
+
+    if not _selo_pc_ok() and not st.session_state.get("captcha_ok"):
+        _verificacao_captcha()
+        st.stop()
 
     modo_login = st.radio("Acesso", ["Entrar", "Criar conta"], horizontal=True,
                           key="login_modo", label_visibility="collapsed")
