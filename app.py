@@ -205,7 +205,7 @@ h1, h2, h3 { color: var(--azul-escuro) !important; }
 hr { border-color: var(--botao-busca) !important; }
 [data-testid="stSidebar"] div[data-baseweb="select"] > div,
 [data-testid="stSidebar"] div[data-baseweb="input"] {
-    background: #FFFFFF !important; border: 1px solid rgba(255,255,255,0.35) !important;
+    background: #F7F9FA !important; border: 1px solid rgba(255,255,255,0.35) !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 [data-testid="stSidebar"] div[data-baseweb="select"] *,
