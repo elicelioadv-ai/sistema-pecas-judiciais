@@ -237,6 +237,13 @@ div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
     background: #FFFFFF !important; border-color: var(--botao-busca) !important;
 }
 input::placeholder, textarea::placeholder { color: var(--placeholder) !important; }
+/* aba Fatos: fundo cinza-claro nos campos de leitura/escrita (menos branco, mais confortável) */
+[data-testid="stAudioInput"] > div:last-child { background: #ECEFF1 !important; }
+.st-key-narrativa div[data-baseweb="textarea"] textarea,
+.st-key-fatos_edit div[data-baseweb="textarea"] textarea,
+[class*="st-key-resp_"] div[data-baseweb="textarea"] textarea {
+    background: #ECEFF1 !important;
+}
 /* abas */
 [data-baseweb="tab-list"] {
     background: var(--aba) !important; border-radius: 8px 8px 0 0; padding: 5px 6px; gap: 4px;
@@ -269,6 +276,10 @@ input::placeholder, textarea::placeholder { color: var(--placeholder) !important
 [data-testid="stSidebar"] [data-testid="stExpander"] summary,
 [data-testid="stSidebar"] [data-testid="stExpander"] summary * {
     color: #FFFFFF !important; fill: #FFFFFF !important;
+}
+/* ícone do expansor "Contas" (bonequinhos) em amarelo, como o símbolo do Direito */
+[data-testid="stSidebar"] [data-testid="stExpander"] summary [data-testid="stIconMaterial"] {
+    color: var(--amarelo) !important; fill: var(--amarelo) !important;
 }
 /* botões: azul corporativo com letra branca (mirado pelo data-testid no Streamlit 1.65+) */
 button[data-testid^="stBaseButton-"],
@@ -791,8 +802,8 @@ with st.sidebar:
             ativos = usuarios.listar_ativos()
         except Exception:
             pendentes, ativos = [], []
-        titulo = f"👥 Contas — {len(pendentes)} pendente(s)" if pendentes else "👥 Contas"
-        with st.expander(titulo):
+        titulo = f"Contas — {len(pendentes)} pendente(s)" if pendentes else "Contas"
+        with st.expander(titulo, icon=":material/group:"):
             if pendentes:
                 for u in pendentes:
                     st.markdown(f"**{u.get('usuario', '')}**  \n{u.get('nome', '') or '—'}")
