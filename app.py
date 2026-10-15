@@ -235,35 +235,26 @@ input::placeholder, textarea::placeholder { color: var(--placeholder) !important
     background: #ECEFF1 !important;
 }
 [data-testid="stExpander"] summary { color: var(--azul-escuro) !important; font-weight: 600 !important; }
-/* botões: fundo azul corporativo com letra preta */
-.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button,
-[data-testid="stLinkButton"] > a {
+/* botões: mirados pelo data-testid do próprio botão (funciona no Streamlit 1.65+) */
+button[data-testid^="stBaseButton-"],
+a[data-testid^="stBaseLinkButton-"] {
     background: var(--azul-escuro) !important; color: #000000 !important;
     border: 1px solid var(--azul-aviso) !important;
     border-radius: 8px !important; font-weight: 600 !important;
+    text-decoration: none !important;
 }
-.stButton > button:hover, .stDownloadButton > button:hover,
-.stFormSubmitButton > button:hover, [data-testid="stLinkButton"] > a:hover {
+button[data-testid^="stBaseButton-"]:hover,
+a[data-testid^="stBaseLinkButton-"]:hover {
     background: var(--azul-petroleo) !important; border-color: var(--azul-petroleo) !important;
     color: #000000 !important;
 }
-[data-testid="stLinkButton"] > a { text-decoration: none !important; }
 /* barra lateral: botões de fundo branco com letra preta */
-[data-testid="stSidebar"] .stButton > button,
-[data-testid="stSidebar"] .stDownloadButton > button,
-[data-testid="stSidebar"] .stFormSubmitButton > button,
-[data-testid="stSidebar"] button[data-baseweb="button"],
-[data-testid="stSidebar"] div[data-testid="stButton"] > button,
-[data-testid="stSidebar"] .stButton > button[kind="secondary"],
-[data-testid="stSidebar"] .stButton > button[kind="primary"] {
+[data-testid="stSidebar"] button[data-testid^="stBaseButton-"] {
     background: #F7F9FA !important; color: #000000 !important;
     border: 1px solid var(--botao-busca) !important;
     border-radius: 8px !important; font-weight: 600 !important;
 }
-[data-testid="stSidebar"] .stButton > button:hover,
-[data-testid="stSidebar"] button[data-baseweb="button"]:hover,
-[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover,
-[data-testid="stSidebar"] .stButton > button[kind="secondary"]:hover {
+[data-testid="stSidebar"] button[data-testid^="stBaseButton-"]:hover {
     background: #E4E9EC !important; border-color: var(--botao-busca) !important;
     color: #000000 !important;
 }
