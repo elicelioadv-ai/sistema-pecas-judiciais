@@ -271,6 +271,17 @@ def salvar_base(nome, itens):
     return caminho
 
 
+def apagar_base(nome):
+    if not re.fullmatch(r"[A-Za-z0-9_\-]+", nome or ""):
+        raise ValueError("O nome da base deve conter apenas letras, números, _ ou -.")
+    caminho = PASTA_BASE / f"{nome}.json"
+    if caminho.exists():
+        caminho.unlink()
+    _backup_remover(f"{nome}.json", "bases")
+    _LOG.info("Base apagada: %s", nome)
+    return nome
+
+
 def novo_item_base(id_, referencia, texto, status="conferir", fonte=""):
     if status not in STATUS_VALIDOS:
         raise ValueError(f"status inválido: {status!r}. Use um de {STATUS_VALIDOS}.")

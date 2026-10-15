@@ -1007,29 +1007,56 @@ def aba_base():
     base_nome = st.selectbox("Base", bases, key="base_editor_nome")
     itens = motor.carregar_base(base_nome)
     df = pd.DataFrame(itens or [{"id": "", "referencia": "", "status": "conferir", "texto": "", "fonte": ""}])
+    df.insert(0, "apagar", False)
+    st.caption("Para tirar um item que você não quer mais: marque a caixa **🗑️ apagar** e clique em "
+               "**🗑️ Apagar marcados**. Você também pode adicionar novas linhas ao fim da tabela.")
     editado = st.data_editor(
         df, num_rows="dynamic", width="stretch", hide_index=True,
         column_config={
+            "apagar": st.column_config.CheckboxColumn("🗑️ apagar", default=False, width="small"),
             "status": st.column_config.SelectboxColumn("status", options=list(motor.STATUS_VALIDOS), required=True),
             "texto": st.column_config.TextColumn("texto", width="large"),
             "fonte": st.column_config.LinkColumn("fonte"),
         },
     )
-    c1, c2 = st.columns([1, 3])
-    if c1.button("💾 Salvar base"):
-        registros = editado.fillna("").to_dict("records")
-        ids = [r["id"].strip() for r in registros if r["id"].strip()]
+    conteudo = editado.fillna("").to_dict("records")
+    marcados = [bool(r.get("apagar")) for r in conteudo]
+    for r in conteudo:
+        r.pop("apagar", None)
+    restantes = [r for r, ap in zip(conteudo, marcados) if not ap]
+
+    def _ids_ok(recs):
+        ids = [str(r.get("id", "")).strip() for r in recs if str(r.get("id", "")).strip()]
         if len(ids) != len(set(ids)):
             st.error("Há IDs repetidos na base. Cada item precisa de um ID único.")
-        elif not ids:
+            return False
+        if not ids:
             st.error("A base precisa de pelo menos um item com ID.")
-        elif tentar(motor.salvar_base, base_nome, registros) is not None:
+            return False
+        return True
+
+    c1, c2, c3 = st.columns([1, 1, 2])
+    if c1.button("💾 Salvar base", type="primary"):
+        if _ids_ok(restantes) and tentar(motor.salvar_base, base_nome, restantes) is not None:
             st.success("Base salva.")
-    with c2.expander("Criar nova base"):
-        nova = st.text_input("Nome da nova base (sem espaços)", key="nova_base")
+    if c2.button("🗑️ Apagar marcados"):
+        if not any(marcados):
+            st.info("Marque ao menos um item na coluna **🗑️ apagar** para apagar.")
+        elif tentar(motor.salvar_base, base_nome, restantes) is not None:
+            st.success(f"{sum(marcados)} item(ns) apagado(s).")
+            st.rerun()
+    with c3.expander("Mais opções"):
+        nova = st.text_input("Criar nova base (nome sem espaços)", key="nova_base")
         if st.button("Criar base vazia"):
             if tentar(motor.salvar_base, nova, []) is not None:
                 st.success(f"Base '{nova}' criada.")
+                st.rerun()
+        st.divider()
+        st.caption(f"Apagar a base **{base_nome}** inteira. Esta ação não volta.")
+        conf_base = st.checkbox(f"Confirmo apagar '{base_nome}'", key="conf_apagar_base")
+        if st.button("🗑️ Apagar base inteira", disabled=not conf_base):
+            if tentar(motor.apagar_base, base_nome) is not None:
+                st.success(f"Base '{base_nome}' apagada.")
                 st.rerun()
 
 

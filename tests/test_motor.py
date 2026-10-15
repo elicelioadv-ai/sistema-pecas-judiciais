@@ -79,6 +79,22 @@ class TestBase(unittest.TestCase):
         with self.assertRaises(ValueError):
             motor.salvar_base("nome com espaço", [])
 
+    def test_apagar_base(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            original = motor.PASTA_BASE
+            motor.PASTA_BASE = Path(tmp)
+            try:
+                motor.salvar_base("base_teste", [motor.novo_item_base("a", "ref", "txt")])
+                self.assertIn("base_teste", motor.listar_bases())
+                motor.apagar_base("base_teste")
+                self.assertNotIn("base_teste", motor.listar_bases())
+            finally:
+                motor.PASTA_BASE = original
+
+    def test_apagar_base_nome_invalido(self):
+        with self.assertRaises(ValueError):
+            motor.apagar_base("nome com espaço")
+
 
 class TestExportacao(unittest.TestCase):
     def test_exporta_docx_e_pdf(self):
