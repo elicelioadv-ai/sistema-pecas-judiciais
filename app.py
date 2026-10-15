@@ -29,6 +29,7 @@ import streamlit.components.v1 as components
 
 import decisoes
 import motor
+import usuarios
 
 # O Streamlit guarda os módulos importados em cache entre execuções. Recarregamos
 # `decisoes` a cada execução para garantir que as funções mais novas do arquivo
@@ -261,80 +262,111 @@ if not st.session_state.setdefault("autenticado", False):
         unsafe_allow_html=True,
     )
 
-    with st.form("login_form"):
-        usuario_entrada = st.text_input("Usuário", key="login_usuario")
-        senha_entrada = st.text_input("Senha de acesso", key="login_senha")
-        entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
+    modo_login = st.radio("Acesso", ["Entrar", "Criar conta"], horizontal=True,
+                          key="login_modo", label_visibility="collapsed")
 
-    components.html(
-        """
-        <script>
-        (function () {
-          var ABERTO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-          var FECHADO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-          function ajustar() {
-            try {
-              var d = window.parent.document;
-              d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"]')
-                .forEach(function (el) {
-                  el.setAttribute('autocomplete', 'off');
-                  el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2));
-                  el.setAttribute('type', 'text');
-                  el.style.webkitTextSecurity = 'disc';
-                  el.style.letterSpacing = '2px';
-                });
-              var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
-              if (!campo) return;
-              var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
-              if (!caixa || caixa.querySelector('.olho-login')) return;
-              caixa.style.position = 'relative';
-              var b = d.createElement('span');
-              b.className = 'olho-login';
-              b.title = 'Mostrar senha';
-              b.innerHTML = ABERTO;
-              b.onclick = function () {
-                var mostrando = campo.style.webkitTextSecurity === 'none';
-                campo.style.webkitTextSecurity = mostrando ? 'disc' : 'none';
-                campo.style.letterSpacing = mostrando ? '2px' : 'normal';
-                b.innerHTML = mostrando ? ABERTO : FECHADO;
-                b.title = mostrando ? 'Mostrar senha' : 'Ocultar senha';
-              };
-              caixa.appendChild(b);
-            } catch (e) {}
-          }
-          ajustar();
-          setTimeout(ajustar, 500);
-          setTimeout(ajustar, 1500);
-        })();
-        </script>
-        """,
-        height=0,
-    )
+    if modo_login == "Entrar":
+        with st.form("login_form"):
+            usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario")
+            senha_entrada = st.text_input("Senha de acesso", key="login_senha")
+            entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
 
-    if not motor.senha_ativa() or not motor.usuario_acesso():
-        st.warning("Nenhum acesso configurado ainda. Defina agora (vale para a nuvem também).")
-        with st.form("primeira_senha"):
-            u_novo = st.text_input("Usuário (ex.: admin)", key="u_novo")
-            s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1")
-            s2 = st.text_input("Repita a nova senha", type="password", key="s2")
-            definir = st.form_submit_button("Definir acesso e entrar")
-            if definir:
-                if not s1 or s1 != s2:
-                    st.error("As senhas não conferem.")
+        components.html(
+            """
+            <script>
+            (function () {
+              var ABERTO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+              var FECHADO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+              function ajustar() {
+                try {
+                  var d = window.parent.document;
+                  d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"]')
+                    .forEach(function (el) {
+                      el.setAttribute('autocomplete', 'off');
+                      el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2));
+                      el.setAttribute('type', 'text');
+                      el.style.webkitTextSecurity = 'disc';
+                      el.style.letterSpacing = '2px';
+                    });
+                  var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
+                  if (!campo) return;
+                  var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
+                  if (!caixa || caixa.querySelector('.olho-login')) return;
+                  caixa.style.position = 'relative';
+                  var b = d.createElement('span');
+                  b.className = 'olho-login';
+                  b.title = 'Mostrar senha';
+                  b.innerHTML = ABERTO;
+                  b.onclick = function () {
+                    var mostrando = campo.style.webkitTextSecurity === 'none';
+                    campo.style.webkitTextSecurity = mostrando ? 'disc' : 'none';
+                    campo.style.letterSpacing = mostrando ? '2px' : 'normal';
+                    b.innerHTML = mostrando ? ABERTO : FECHADO;
+                    b.title = mostrando ? 'Mostrar senha' : 'Ocultar senha';
+                  };
+                  caixa.appendChild(b);
+                } catch (e) {}
+              }
+              ajustar();
+              setTimeout(ajustar, 500);
+              setTimeout(ajustar, 1500);
+            })();
+            </script>
+            """,
+            height=0,
+        )
+
+        if not motor.senha_ativa() or not motor.usuario_acesso():
+            st.info("Primeiro acesso do administrador: defina abaixo o usuário e a senha.")
+            with st.form("primeira_senha"):
+                u_novo = st.text_input("Usuário (ex.: admin)", key="u_novo")
+                s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1")
+                s2 = st.text_input("Repita a nova senha", type="password", key="s2")
+                definir = st.form_submit_button("Definir acesso e entrar")
+                if definir:
+                    if not s1 or s1 != s2:
+                        st.error("As senhas não conferem.")
+                    else:
+                        try:
+                            motor.definir_acesso(u_novo, s1)
+                            st.session_state.update(autenticado=True, usuario=u_novo.strip(), admin=True)
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Não deu para definir o acesso: {e}")
+
+        if entrar:
+            if motor.verificar_acesso(usuario_entrada, senha_entrada):
+                st.session_state.update(autenticado=True, admin=True,
+                                        usuario=motor.usuario_acesso() or usuario_entrada.strip())
+                st.rerun()
+            else:
+                resultado = usuarios.autenticar(usuario_entrada, senha_entrada)
+                if resultado == usuarios.OK:
+                    st.session_state.update(autenticado=True, admin=False, usuario=usuario_entrada.strip())
+                    st.rerun()
+                elif resultado == usuarios.PENDENTE:
+                    st.warning("Sua conta foi criada, mas ainda aguarda a **aprovação** do administrador.")
                 else:
-                    try:
-                        motor.definir_acesso(u_novo, s1)
-                        st.session_state.update(autenticado=True, usuario=u_novo.strip())
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Não deu para definir o acesso: {e}")
-
-    if entrar:
-        if motor.verificar_acesso(usuario_entrada, senha_entrada):
-            st.session_state.update(autenticado=True, usuario=usuario_entrada.strip())
-            st.rerun()
-        else:
-            st.error("Usuário ou senha incorretos.")
+                    st.error("Usuário ou senha incorretos.")
+    else:
+        st.caption("Crie sua conta. Ela será liberada depois que o administrador aprovar.")
+        with st.form("cadastro_form"):
+            cad_nome = st.text_input("Nome completo", key="cad_nome")
+            cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
+            cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1")
+            cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
+            criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
+        if criar:
+            if cad_s1 != cad_s2:
+                st.error("As senhas não conferem.")
+            else:
+                try:
+                    usuarios.criar(cad_nome, cad_usuario, cad_s1)
+                    st.success("Conta criada! Aguarde a aprovação do administrador para entrar.")
+                except ValueError as e:
+                    st.error(str(e))
+                except Exception as e:
+                    st.error(f"Não foi possível criar a conta: {e}")
 
     st.stop()
 
@@ -354,6 +386,13 @@ ROTULOS_PARTES = {
 
 def _g(chave):
     return str(st.session_state.get(chave, "") or "").strip()
+
+
+def _dono():
+    """Dono dos casos: admin usa a raiz (pega os casos antigos); os demais, a sua pasta."""
+    if st.session_state.get("admin"):
+        return ""
+    return str(st.session_state.get("usuario", "") or "").strip()
 
 
 def _memorizar(mem_key, valor):
@@ -563,7 +602,7 @@ def _salvar_automatico():
         st.info("Para salvar sozinho(a), dê um nome à peça em ➕ **Nova peça** (lateral).")
         return
     try:
-        caminho = motor.salvar_caso(nome, _dados_caso())
+        caminho = motor.salvar_caso(nome, _dados_caso(), _dono())
         st.success(f"✅ Peça salva automaticamente em: **{caminho.stem}**")
     except Exception as e:
         st.error(f"Não consegui salvar automaticamente: {e}")
@@ -609,13 +648,40 @@ with st.sidebar:
         st.rerun()
     st.divider()
 
+    if st.session_state.get("admin"):
+        try:
+            pendentes = usuarios.listar_pendentes()
+            ativos = usuarios.listar_ativos()
+        except Exception:
+            pendentes, ativos = [], []
+        titulo = f"👥 Contas — {len(pendentes)} pendente(s)" if pendentes else "👥 Contas"
+        with st.expander(titulo):
+            if pendentes:
+                for u in pendentes:
+                    st.markdown(f"**{u.get('usuario', '')}**  \n{u.get('nome', '') or '—'}")
+                    b1, b2 = st.columns(2)
+                    if b1.button("✅ Aprovar", key=f"aprov_{u.get('usuario')}", width="stretch"):
+                        usuarios.aprovar(u.get("usuario"))
+                        st.rerun()
+                    if b2.button("🗑️ Recusar", key=f"recus_{u.get('usuario')}", width="stretch"):
+                        usuarios.remover(u.get("usuario"))
+                        st.rerun()
+            else:
+                st.caption("Nenhuma conta aguardando aprovação.")
+            if ativos:
+                st.divider()
+                st.caption("Contas ativas:")
+                for u in ativos:
+                    st.write(f"• {u.get('usuario', '')}")
+        st.divider()
+
     st.header("📁 Casos salvos")
-    casos = motor.listar_casos()
+    casos = motor.listar_casos(_dono())
     if casos:
         escolhido = st.selectbox("Abrir caso", ["—"] + casos, key="caso_escolhido")
         c1, c2 = st.columns(2)
         if c1.button("Abrir", width="stretch") and escolhido != "—":
-            caso = motor.carregar_caso(escolhido)
+            caso = motor.carregar_caso(escolhido, _dono())
             _cpf1, _cnpj1, _rg1 = _doc_do_caso(caso, "req")
             _cpf2, _cnpj2, _rg2 = _doc_do_caso(caso, "rdo")
             st.session_state.update(
@@ -643,7 +709,7 @@ with st.sidebar:
                 st.session_state["base_editor_nome"] = base_salva
             st.rerun()
         if c2.button("Apagar", width="stretch") and escolhido != "—":
-            motor.apagar_caso(escolhido)
+            motor.apagar_caso(escolhido, _dono())
             st.rerun()
     else:
         st.caption("Nenhum caso salvo ainda.")
@@ -657,7 +723,7 @@ with st.sidebar:
         if not nome:
             st.warning("Dê um nome para a nova peça.")
         else:
-            caminho = motor.salvar_caso(nome, {})
+            caminho = motor.salvar_caso(nome, {}, _dono())
             iniciar_limpo(caminho.stem)
             base_novo = caminho.stem
             if base_novo not in motor.listar_bases():
@@ -700,7 +766,7 @@ with st.sidebar:
         if not nome_caso.strip():
             st.warning("Dê um nome antes de salvar.")
         else:
-            caminho = motor.salvar_caso(nome_caso, _dados_caso())
+            caminho = motor.salvar_caso(nome_caso, _dados_caso(), _dono())
             st.success(f"Salvo: {caminho.stem}")
 
     st.divider()

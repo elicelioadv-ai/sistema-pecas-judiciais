@@ -58,6 +58,23 @@ def enviar_texto(nome: str, texto: str, subpasta: str = "outros"):
     return p.enviar_texto(nome, texto, subpasta) if p else None
 
 
+def ler_texto(caminho: str):
+    """Lê um arquivo de texto do provedor ativo (por caminho completo). None se não houver."""
+    p = ativo()
+    if p and hasattr(p, "ler_texto"):
+        return p.ler_texto(caminho)
+    return None
+
+
+def listar(caminho_dir: str):
+    """Lista (nome, tipo) de uma pasta do provedor ativo. [] se não houver."""
+    p = ativo()
+    if p and hasattr(p, "listar"):
+        return p.listar(caminho_dir)
+    return []
+
+
+
 def remover(nome: str, subpasta: str = "casos") -> bool:
     p = ativo()
     return bool(p.remover(nome, subpasta)) if p else False

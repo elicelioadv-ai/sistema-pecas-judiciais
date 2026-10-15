@@ -827,27 +827,72 @@ def salvar_pdf(texto, caminho):
 
 
 # ---------------------------------------------------------------- histórico de casos
-def salvar_caso(nome, dados):
+def _dono_seguro(dono):
+    return re.sub(r"[^A-Za-z0-9_\-]", "_", (dono or "").strip()).strip("_")
+
+
+def _pasta_casos_local(dono):
+    seguro = _dono_seguro(dono)
+    if not seguro:
+        return PASTA_HISTORICO
+    pasta = PASTA_HISTORICO / seguro
+    pasta.mkdir(exist_ok=True)
+    return pasta
+
+
+def _subpasta_casos(dono):
+    seguro = _dono_seguro(dono)
+    return f"casos/{seguro}" if seguro else "casos"
+
+
+def salvar_caso(nome, dados, dono=""):
     seguro = re.sub(r"[^A-Za-z0-9_\-]", "_", nome or "").strip("_") or datetime.now().strftime("%Y%m%d_%H%M%S")
-    caminho = PASTA_HISTORICO / f"{seguro}.json"
+    caminho = _pasta_casos_local(dono) / f"{seguro}.json"
     dados = dict(dados)
     dados["_salvo_em"] = datetime.now().isoformat(timespec="seconds")
+    dados["_dono"] = (dono or "").strip()
     caminho.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
-    _backup_drive(caminho, "casos")
+    _backup_drive(caminho, _subpasta_casos(dono))
     return caminho
 
 
-def listar_casos():
-    return sorted((p.stem for p in PASTA_HISTORICO.glob("*.json")), reverse=True)
+def listar_casos(dono=""):
+    nomes = set()
+    pasta = _pasta_casos_local(dono)
+    if pasta.exists():
+        nomes.update(p.stem for p in pasta.glob("*.json"))
+    try:
+        import nuvem
+
+        if nuvem.disponivel():
+            for nome_arq, tipo in nuvem.listar(_subpasta_casos(dono)):
+                if nome_arq and nome_arq.endswith(".json") and (tipo in (None, "file")):
+                    nomes.add(nome_arq[:-5])
+    except Exception:
+        _LOG.warning("Listar casos na nuvem falhou (dono=%s)", dono, exc_info=True)
+    return sorted(nomes, reverse=True)
 
 
-def carregar_caso(nome):
-    with open(PASTA_HISTORICO / f"{nome}.json", encoding="utf-8") as f:
-        return json.load(f)
+def carregar_caso(nome, dono=""):
+    caminho = _pasta_casos_local(dono) / f"{nome}.json"
+    if caminho.exists():
+        with open(caminho, encoding="utf-8") as f:
+            return json.load(f)
+    try:
+        import nuvem
+
+        if nuvem.disponivel():
+            bruto = nuvem.ler_texto(f"{_subpasta_casos(dono)}/{nome}.json")
+            if bruto:
+                caminho.write_text(bruto, encoding="utf-8")
+                return json.loads(bruto)
+    except Exception:
+        _LOG.warning("Buscar caso na nuvem falhou (%s)", nome, exc_info=True)
+    raise FileNotFoundError(f"Caso não encontrado: {nome}")
 
 
-def apagar_caso(nome):
-    caminho = PASTA_HISTORICO / f"{nome}.json"
+def apagar_caso(nome, dono=""):
+    caminho = _pasta_casos_local(dono) / f"{nome}.json"
     if caminho.exists():
         caminho.unlink()
-        _backup_remover(caminho.name, "casos")
+    _backup_remover(f"{nome}.json", _subpasta_casos(dono))

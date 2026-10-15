@@ -125,6 +125,49 @@ def enviar_texto(nome: str, texto: str, subpasta: str = "outros"):
     return (info.get("content") or {}).get("html_url")
 
 
+def ler_texto(caminho: str):
+    """Lê o conteúdo (texto) de um arquivo do repositório. None se não existir."""
+    if not disponivel():
+        return None
+    c = _cfg()
+    url = _url_conteudo(caminho) + "?ref=" + urllib.parse.quote(c["branch"], safe="")
+    req = urllib.request.Request(url, headers=_headers())
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            dados = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return None
+        raise
+    if not isinstance(dados, dict):
+        return None
+    conteudo = dados.get("content")
+    if not conteudo:
+        return None
+    return base64.b64decode(conteudo).decode("utf-8")
+
+
+def listar(caminho_dir: str):
+    """Lista (nome, tipo) dos itens numa pasta do repositório. [] se não existir."""
+    if not disponivel():
+        return []
+    c = _cfg()
+    caminho_dir = (caminho_dir or "").strip("/")
+    url = _url_conteudo(caminho_dir) + "?ref=" + urllib.parse.quote(c["branch"], safe="")
+    req = urllib.request.Request(url, headers=_headers())
+    try:
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            dados = json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return []
+        raise
+    if not isinstance(dados, list):
+        return []
+    return [(item.get("name"), item.get("type")) for item in dados]
+
+
+
 def remover(nome: str, subpasta: str = "casos") -> bool:
     """Remove do repositório o arquivo com esse nome (se existir)."""
     if not disponivel():
