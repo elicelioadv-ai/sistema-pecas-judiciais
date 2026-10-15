@@ -187,6 +187,9 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary {
 }
 div[data-testid="stForm"] [data-testid="stExpander"] summary svg { display: none !important; }
 div[data-testid="stForm"] [data-testid="stExpander"] summary:hover { color: #2d6aa3 !important; }
+/* seletor Entrar/Criar conta: na mesma coluna do cartão, abaixo da frase */
+.st-key-login_modo { max-width: 470px; margin: 14px auto 0 auto; }
+.st-key-login_modo [role="radiogroup"] { justify-content: center !important; gap: 22px !important; }
 </style>
 """
 
