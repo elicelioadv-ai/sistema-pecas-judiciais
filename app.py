@@ -213,20 +213,20 @@ hr { border-color: var(--botao-busca) !important; }
     color: #1F2933 !important;
 }
 [data-testid="stSidebar"] .stButton > button, [data-testid="stSidebar"] .stDownloadButton > button {
-    background: var(--botao-menu) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.18) !important;
+    background: rgba(255,255,255,0.16) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.35) !important;
 }
 [data-testid="stSidebar"] .stButton > button:hover {
-    background: var(--botao-menu-ativo) !important;
+    background: rgba(255,255,255,0.22) !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="primary"],
 [data-testid="stSidebar"] .stFormSubmitButton > button {
-    background: var(--botao-menu-ativo) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.35) !important;
+    background: rgba(255,255,255,0.24) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.45) !important;
 }
 [data-testid="stSidebar"] .stButton > button[kind="primary"]:hover,
 [data-testid="stSidebar"] .stFormSubmitButton > button:hover {
-    background: rgba(255,255,255,0.25) !important;
+    background: rgba(255,255,255,0.32) !important;
 }
 /* campos brancos */
 div[data-baseweb="input"], div[data-baseweb="select"] > div,
