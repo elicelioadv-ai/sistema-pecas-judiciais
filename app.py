@@ -213,23 +213,17 @@ hr { border-color: var(--botao-busca) !important; }
     color: #1F2933 !important;
 }
 [data-testid="stSidebar"] .stButton > button, [data-testid="stSidebar"] .stDownloadButton > button,
-[data-testid="stSidebar"] button:not([kind]), [data-testid="stSidebar"] a[role="button"] {
-    background: rgba(255,255,255,0.16) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.35) !important;
-}
-[data-testid="stSidebar"] .stButton > button:hover,
-[data-testid="stSidebar"] button:not([kind]):hover, [data-testid="stSidebar"] a[role="button"]:hover {
-    background: rgba(255,255,255,0.22) !important;
-}
-[data-testid="stSidebar"] .stButton > button[kind="primary"],
 [data-testid="stSidebar"] .stFormSubmitButton > button,
-[data-testid="stSidebar"] button[kind="primary"], [data-testid="stSidebar"] a[role="button"][class*="primary"] {
+[data-testid="stSidebar"] button[kind="primary"], [data-testid="stSidebar"] button:not([kind]),
+[data-testid="stSidebar"] div[data-testid="stButton"] > button,
+[data-testid="stSidebar"] a[role="button"] {
     background: var(--azul-escuro) !important; color: #FFFFFF !important;
     border: 1px solid rgba(255,255,255,0.25) !important;
+    border-radius: 8px !important; font-weight: 600 !important;
 }
-[data-testid="stSidebar"] .stButton > button[kind="primary"]:hover,
-[data-testid="stSidebar"] .stFormSubmitButton > button:hover,
-[data-testid="stSidebar"] button[kind="primary"]:hover, [data-testid="stSidebar"] a[role="button"][class*="primary"]:hover {
+[data-testid="stSidebar"] .stButton > button:hover, [data-testid="stSidebar"] button:not([kind]):hover,
+[data-testid="stSidebar"] div[data-testid="stButton"] > button:hover,
+[data-testid="stSidebar"] a[role="button"]:hover {
     background: var(--azul-petroleo) !important;
 }
 /* campos brancos */
