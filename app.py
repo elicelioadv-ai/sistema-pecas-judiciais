@@ -175,6 +175,77 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 </style>
 """
 
+
+_CSS_TEMA = """
+<style>
+:root {
+    --azul-escuro:#003F65; --azul-aviso:#004164; --azul-petroleo:#00658A;
+    --vermelho:#B2101D; --roxo:#694467; --amarelo:#F5AF00;
+    --fundo:#F8F9F9; --header:#EEEFF0; --botao:#E4E9EC; --botao-busca:#C3D1D9;
+    --aba-ativa:#D2D4D5; --aba:#DCDEDF;
+    --texto-menu:#414F55; --texto-aba:#575756; --link:#3B5C7D; --placeholder:#6C757D;
+}
+/* fundo do interior */
+.stApp, [data-testid="stAppViewContainer"] { background: var(--fundo) !important; }
+/* barra lateral (menu) */
+[data-testid="stSidebar"] {
+    background: var(--header) !important;
+    border-right: 1px solid var(--botao-busca) !important;
+}
+[data-testid="stSidebar"] * { color: var(--texto-menu); }
+[data-testid="stSidebar"] a { color: var(--link) !important; }
+[data-testid="stSidebar"] hr { border-color: var(--botao-busca) !important; }
+/* títulos */
+h1, h2, h3 { color: var(--azul-escuro) !important; }
+/* links */
+[data-testid="stMarkdownContainer"] a { color: var(--link) !important; }
+hr { border-color: var(--botao-busca) !important; }
+/* campos */
+div[data-baseweb="input"], div[data-baseweb="select"] > div,
+div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
+[data-testid="stNumberInputContainer"] {
+    background: #FFFFFF !important; border-color: var(--botao-busca) !important;
+}
+input::placeholder, textarea::placeholder { color: var(--placeholder) !important; }
+/* abas */
+[data-baseweb="tab-list"] {
+    background: var(--aba) !important; border-radius: 8px 8px 0 0; padding: 5px 6px; gap: 4px;
+    border-bottom: 1px solid var(--botao-busca) !important;
+}
+[data-baseweb="tab"] { color: var(--texto-aba) !important; border-radius: 6px !important; }
+[data-baseweb="tab"][aria-selected="true"] {
+    color: var(--texto-menu) !important; background: var(--aba-ativa) !important; font-weight: 600 !important;
+}
+[data-baseweb="tab-highlight"], [data-baseweb="tab-border"] { background: transparent !important; }
+/* cartelas/expansores */
+[data-testid="stExpander"] details {
+    border: 1px solid var(--botao-busca) !important; border-radius: 8px !important;
+    background: #FFFFFF !important;
+}
+[data-testid="stExpander"] summary { color: var(--azul-escuro) !important; font-weight: 600 !important; }
+/* botões */
+.stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
+    border-radius: 8px !important; font-weight: 600 !important;
+}
+.stButton > button[kind="primary"], .stFormSubmitButton > button,
+[data-testid="stDownloadButton"] > button {
+    background: var(--azul-escuro) !important; color: #ffffff !important;
+    border: 1px solid var(--azul-aviso) !important;
+}
+.stButton > button[kind="primary"]:hover, .stFormSubmitButton > button:hover {
+    background: var(--azul-petroleo) !important; border-color: var(--azul-petroleo) !important;
+}
+.stButton > button[kind="secondary"] {
+    background: var(--botao) !important; color: var(--texto-menu) !important;
+    border: 1px solid var(--botao-busca) !important;
+}
+.stButton > button[kind="secondary"]:hover {
+    background: var(--botao-busca) !important; color: var(--texto-menu) !important;
+}
+</style>
+"""
+
+
 MENSAGENS_ABERTURA = [
     "Bem-vindo(a) de volta! Que seu trabalho hoje flua leve e produtivo.",
     "Pronto(a) para transformar fatos em uma peça impecável? Vamos começar!",
@@ -369,6 +440,9 @@ if not st.session_state.setdefault("autenticado", False):
                     st.error(f"Não foi possível criar a conta: {e}")
 
     st.stop()
+
+# tema visual do interior (aplicado só depois do login)
+st.markdown(_CSS_TEMA, unsafe_allow_html=True)
 
 
 def alerta(nivel, msg):
