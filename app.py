@@ -105,52 +105,77 @@ div[data-testid="stForm"] {
     border: none; border-radius: 0; padding: 0; box-shadow: none;
 }
 .st-key-login_campos, .st-key-cad_campos {
+    max-width: 470px; margin: 16px auto 0 auto;
     background: #ffffff;
     border: 1px solid #d5d9de; border-top: 5px solid #1F4E78; border-radius: 14px;
     padding: 24px 26px 20px 26px;
     box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
 }
-div[data-testid="stForm"] label { color: #000000 !important; font-weight: 600; }
+div[data-testid="stForm"] label,
+.st-key-login_campos label { color: #000000 !important; font-weight: 600; }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"],
-div[data-testid="stForm"] div[data-baseweb="input"] {
+div[data-testid="stForm"] div[data-baseweb="input"],
+.st-key-login_campos [data-testid="stTextInputRootElement"],
+.st-key-login_campos div[data-baseweb="input"] {
     background: #ffffff !important; border: 1px solid #cbd2d9 !important;
     border-radius: 10px !important;
 }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"]:focus-within,
-div[data-testid="stForm"] div[data-baseweb="input"]:focus-within {
+div[data-testid="stForm"] div[data-baseweb="input"]:focus-within,
+.st-key-login_campos [data-testid="stTextInputRootElement"]:focus-within,
+.st-key-login_campos div[data-baseweb="input"]:focus-within {
     background: #ffffff !important; border-color: #cbd2d9 !important;
 }
 div[data-testid="stForm"] input,
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] input,
-div[data-testid="stForm"] div[data-baseweb="input"] input {
+div[data-testid="stForm"] div[data-baseweb="input"] input,
+.st-key-login_campos input,
+.st-key-login_campos [data-testid="stTextInputRootElement"] input,
+.st-key-login_campos div[data-baseweb="input"] input {
     background: #ffffff !important; color: #000000 !important;
     -webkit-text-fill-color: #000000 !important; caret-color: #000000 !important;
 }
 div[data-testid="stForm"] input:focus,
 div[data-testid="stForm"] input:active,
-div[data-testid="stForm"] input:hover {
+div[data-testid="stForm"] input:hover,
+.st-key-login_campos input:focus,
+.st-key-login_campos input:active,
+.st-key-login_campos input:hover {
     background: #ffffff !important; color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
 }
 div[data-testid="stForm"] input:-webkit-autofill,
 div[data-testid="stForm"] input:-webkit-autofill:hover,
 div[data-testid="stForm"] input:-webkit-autofill:focus,
-div[data-testid="stForm"] input:-webkit-autofill:active {
+div[data-testid="stForm"] input:-webkit-autofill:active,
+.st-key-login_campos input:-webkit-autofill,
+.st-key-login_campos input:-webkit-autofill:hover,
+.st-key-login_campos input:-webkit-autofill:focus,
+.st-key-login_campos input:-webkit-autofill:active {
     -webkit-text-fill-color: #000000 !important;
     -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
     box-shadow: 0 0 0 1000px #ffffff inset !important;
 }
-div[data-testid="stForm"] ::selection { background: #cfe2ff; color: #000000; }
-div[data-testid="stForm"] button {
+div[data-testid="stForm"] ::selection,
+.st-key-login_campos ::selection { background: #cfe2ff; color: #000000; }
+div[data-testid="stForm"] button,
+.st-key-login_entrar button {
     border-radius: 10px; font-weight: 700; background: #1F4E78; color: #ffffff; border: none;
 }
-div[data-testid="stForm"] button:hover { background: #2d6aa3; color: #ffffff; }
+div[data-testid="stForm"] button:hover,
+.st-key-login_entrar button:hover { background: #2d6aa3; color: #ffffff; }
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button,
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button *,
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [data-baseweb="button"],
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [role="button"],
 div[data-testid="stForm"] [data-baseweb="input"] button,
-div[data-testid="stForm"] [data-baseweb="input"] [role="button"] {
+div[data-testid="stForm"] [data-baseweb="input"] [role="button"],
+.st-key-login_campos [data-testid="stTextInputRootElement"] button,
+.st-key-login_campos [data-testid="stTextInputRootElement"] button *,
+.st-key-login_campos [data-testid="stTextInputRootElement"] [data-baseweb="button"],
+.st-key-login_campos [data-testid="stTextInputRootElement"] [role="button"],
+.st-key-login_campos [data-baseweb="input"] button,
+.st-key-login_campos [data-baseweb="input"] [role="button"] {
     background: transparent !important; background-color: transparent !important;
     border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
     outline: none !important; min-height: 0 !important; height: auto !important;
@@ -159,6 +184,8 @@ div[data-testid="stForm"] [data-baseweb="input"] [role="button"] {
 /* Esconde o "olhinho"/opções de senha (Streamlit e navegador) */
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button,
 div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [role="button"],
+.st-key-login_campos [data-testid="stTextInputRootElement"] button,
+.st-key-login_campos [data-testid="stTextInputRootElement"] [role="button"],
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear,
 input[type="password"]::-webkit-credentials-auto-fill-button,
@@ -169,6 +196,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 /* Campo de senha do login: mascarado, mas sem o navegador tratar como senha
    (evita o "gerenciador de senhas" do Google aparecer) */
 .st-key-login_senha input,
+.st-key-login_campos input[aria-label="Senha de acesso"],
 div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
     -webkit-text-security: disc !important; letter-spacing: 2px !important;
 }
@@ -185,27 +213,56 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 .olho-login svg { width: 20px; height: 20px; display: block; }
 /* "Esqueceu a senha?": apenas o texto com o símbolo, sem caixa */
 div[data-testid="stForm"] [data-testid="stExpander"],
-div[data-testid="stForm"] [data-testid="stExpander"] details {
+div[data-testid="stForm"] [data-testid="stExpander"] details,
+.st-key-login_campos [data-testid="stExpander"],
+.st-key-login_campos [data-testid="stExpander"] details {
     border: none !important; background: transparent !important; box-shadow: none !important;
 }
-div[data-testid="stForm"] [data-testid="stExpander"] summary {
+div[data-testid="stForm"] [data-testid="stExpander"] summary,
+.st-key-login_campos [data-testid="stExpander"] summary {
     justify-content: center !important; padding: 2px 0 !important;
     color: #1F4E78 !important; font-weight: 600 !important; font-size: 0.9rem !important;
 }
-div[data-testid="stForm"] [data-testid="stExpander"] summary svg { display: none !important; }
-div[data-testid="stForm"] [data-testid="stExpander"] summary:hover { color: #2d6aa3 !important; }
+div[data-testid="stForm"] [data-testid="stExpander"] summary svg,
+.st-key-login_campos [data-testid="stExpander"] summary svg { display: none !important; }
+div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
+.st-key-login_campos [data-testid="stExpander"] summary:hover { color: #2d6aa3 !important; }
 /* seletor Entrar/Criar conta: na mesma coluna do cartão, abaixo da frase */
 .st-key-login_modo { max-width: 470px; margin: 14px auto 0 auto; }
 .st-key-login_modo [role="radiogroup"] { justify-content: center !important; gap: 22px !important; }
-/* captcha de figuras */
-.st-key-captcha_box {
-    max-width: 470px; margin: 14px auto 0 auto; background: #ffffff;
-    border-radius: 14px; padding: 18px 24px 20px 24px;
-    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.10);
+/* captcha de figuras (dentro do cartão, abaixo da senha) */
+.cap-titulo { color: #1F4E78 !important; font-weight: 700; font-size: 0.95rem; margin: 10px 0 4px 0; }
+.cap-pergunta { color: #000000 !important; font-size: 0.92rem; margin: 2px 0 8px 0; }
+/* "Não sou um robô" */
+.st-key-captcha_humano_btn button {
+    justify-content: flex-start !important; min-height: 46px !important;
+    background: #f9f9f9 !important; color: #333333 !important;
+    border: 1px solid #d3d3d3 !important; border-radius: 4px !important;
+    font-weight: 500 !important; padding: 6px 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08) !important;
 }
-.st-key-captcha_box h2 { color: #1F4E78 !important; text-align: center; margin: 0 0 6px 0; }
-.st-key-captcha_box [data-testid="stCheckbox"] label { font-size: 1.6rem; }
-.st-key-captcha_box [data-testid="stCheckbox"] label p { color: #000000 !important; }
+.st-key-captcha_humano_btn button::before {
+    content: ''; width: 20px; height: 20px; border: 2px solid #c1c1c1; border-radius: 3px;
+    background: #ffffff; margin-right: 10px; display: inline-block; flex-shrink: 0;
+}
+.st-key-captcha_humano_btn button p { color: #333333 !important; font-size: 0.95rem !important; }
+.st-key-captcha_humano_btn button:hover { background: #f1f1f1 !important; }
+/* grade de figuras */
+.st-key-captcha_nativo [data-testid="stHorizontalBlock"] { gap: 8px !important; }
+.st-key-captcha_nativo [data-testid="stButton"] { margin: 0 !important; }
+.st-key-captcha_nativo button {
+    width: 100% !important; aspect-ratio: 1 / 1; padding: 0 !important;
+    min-height: 0 !important; border-radius: 6px !important; line-height: 1 !important;
+}
+.st-key-captcha_nativo button p { font-size: 28px !important; margin: 0 !important; line-height: 1 !important; }
+.st-key-captcha_nativo button[data-testid^="stBaseButton-secondary"] {
+    background: #eef2f6 !important; color: #222222 !important; border: 2px solid #cfd8e3 !important;
+}
+.st-key-captcha_nativo button[data-testid^="stBaseButton-secondary"]:hover { background: #e2ebf3 !important; }
+.st-key-captcha_nativo button[data-testid^="stBaseButton-primary"] {
+    background: #d7eef3 !important; color: #222222 !important; border: 2px solid #0093AE !important;
+    box-shadow: inset 0 0 0 2px #0093AE !important;
+}
 </style>
 """
 
@@ -506,10 +563,77 @@ def _captcha_html():
 """
 
 
-def _verificacao_captcha():
-    with st.container(key="captcha_box"):
-        st.markdown("## 🔒 Verificação de segurança")
-        components.html(_captcha_html(), height=430, scrolling=False)
+def _gravar_selo_pc():
+    """Marca este navegador como já verificado (não pede o captcha de novo aqui)."""
+    components.html(
+        """
+        <script>
+        try { document.cookie = 'pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; } catch (e) {}
+        try { window.parent.document.cookie = 'pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; } catch (e) {}
+        </script>
+        """,
+        height=0,
+    )
+
+
+_CAPTCHA_FIGURAS = [
+    ("🚚", "o caminhão"), ("🚗", "o carro"), ("🚌", "o ônibus"),
+    ("🚲", "a bicicleta"), ("⭐", "a estrela"), ("✈️", "o avião"),
+    ("🏠", "a casa"), ("🌳", "a árvore"), ("⚖️", "a balança"),
+    ("📚", "os livros"), ("🔨", "o martelo"), ("🏛️", "o tribunal"),
+]
+
+
+def _captcha_novo_desafio():
+    emoji, nome = random.choice(_CAPTCHA_FIGURAS)
+    outros = [e for e, _ in _CAPTCHA_FIGURAS if e != emoji]
+    certos = sorted(random.sample(range(9), random.randint(2, 3)))
+    st.session_state["captcha_alvo"] = nome
+    st.session_state["captcha_corretos"] = certos
+    st.session_state["captcha_tiles"] = [
+        emoji if k in certos else random.choice(outros) for k in range(9)
+    ]
+    st.session_state["captcha_sel"] = []
+
+
+def _captcha_render():
+    """Verificação de segurança dentro do cartão: 'Não sou um robô' abre as figuras."""
+    st.markdown("<div class='cap-titulo'>Verificação de segurança</div>", unsafe_allow_html=True)
+    if not st.session_state.get("captcha_humano"):
+        if st.button("Não sou um robô", key="captcha_humano_btn", width="stretch"):
+            st.session_state["captcha_humano"] = True
+            _captcha_novo_desafio()
+            st.rerun()
+        return
+    with st.container(key="captcha_nativo"):
+        st.markdown(
+            "<p class='cap-pergunta'>Marque as figuras que mostram <b>"
+            f"{st.session_state.get('captcha_alvo', '')}</b>:</p>",
+            unsafe_allow_html=True,
+        )
+        sel = set(st.session_state.get("captcha_sel", []))
+        tiles = st.session_state.get("captcha_tiles", [])
+        for linha in range(3):
+            colunas = st.columns(3)
+            for c in range(3):
+                i = linha * 3 + c
+                with colunas[c]:
+                    if st.button(tiles[i], key=f"captcha_tile_{i}",
+                                 type=("primary" if i in sel else "secondary")):
+                        nova = set(sel)
+                        nova.symmetric_difference_update({i})
+                        st.session_state["captcha_sel"] = sorted(nova)
+                        st.rerun()
+
+
+def _captcha_necessario():
+    return not _selo_pc_ok() and not st.session_state.get("captcha_ok")
+
+
+def _captcha_valido():
+    sel = set(st.session_state.get("captcha_sel", []))
+    corretos = set(st.session_state.get("captcha_corretos", []))
+    return bool(corretos) and sel == corretos
 
 
 if not st.session_state.setdefault("autenticado", False):
@@ -527,29 +651,28 @@ if not st.session_state.setdefault("autenticado", False):
         unsafe_allow_html=True,
     )
 
-    if not _selo_pc_ok() and not st.session_state.get("captcha_ok"):
-        _verificacao_captcha()
-        st.stop()
+    _precisa_captcha = _captcha_necessario()
 
     modo_login = st.radio("Acesso", ["Entrar", "Criar conta"], horizontal=True,
                           key="login_modo", label_visibility="collapsed")
 
     if modo_login == "Entrar":
-        with st.form("login_form"):
-            with st.container(key="login_campos"):
-                usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario")
-                senha_entrada = st.text_input("Senha de acesso", key="login_senha")
-                entrar = st.form_submit_button("Entrar", type="primary", width="stretch")
-                with st.expander("🔑 Esqueceu a senha?"):
-                    st.markdown(
-                        "Sem problema. Sua senha não pode ser enviada por e-mail, mas pode ser "
-                        "**redefinida**:\n\n"
-                        "- **Usuário do sistema:** peça ao **administrador** para criar uma nova "
-                        "senha para você (ele faz em **👥 Contas**).\n"
-                        "- **Administrador:** se você esqueceu a sua, redefina em "
-                        "**Streamlit → Manage app → Settings → Secrets** (variável "
-                        "`SENHA_ACESSO`)."
-                    )
+        with st.container(key="login_campos"):
+            usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario")
+            senha_entrada = st.text_input("Senha de acesso", key="login_senha")
+            if _precisa_captcha:
+                _captcha_render()
+            entrar = st.button("Entrar", type="primary", key="login_entrar", width="stretch")
+            with st.expander("🔑 Esqueceu a senha?"):
+                st.markdown(
+                    "Sem problema. Sua senha não pode ser enviada por e-mail, mas pode ser "
+                    "**redefinida**:\n\n"
+                    "- **Usuário do sistema:** peça ao **administrador** para criar uma nova "
+                    "senha para você (ele faz em **👥 Contas**).\n"
+                    "- **Administrador:** se você esqueceu a sua, redefina em "
+                    "**Streamlit → Manage app → Settings → Secrets** (variável "
+                    "`SENHA_ACESSO`)."
+                )
 
         components.html(
             """
@@ -615,14 +738,18 @@ if not st.session_state.setdefault("autenticado", False):
                             st.error(f"Não deu para definir o acesso: {e}")
 
         if entrar:
-            if motor.verificar_acesso(usuario_entrada, senha_entrada):
+            if _precisa_captcha and not _captcha_valido():
+                st.error("Para entrar, marque as figuras corretas na verificação de segurança.")
+            elif motor.verificar_acesso(usuario_entrada, senha_entrada):
                 st.session_state.update(autenticado=True, admin=True,
                                         usuario=motor.usuario_acesso() or usuario_entrada.strip())
+                _gravar_selo_pc()
                 st.rerun()
             else:
                 resultado = usuarios.autenticar(usuario_entrada, senha_entrada)
                 if resultado == usuarios.OK:
                     st.session_state.update(autenticado=True, admin=False, usuario=usuario_entrada.strip())
+                    _gravar_selo_pc()
                     st.rerun()
                 elif resultado == usuarios.PENDENTE:
                     st.warning("Sua conta foi criada, mas ainda aguarda a **aprovação** do administrador.")
