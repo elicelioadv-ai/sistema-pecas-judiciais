@@ -632,7 +632,8 @@ def _captcha_render():
 
 
 def _captcha_necessario():
-    return not _selo_pc_ok() and not st.session_state.get("captcha_ok")
+    # Pede a verificação de segurança sempre, em todo login.
+    return True
 
 
 def _captcha_valido():
@@ -776,13 +777,11 @@ if not st.session_state.setdefault("autenticado", False):
         elif motor.verificar_acesso(usuario_entrada, senha_entrada):
             st.session_state.update(autenticado=True, admin=True,
                                     usuario=motor.usuario_acesso() or usuario_entrada.strip())
-            _gravar_selo_pc()
             st.rerun()
         else:
             resultado = usuarios.autenticar(usuario_entrada, senha_entrada)
             if resultado == usuarios.OK:
                 st.session_state.update(autenticado=True, admin=False, usuario=usuario_entrada.strip())
-                _gravar_selo_pc()
                 st.rerun()
             elif resultado == usuarios.PENDENTE:
                 st.warning("Sua conta foi criada, mas ainda aguarda a **aprovação** do administrador.")
