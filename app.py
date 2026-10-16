@@ -445,6 +445,7 @@ DEFAULTS = {
 }
 for chave, inicial in DEFAULTS.items():
     st.session_state.setdefault(chave, inicial)
+st.session_state.setdefault("chat_hist", [])
 
 # aplica valores definidos por botões (antes de criar os campos, para não dar erro)
 for _campo, _pendente in (("fatos_edit", "_p_fatos"), ("peca_edit", "_p_peca"),
@@ -1079,6 +1080,7 @@ with st.sidebar:
     st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
     if st.button("🚪 Sair do sistema", width="stretch"):
         st.session_state["autenticado"] = False
+        st.session_state["chat_hist"] = []
         st.rerun()
     st.divider()
 
@@ -1627,9 +1629,9 @@ def exportar(texto):
 
 
 # ------------------------------------------------------------------ abas principais
-aba_caso, aba_fatos, aba_peca, aba_conf, aba_base_ui, aba_anexo, aba_decisoes_ui, aba_processos_ui = st.tabs(
+aba_caso, aba_fatos, aba_peca, aba_conf, aba_base_ui, aba_anexo, aba_decisoes_ui, aba_processos_ui, aba_chat = st.tabs(
     ["1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência", "🗂️ Base legal", "📎 Anexo/Análise",
-     "📰 Decisões & Processos", "📌 Acompanhar processo"]
+     "📰 Decisões & Processos", "📌 Acompanhar processo", "💬 Chat IA"]
 )
 
 with aba_caso:
@@ -1821,3 +1823,38 @@ with aba_decisoes_ui:
 
 with aba_processos_ui:
     aba_processos()
+
+with aba_chat:
+    st.subheader("💬 Conversar com a IA")
+    st.caption("Tire dúvidas e pesquise sobre o processo. A IA é apoio — confira sempre as fontes oficiais.")
+    c1, c2 = st.columns([1, 4])
+    if c1.button("🗑️ Limpar conversa", width="stretch"):
+        st.session_state["chat_hist"] = []
+        st.rerun()
+    c2.checkbox("Incluir os dados e os fatos deste caso no contexto", value=True,
+                key="chat_usar_caso")
+    for _m in st.session_state["chat_hist"]:
+        with st.chat_message("user" if _m.get("role") == "user" else "assistant"):
+            st.markdown(_m.get("content", ""))
+    _pergunta = st.chat_input("Escreva sua pergunta...", key="chat_pergunta")
+    if _pergunta and _pergunta.strip():
+        _pergunta = _pergunta.strip()
+        st.session_state["chat_hist"].append({"role": "user", "content": _pergunta})
+        with st.chat_message("user"):
+            st.markdown(_pergunta)
+        _contexto = ""
+        if st.session_state.get("chat_usar_caso", True):
+            _partes = []
+            if st.session_state.get("dados", "").strip():
+                _partes.append(st.session_state["dados"])
+            if st.session_state.get("fatos_edit", "").strip():
+                _partes.append("FATOS:\n" + st.session_state["fatos_edit"])
+            _contexto = "\n\n".join(_partes)
+        with st.chat_message("assistant"):
+            with st.spinner("Pensando..."):
+                _resposta = tentar(motor.responder_chat, st.session_state["chat_hist"],
+                                   _contexto, anonimizador)
+            if _resposta:
+                st.markdown(_resposta)
+        if _resposta:
+            st.session_state["chat_hist"].append({"role": "assistant", "content": _resposta})

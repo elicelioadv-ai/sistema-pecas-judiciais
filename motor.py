@@ -520,6 +520,39 @@ def sugerir_jurisprudencia(dados_caso, fatos, base, anonimizador=None):
     return (saida or "").strip()
 
 
+# ---------------------------------------------------------------- chat com a IA
+REGRAS_CHAT = """Você é um assistente jurídico do escritório, conversando em português com o advogado.
+Objetivo: responder dúvidas e ajudar a PENSAR e PESQUISAR sobre o processo e o Direito brasileiro.
+REGRAS ABSOLUTAS:
+- Responda de forma clara, objetiva e prática, como um assistente jurídico experiente.
+- NUNCA invente número de processo, de lei, de súmula, de tema, nem dados do caso. Se não tiver
+  certeza da identificação, diga que é preciso CONFERIR na fonte oficial e indique onde buscar.
+- Trate como referência apenas o que estiver no CONTEXTO DO CASO fornecido; se faltar dado, peça.
+- Você é apoio: o advogado revisa e decide tudo antes de usar.
+- Responda apenas à última mensagem do advogado, mantendo o fio da conversa.""".strip()
+
+
+def responder_chat(historico, contexto="", anonimizador=None):
+    """Responde a uma conversa. ``historico`` = lista de {'role','content'}."""
+    partes = []
+    if contexto and contexto.strip():
+        partes.append("CONTEXTO DO CASO (use só como referência; não invente dados):\n" + contexto.strip())
+    conversa = []
+    for m in historico or []:
+        quem = "Advogado" if m.get("role") == "user" else "Assistente"
+        conversa.append(f"{quem}: {m.get('content', '')}")
+    partes.append("CONVERSA ATÉ AGORA:\n" + "\n\n".join(conversa))
+    partes.append("Responda agora à última mensagem do Advogado.")
+    entrada = "\n\n".join(partes)
+    mapa = {}
+    if anonimizador is not None:
+        entrada, mapa = anonimizador.mascarar(entrada)
+    saida = _chamar_ia(REGRAS_CHAT, entrada, 4000)
+    if anonimizador is not None:
+        saida = anonimizador.restaurar(saida, mapa)
+    return (saida or "").strip()
+
+
 # ---------------------------------------------------------------- anexo / triagem de documento
 def extrair_texto_anexo(nome, dados):
     """Extrai o texto de um anexo digital (.txt/.md/.docx/.pdf) localmente (LGPD)."""
