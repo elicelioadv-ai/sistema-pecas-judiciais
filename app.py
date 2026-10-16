@@ -641,6 +641,23 @@ def _captcha_valido():
     return bool(corretos) and sel == corretos
 
 
+def _definir_idioma():
+    """Marca a página como português para o navegador não oferecer tradução."""
+    if st.session_state.get("_idioma_pt"):
+        return
+    components.html(
+        "<script>"
+        "try { var h = window.parent.document.documentElement;"
+        " h.setAttribute('lang', 'pt-BR'); h.setAttribute('xml:lang', 'pt-BR'); }"
+        " catch (e) {}"
+        "</script>",
+        height=0,
+    )
+    st.session_state["_idioma_pt"] = True
+
+
+_definir_idioma()
+
 if not st.session_state.setdefault("autenticado", False):
     if "msg_abertura" not in st.session_state:
         st.session_state["msg_abertura"] = random.choice(MENSAGENS_ABERTURA)
