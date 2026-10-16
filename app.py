@@ -91,7 +91,7 @@ _CSS_LOGIN = """
     background-attachment: fixed !important;
 }
 [data-testid="stHeader"] { background: transparent !important; }
-.login-head { max-width: 470px; margin: 6vh auto 0 auto; text-align: center; }
+.login-head { margin: 0 auto 6px auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
 .login-head .login-title, .login-title {
     margin: 0; font-size: 1.7rem; font-weight: 800; letter-spacing: .2px;
@@ -227,9 +227,12 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary svg,
 .st-key-login_campos [data-testid="stExpander"] summary svg { display: none !important; }
 div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 .st-key-login_campos [data-testid="stExpander"] summary:hover { color: #2d6aa3 !important; }
-/* seletor Entrar/Criar conta: na mesma coluna do cartão, abaixo da frase */
-.st-key-login_modo { max-width: 470px; margin: 14px auto 0 auto; }
+/* seletor Entrar/Criar conta: dentro do cartão, abaixo da frase */
+.st-key-login_modo { margin: 2px 0 6px 0; }
 .st-key-login_modo [role="radiogroup"] { justify-content: center !important; gap: 22px !important; }
+.st-key-login_campos .login-logo { font-size: clamp(46px, 11vw, 66px); }
+.st-key-login_campos .login-saudacao { font-size: 1.6rem; margin: 10px 0 4px 0; }
+.st-key-login_campos .login-title { font-size: 1.45rem; }
 /* captcha de figuras (dentro do cartão, abaixo da senha) */
 .cap-titulo { color: #1F4E78 !important; font-weight: 700; font-size: 0.95rem; margin: 10px 0 4px 0; }
 .cap-pergunta { color: #000000 !important; font-size: 0.92rem; margin: 2px 0 8px 0; }
@@ -640,24 +643,24 @@ if not st.session_state.setdefault("autenticado", False):
     if "msg_abertura" not in st.session_state:
         st.session_state["msg_abertura"] = random.choice(MENSAGENS_ABERTURA)
     st.markdown(_CSS_LOGIN, unsafe_allow_html=True)
-    st.markdown(
-        "<div class='login-head'>"
-        "<div class='login-logo'>⚖️</div>"
-        "<h1 class='login-title'>Sistema de Peças Judiciais</h1>"
-        f"<div class='login-saudacao'>{_saudacao()}!</div>"
-        f"<p class='login-msg'>{html.escape(st.session_state['msg_abertura'])}</p>"
-        "<p class='login-sub'>Acesse com seu usuário e senha.</p>"
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    with st.container(key="login_campos"):
+        st.markdown(
+            "<div class='login-head'>"
+            "<div class='login-logo'>⚖️</div>"
+            "<h1 class='login-title'>Sistema de Peças Judiciais</h1>"
+            f"<div class='login-saudacao'>{_saudacao()}!</div>"
+            f"<p class='login-msg'>{html.escape(st.session_state['msg_abertura'])}</p>"
+            "<p class='login-sub'>Acesse com seu usuário e senha.</p>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
-    _precisa_captcha = _captcha_necessario()
+        _precisa_captcha = _captcha_necessario()
 
-    modo_login = st.radio("Acesso", ["Entrar", "Criar conta"], horizontal=True,
-                          key="login_modo", label_visibility="collapsed")
+        modo_login = st.radio("Acesso", ["Entrar", "Criar conta"], horizontal=True,
+                              key="login_modo", label_visibility="collapsed")
 
-    if modo_login == "Entrar":
-        with st.container(key="login_campos"):
+        if modo_login == "Entrar":
             usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario")
             senha_entrada = st.text_input("Senha de acesso", key="login_senha")
             if _precisa_captcha:
@@ -673,6 +676,32 @@ if not st.session_state.setdefault("autenticado", False):
                     "**Streamlit → Manage app → Settings → Secrets** (variável "
                     "`SENHA_ACESSO`)."
                 )
+
+            if not motor.senha_ativa() or not motor.usuario_acesso():
+                st.info("Primeiro acesso do administrador: defina abaixo o usuário e a senha.")
+                with st.form("primeira_senha"):
+                    u_novo = st.text_input("Usuário (ex.: admin)", key="u_novo")
+                    s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1")
+                    s2 = st.text_input("Repita a nova senha", type="password", key="s2")
+                    definir = st.form_submit_button("Definir acesso e entrar")
+                    if definir:
+                        if not s1 or s1 != s2:
+                            st.error("As senhas não conferem.")
+                        else:
+                            try:
+                                motor.definir_acesso(u_novo, s1)
+                                st.session_state.update(autenticado=True, usuario=u_novo.strip(), admin=True)
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Não deu para definir o acesso: {e}")
+        else:
+            st.caption("Crie sua conta. Ela será liberada depois que o administrador aprovar.")
+            with st.form("cadastro_form"):
+                cad_nome = st.text_input("Nome completo", key="cad_nome")
+                cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
+                cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1")
+                cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
+                criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
 
         components.html(
             """
@@ -719,62 +748,35 @@ if not st.session_state.setdefault("autenticado", False):
             height=0,
         )
 
-        if not motor.senha_ativa() or not motor.usuario_acesso():
-            st.info("Primeiro acesso do administrador: defina abaixo o usuário e a senha.")
-            with st.form("primeira_senha"):
-                u_novo = st.text_input("Usuário (ex.: admin)", key="u_novo")
-                s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1")
-                s2 = st.text_input("Repita a nova senha", type="password", key="s2")
-                definir = st.form_submit_button("Definir acesso e entrar")
-                if definir:
-                    if not s1 or s1 != s2:
-                        st.error("As senhas não conferem.")
-                    else:
-                        try:
-                            motor.definir_acesso(u_novo, s1)
-                            st.session_state.update(autenticado=True, usuario=u_novo.strip(), admin=True)
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Não deu para definir o acesso: {e}")
-
-        if entrar:
-            if _precisa_captcha and not _captcha_valido():
-                st.error("Para entrar, marque as figuras corretas na verificação de segurança.")
-            elif motor.verificar_acesso(usuario_entrada, senha_entrada):
-                st.session_state.update(autenticado=True, admin=True,
-                                        usuario=motor.usuario_acesso() or usuario_entrada.strip())
+    if modo_login == "Entrar" and entrar:
+        if _precisa_captcha and not _captcha_valido():
+            st.error("Para entrar, marque as figuras corretas na verificação de segurança.")
+        elif motor.verificar_acesso(usuario_entrada, senha_entrada):
+            st.session_state.update(autenticado=True, admin=True,
+                                    usuario=motor.usuario_acesso() or usuario_entrada.strip())
+            _gravar_selo_pc()
+            st.rerun()
+        else:
+            resultado = usuarios.autenticar(usuario_entrada, senha_entrada)
+            if resultado == usuarios.OK:
+                st.session_state.update(autenticado=True, admin=False, usuario=usuario_entrada.strip())
                 _gravar_selo_pc()
                 st.rerun()
+            elif resultado == usuarios.PENDENTE:
+                st.warning("Sua conta foi criada, mas ainda aguarda a **aprovação** do administrador.")
             else:
-                resultado = usuarios.autenticar(usuario_entrada, senha_entrada)
-                if resultado == usuarios.OK:
-                    st.session_state.update(autenticado=True, admin=False, usuario=usuario_entrada.strip())
-                    _gravar_selo_pc()
-                    st.rerun()
-                elif resultado == usuarios.PENDENTE:
-                    st.warning("Sua conta foi criada, mas ainda aguarda a **aprovação** do administrador.")
-                else:
-                    st.error("Usuário ou senha incorretos.")
-    else:
-        st.caption("Crie sua conta. Ela será liberada depois que o administrador aprovar.")
-        with st.form("cadastro_form"):
-            with st.container(key="cad_campos"):
-                cad_nome = st.text_input("Nome completo", key="cad_nome")
-                cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
-                cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1")
-                cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
-                criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
-        if criar:
-            if cad_s1 != cad_s2:
-                st.error("As senhas não conferem.")
-            else:
-                try:
-                    usuarios.criar(cad_nome, cad_usuario, cad_s1)
-                    st.success("Conta criada! Aguarde a aprovação do administrador para entrar.")
-                except ValueError as e:
-                    st.error(str(e))
-                except Exception as e:
-                    st.error(f"Não foi possível criar a conta: {e}")
+                st.error("Usuário ou senha incorretos.")
+    elif modo_login == "Criar conta" and criar:
+        if cad_s1 != cad_s2:
+            st.error("As senhas não conferem.")
+        else:
+            try:
+                usuarios.criar(cad_nome, cad_usuario, cad_s1)
+                st.success("Conta criada! Aguarde a aprovação do administrador para entrar.")
+            except ValueError as e:
+                st.error(str(e))
+            except Exception as e:
+                st.error(f"Não foi possível criar a conta: {e}")
 
     st.stop()
 
