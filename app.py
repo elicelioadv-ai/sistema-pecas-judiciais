@@ -198,7 +198,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .st-key-login_senha input,
 .st-key-login_campos input[aria-label="Senha de acesso"],
 div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
-    -webkit-text-security: disc !important; letter-spacing: 2px !important;
+    -webkit-text-security: disc; letter-spacing: 2px;
 }
 /* Olhinho: mostrar/ocultar a senha */
 .st-key-login_senha [data-baseweb="input"],
@@ -717,8 +717,8 @@ if not st.session_state.setdefault("autenticado", False):
                       el.setAttribute('autocomplete', 'off');
                       el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2));
                       el.setAttribute('type', 'text');
-                      el.style.webkitTextSecurity = 'disc';
-                      el.style.letterSpacing = '2px';
+                      el.style.setProperty('-webkit-text-security', 'disc', 'important');
+                      el.style.setProperty('letter-spacing', '2px', 'important');
                     });
                   var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
                   if (!campo) return;
@@ -729,12 +729,13 @@ if not st.session_state.setdefault("autenticado", False):
                   b.className = 'olho-login';
                   b.title = 'Mostrar senha';
                   b.innerHTML = ABERTO;
+                  var mostrando = false;
                   b.onclick = function () {
-                    var mostrando = campo.style.webkitTextSecurity === 'none';
-                    campo.style.webkitTextSecurity = mostrando ? 'disc' : 'none';
-                    campo.style.letterSpacing = mostrando ? '2px' : 'normal';
-                    b.innerHTML = mostrando ? ABERTO : FECHADO;
-                    b.title = mostrando ? 'Mostrar senha' : 'Ocultar senha';
+                    mostrando = !mostrando;
+                    campo.style.setProperty('-webkit-text-security', mostrando ? 'none' : 'disc', 'important');
+                    campo.style.setProperty('letter-spacing', mostrando ? 'normal' : '2px', 'important');
+                    b.innerHTML = mostrando ? FECHADO : ABERTO;
+                    b.title = mostrando ? 'Ocultar senha' : 'Mostrar senha';
                   };
                   caixa.appendChild(b);
                 } catch (e) {}
