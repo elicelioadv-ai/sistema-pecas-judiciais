@@ -238,20 +238,20 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 /* captcha de figuras (dentro do cartão, abaixo da senha) */
 .cap-titulo { color: #1F4E78 !important; font-weight: 700; font-size: 0.95rem; margin: 10px 0 4px 0; }
 .cap-pergunta { color: #000000 !important; font-size: 0.92rem; margin: 2px 0 8px 0; }
-/* "Não sou um robô" */
+/* "Não sou um robô" (discreto) */
 .st-key-captcha_humano_btn button {
-    justify-content: flex-start !important; min-height: 46px !important;
-    background: #f9f9f9 !important; color: #333333 !important;
-    border: 1px solid #d3d3d3 !important; border-radius: 4px !important;
-    font-weight: 500 !important; padding: 6px 12px !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, .08) !important;
+    justify-content: flex-start !important; width: auto !important; min-height: 32px !important;
+    background: #fafafa !important; color: #555555 !important;
+    border: 1px solid #e4e4e4 !important; border-radius: 4px !important;
+    font-weight: 400 !important; padding: 3px 10px !important;
+    box-shadow: none !important;
 }
 .st-key-captcha_humano_btn button::before {
-    content: ''; width: 20px; height: 20px; border: 2px solid #c1c1c1; border-radius: 3px;
-    background: #ffffff; margin-right: 10px; display: inline-block; flex-shrink: 0;
+    content: ''; width: 15px; height: 15px; border: 1.5px solid #cfcfcf; border-radius: 3px;
+    background: #ffffff; margin-right: 8px; display: inline-block; flex-shrink: 0;
 }
-.st-key-captcha_humano_btn button p { color: #333333 !important; font-size: 0.95rem !important; }
-.st-key-captcha_humano_btn button:hover { background: #f1f1f1 !important; }
+.st-key-captcha_humano_btn button p { color: #666666 !important; font-size: 0.78rem !important; }
+.st-key-captcha_humano_btn button:hover { background: #f2f2f2 !important; }
 /* grade de figuras */
 .st-key-captcha_nativo [data-testid="stHorizontalBlock"] { gap: 8px !important; }
 .st-key-captcha_nativo [data-testid="stButton"] { margin: 0 !important; }
@@ -605,7 +605,7 @@ def _captcha_render():
     """Verificação de segurança dentro do cartão: 'Não sou um robô' abre as figuras."""
     st.markdown("<div class='cap-titulo'>Verificação de segurança</div>", unsafe_allow_html=True)
     if not st.session_state.get("captcha_humano"):
-        if st.button("Não sou um robô", key="captcha_humano_btn", width="stretch"):
+        if st.button("Não sou um robô", key="captcha_humano_btn"):
             st.session_state["captcha_humano"] = True
             _captcha_novo_desafio()
             st.rerun()
