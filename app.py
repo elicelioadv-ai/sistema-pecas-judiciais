@@ -396,25 +396,7 @@ if st.session_state.pop("_limpar_respostas", False):
 
 
 # ---------------------------------------------------------------- portão de acesso (senha)
-_FIGURAS_ALVO = ["⚖️", "🏛️", "📚", "📜", "🔨"]
-_FIGURAS_OUTRAS = ["🚗", "🍎", "🐶", "🌳", "⚽", "🎵", "🍕", "✈️", "🐱", "🦋",
-                   "🍀", "🎩", "🐟", "🍓", "🌙", "🚲", "🐸", "☂️", "🎁", "🍇"]
 _SELO_PC = "pecas_acesso_ok"
-
-
-def _gerar_captcha():
-    for k in [k for k in st.session_state if str(k).startswith("cap_")]:
-        del st.session_state[k]
-    alvo = random.choice(_FIGURAS_ALVO)
-    outras = random.sample(_FIGURAS_OUTRAS, 9)
-    qtd = random.randint(2, 4)
-    grade = [alvo] * qtd + outras[: 9 - qtd]
-    random.shuffle(grade)
-    st.session_state["captcha"] = {
-        "grade": grade,
-        "alvo": alvo,
-        "certos": [i for i, f in enumerate(grade) if f == alvo],
-    }
 
 
 def _selo_pc_ok():
@@ -424,50 +406,110 @@ def _selo_pc_ok():
         return False
 
 
-def _gravar_selo_pc():
-    """Marca no navegador que este PC já passou pela verificação (não repete)."""
-    components.html(
-        "<script>(function(){try{var d=window.parent.document;"
-        f"d.cookie='{_SELO_PC}=ok; max-age=31536000; path=/; SameSite=Lax';"
-        "}catch(e){}})();</script>",
-        height=0,
-    )
+def _captcha_html():
+    """Captcha no estilo reCAPTCHA (como no controle de frota): caixa 'Não sou um robô'
+    que abre uma grade de figuras para marcar. Ao acertar, grava o selo no navegador."""
+    return """
+<style>
+  html, body { margin:0; padding:0; background:transparent;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; }
+  .recaptcha { background:#f9f9f9; border:1px solid #d3d3d3; border-radius:4px;
+    padding:10px; max-width:300px; margin:0 auto; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .recaptcha-topo { display:flex; align-items:center; gap:10px; width:100%;
+    background:none; border:none; cursor:pointer; padding:4px 2px; font-family:inherit; }
+  .recaptcha-caixa { width:24px; height:24px; border:2px solid #c1c1c1; border-radius:3px;
+    background:#fff; display:inline-block; flex-shrink:0; }
+  .recaptcha-texto { font-size:14px; color:#333; }
+  .recaptcha-marca { margin-left:auto; font-size:10px; color:#9aa0a6;
+    text-transform:uppercase; letter-spacing:1px; }
+  .recaptcha-desafio { margin-top:10px; }
+  .recaptcha-pergunta { font-size:14px; font-weight:600; color:#1F4E78; margin:0 0 8px 0; }
+  .recaptcha-grade { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .recaptcha-tile { aspect-ratio:1/1; font-size:30px; background:#eef2f6;
+    border:2px solid #cfd8e3; border-radius:6px; cursor:pointer; line-height:1;
+    display:flex; align-items:center; justify-content:center; }
+  .recaptcha-tile:hover { background:#e2ebf3; }
+  .recaptcha-tile.selecionado { border-color:#0093AE; background:#d7eef3;
+    box-shadow:inset 0 0 0 2px #0093AE; }
+  .recaptcha-dica { display:block; margin-top:8px; color:#777; font-size:12px; }
+  .recaptcha-erro { color:#B2101D; font-size:13px; font-weight:600; margin:8px 0 0 0; }
+  .recaptcha-btn { margin-top:10px; width:100%; background:#1F4E78; color:#fff;
+    border:none; border-radius:6px; padding:9px; font-weight:700; font-size:14px; cursor:pointer; }
+  .recaptcha-btn:hover { background:#2d6aa3; }
+</style>
+<div class="recaptcha">
+  <button type="button" class="recaptcha-topo" id="topo" onclick="abrir()">
+    <span class="recaptcha-caixa"></span>
+    <span class="recaptcha-texto">Não sou um robô</span>
+    <span class="recaptcha-marca">segurança</span>
+  </button>
+  <div class="recaptcha-desafio" id="desafio" style="display:none;">
+    <p class="recaptcha-pergunta" id="pergunta"></p>
+    <div class="recaptcha-grade" id="grade"></div>
+    <small class="recaptcha-dica">Clique em todas as imagens certas e depois em Confirmar.</small>
+    <p class="recaptcha-erro" id="erro" style="display:none;">Verificação incorreta. Tente novamente.</p>
+    <button type="button" class="recaptcha-btn" onclick="confirmar()">Confirmar</button>
+  </div>
+</div>
+<script>
+  var IMAGENS = [["🚚","o caminhão"],["🚗","o carro"],["🚌","o ônibus"],["🚲","a bicicleta"],
+                 ["⭐","a estrela"],["✈️","o avião"],["🏠","a casa"],["🌳","a árvore"],
+                 ["⚖️","a balança"],["📚","os livros"],["🔨","o martelo"],["🏛️","o tribunal"]];
+  var corretos = [];
+  function ajustar(){ try{ window.frameElement.style.height=(document.body.scrollHeight+18)+'px'; }catch(e){} }
+  function gerar(){
+    var i = Math.floor(Math.random()*IMAGENS.length);
+    var alvo = IMAGENS[i][0], nome = IMAGENS[i][1];
+    var outros = IMAGENS.filter(function(x){ return x[0]!==alvo; }).map(function(x){ return x[0]; });
+    var pos = [0,1,2,3,4,5,6,7,8];
+    pos.sort(function(){ return Math.random()-0.5; });
+    var qtd = 2 + Math.floor(Math.random()*2);
+    corretos = pos.slice(0,qtd).sort(function(a,b){ return a-b; });
+    var g = document.getElementById('grade');
+    g.innerHTML = '';
+    for (var k=0;k<9;k++){
+      (function(k){
+        var t = document.createElement('button');
+        t.type = 'button'; t.className = 'recaptcha-tile'; t.setAttribute('data-i', k);
+        t.textContent = corretos.indexOf(k)>=0 ? alvo : outros[Math.floor(Math.random()*outros.length)];
+        t.onclick = function(){ t.classList.toggle('selecionado'); };
+        g.appendChild(t);
+      })(k);
+    }
+    document.getElementById('pergunta').innerHTML = 'Clique nas imagens que mostram <b>'+nome+'</b>:';
+    document.getElementById('erro').style.display = 'none';
+    ajustar();
+  }
+  function abrir(){
+    document.getElementById('topo').style.display = 'none';
+    document.getElementById('desafio').style.display = 'block';
+    if (!corretos.length) gerar();
+    ajustar();
+  }
+  function confirmar(){
+    var sel = [];
+    var ts = document.querySelectorAll('.recaptcha-tile.selecionado');
+    for (var i=0;i<ts.length;i++){ sel.push(parseInt(ts[i].getAttribute('data-i'),10)); }
+    sel.sort(function(a,b){ return a-b; });
+    if (JSON.stringify(sel)===JSON.stringify(corretos)){
+      try{ document.cookie='pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
+      try{ window.parent.document.cookie='pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
+      window.parent.location.reload();
+    } else {
+      document.getElementById('erro').style.display = 'block';
+      gerar();
+    }
+  }
+  ajustar();
+  window.addEventListener('load', ajustar);
+</script>
+"""
 
 
 def _verificacao_captcha():
     with st.container(key="captcha_box"):
         st.markdown("## 🔒 Verificação de segurança")
-        if not st.checkbox("Não sou um robô", key="captcha_humano"):
-            st.caption("Marque a caixa acima para ver as figuras e validar.")
-            return
-        if not st.session_state.get("captcha"):
-            _gerar_captcha()
-        dados = st.session_state["captcha"]
-        st.markdown(
-            f"Marque **todas** as figuras iguais a **{dados['alvo']}** e clique em Confirmar."
-        )
-        colunas = st.columns(3)
-        marcados = set()
-        for i, fig in enumerate(dados["grade"]):
-            with colunas[i % 3]:
-                if st.checkbox(fig, key=f"cap_{i}"):
-                    marcados.add(i)
-        b1, b2 = st.columns(2)
-        if b1.button("✅ Confirmar", type="primary", width="stretch"):
-            if marcados == set(dados["certos"]):
-                st.session_state["captcha_ok"] = True
-                st.session_state.pop("captcha", None)
-                for k in [k for k in st.session_state if str(k).startswith("cap_")]:
-                    del st.session_state[k]
-                _gravar_selo_pc()
-                st.rerun()
-            else:
-                st.error("As figuras marcadas não conferem. Tente de novo.")
-                _gerar_captcha()
-                st.rerun()
-        if b2.button("🔄 Outras figuras", width="stretch"):
-            _gerar_captcha()
-            st.rerun()
+        components.html(_captcha_html(), height=430, scrolling=False)
 
 
 if not st.session_state.setdefault("autenticado", False):
