@@ -233,7 +233,7 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 .st-key-login_campos .login-logo { font-size: clamp(46px, 11vw, 66px); }
 .st-key-login_campos .login-saudacao { font-size: 1.6rem; margin: 10px 0 4px 0; }
 .st-key-login_campos .login-title { font-size: 1.45rem; }
-.st-key-login_campos input::placeholder { color: #8a949c !important; opacity: 1; }
+.st-key-login_campos input::placeholder { color: #b7bfc6 !important; opacity: 0.65; }
 /* captcha de figuras (dentro do cartão, abaixo da senha) */
 .cap-titulo { color: #1F4E78 !important; font-weight: 700; font-size: 0.95rem; margin: 10px 0 4px 0; }
 .cap-pergunta { color: #000000 !important; font-size: 0.92rem; margin: 2px 0 8px 0; }
@@ -663,11 +663,9 @@ if not st.session_state.setdefault("autenticado", False):
 
         if modo_login == "Entrar":
             usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario",
-                                            placeholder="Usuário (ou e-mail)",
-                                            label_visibility="collapsed")
+                                            placeholder="Usuário (ou e-mail)")
             senha_entrada = st.text_input("Senha de acesso", key="login_senha",
-                                          placeholder="Senha de acesso",
-                                          label_visibility="collapsed")
+                                          placeholder="Senha de acesso")
             if _precisa_captcha:
                 _captcha_render()
             entrar = st.button("Entrar", type="primary", key="login_entrar", width="stretch")
