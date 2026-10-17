@@ -26,8 +26,8 @@ class TestLinksProcesso(unittest.TestCase):
     def test_pje_tjce_host_correto_por_grau(self):
         g1 = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G1")
         g2 = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G2")
-        pje1 = [u for r, u in g1 if "PJe" in r][0]
-        pje2 = [u for r, u in g2 if "PJe" in r][0]
+        pje1 = [u for r, u in g1 if "Consulta Pública do PJe" in r][0]
+        pje2 = [u for r, u in g2 if "Consulta Pública do PJe" in r][0]
         self.assertEqual(pje1, "https://pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica/listView.seam")
         self.assertEqual(pje2, "https://pje-consulta.tjce.jus.br/pje2grau/ConsultaPublica/listView.seam")
 
@@ -42,6 +42,18 @@ class TestLinksProcesso(unittest.TestCase):
     def test_link_processo_compat(self):
         url = decisoes.link_processo("api_publica_trt7", "0001234-56.2024.5.07.0001")
         self.assertIn("detalhe-processo", url)
+
+    def test_comunica_pje(self):
+        links = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G1")
+        comunica = [u for r, u in links if "comunica" in r.lower()][0]
+        self.assertIn("comunica.pje.jus.br/consulta", comunica)
+        self.assertIn("numeroProcesso=0200677-09.2023.8.06.0160", comunica)
+        self.assertIn("siglaTribunal=TJCE", comunica)
+
+    def test_sigla_tribunal(self):
+        self.assertEqual(decisoes._sigla_tribunal("api_publica_tjce"), "TJCE")
+        self.assertEqual(decisoes._sigla_tribunal("api_publica_trf5"), "TRF5")
+        self.assertEqual(decisoes._sigla_tribunal("api_publica_tre-ce"), "TRE-CE")
 
 
 if __name__ == "__main__":

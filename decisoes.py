@@ -526,6 +526,21 @@ def _pje_consulta(alias, grau=None):
     return PJE_CONSULTA.get(alias)
 
 
+def _sigla_tribunal(alias):
+    """Sigla do tribunal (ex.: ``api_publica_tjce`` -> ``TJCE``)."""
+    return (alias or "").replace("api_publica_", "").strip().upper()
+
+
+def _comunica_processo(alias, numero):
+    """Link do 'Comunica PJe' (CNJ), que abre as comunicações por URL."""
+    sigla = _sigla_tribunal(alias)
+    if not sigla or len(so_digitos(numero)) != 20:
+        return None
+    fmt = urllib.parse.quote(formatar_numero(numero))
+    return (f"https://comunica.pje.jus.br/consulta"
+            f"?numeroProcesso={fmt}&siglaTribunal={urllib.parse.quote(sigla)}")
+
+
 def links_processo(alias, numero, grau=None):
     """Lista de (rótulo, url) para abrir o processo nos sites oficiais.
 
@@ -544,6 +559,9 @@ def links_processo(alias, numero, grau=None):
     direto = _pje_direto(alias, numero)
     if direto:
         saida.append(("🔗 Abrir o processo no PJe", direto))
+    comunica = _comunica_processo(alias, numero)
+    if comunica:
+        saida.append(("🔗 PJe — comunicações do processo", comunica))
     pje = _pje_consulta(alias, grau)
     if pje:
         saida.append(("🔗 Consulta Pública do PJe", pje))
