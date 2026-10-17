@@ -129,7 +129,7 @@ DATAJUD_SITE = {
 # nome/número pela URL, então abrimos a página para o usuário digitar o termo.
 PJE_CONSULTA = {
     "api_publica_tjba": "https://pje.tjba.jus.br/pje/ConsultaPublica/listView.seam",
-    "api_publica_tjce": "https://pje.tjce.jus.br/pje/ConsultaPublica/listView.seam",
+    "api_publica_tjce": "https://pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica/listView.seam",
     "api_publica_tjma": "https://pje.tjma.jus.br/pje/ConsultaPublica/listView.seam",
     "api_publica_tjmg": "https://pje-consulta-publica.tjmg.jus.br/",
     "api_publica_tjpa": "https://pje.tjpa.jus.br/pje/ConsultaPublica/listView.seam",
@@ -139,6 +139,14 @@ PJE_CONSULTA = {
     "api_publica_tjrr": "https://pje.tjrr.jus.br/pje/ConsultaPublica/listView.seam",
     "api_publica_trf5": "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
     "api_publica_trt7": "https://pje.trt7.jus.br/consultaprocessual/",
+}
+
+# Em alguns tribunais a consulta pública fica em endereço próprio por grau.
+PJE_CONSULTA_GRAU = {
+    "api_publica_tjce": (
+        "https://pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica/listView.seam",
+        "https://pje-consulta.tjce.jus.br/pje2grau/ConsultaPublica/listView.seam",
+    ),
 }
 
 # PJe novo (SPA "Consulta Processual"): abre o processo DIRETO pela rota
@@ -510,6 +518,14 @@ def _pje_direto(alias, numero):
     return f"{base}detalhe-processo/{dig}"
 
 
+def _pje_consulta(alias, grau=None):
+    """URL da Consulta Pública do PJe, respeitando o grau quando ele muda."""
+    por_grau = PJE_CONSULTA_GRAU.get(alias)
+    if por_grau:
+        return por_grau[1] if _grau2(grau) else por_grau[0]
+    return PJE_CONSULTA.get(alias)
+
+
 def links_processo(alias, numero, grau=None):
     """Lista de (rótulo, url) para abrir o processo nos sites oficiais.
 
@@ -528,7 +544,7 @@ def links_processo(alias, numero, grau=None):
     direto = _pje_direto(alias, numero)
     if direto:
         saida.append(("🔗 Abrir o processo no PJe", direto))
-    pje = PJE_CONSULTA.get(alias)
+    pje = _pje_consulta(alias, grau)
     if pje:
         saida.append(("🔗 Consulta Pública do PJe", pje))
     if not saida:
@@ -555,7 +571,7 @@ def links_processo_nome(alias, nome):
     sig = DATAJUD_ESAJ.get(alias)
     if sig:
         saida.append(("🔎 Buscar por nome no e-SAJ", _esaj_nome(sig, nome)))
-    pje = PJE_CONSULTA.get(alias)
+    pje = _pje_consulta(alias)
     if pje:
         saida.append(("🔎 Buscar por nome no PJe", pje))
     if not saida:
