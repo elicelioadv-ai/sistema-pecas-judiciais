@@ -11,6 +11,7 @@ Sem dependências novas: usa somente a biblioteca padrão do Python.
 """
 from __future__ import annotations
 
+import http.cookiejar
 import io
 import json
 import os
@@ -562,6 +563,81 @@ def _pje_consulta(alias, grau=None):
     return PJE_CONSULTA.get(alias)
 
 
+def _pje_ca(base, numero_fmt, timeout=30):
+    """Descobre o código ``ca`` do processo na Consulta Pública do PJe (JSF).
+
+    A página de detalhe do PJe não abre pelo número: ela exige um código ``ca``
+    que a busca gera. Fazemos a busca (não tem captcha no TJCE) e lemos o ``ca``
+    do resultado. Devolve ``None`` quando a busca falha.
+    """
+    ctx = ssl.create_default_context()
+    ctx.set_ciphers("DEFAULT@SECLEVEL=1")
+    cj = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(
+        urllib.request.HTTPCookieProcessor(cj),
+        urllib.request.HTTPSHandler(context=ctx),
+    )
+    opener.addheaders = list(_CABECALHO.items())
+    try:
+        html = opener.open(base, timeout=timeout).read().decode("utf-8", "replace")
+    except Exception:
+        return None
+    estado = re.search(r'name="javax\.faces\.ViewState"[^>]*value="([^"]+)"', html)
+    dados = {
+        "AJAXREQUEST": "_viewRoot",
+        "fPP:numProcesso-inputNumeroProcessoDecoration:numProcesso-inputNumeroProcesso": numero_fmt,
+        "mascaraProcessoReferenciaRadio": "on",
+        "fPP:j_id162:processoReferenciaInput": "",
+        "fPP:dnp:nomeParte": "",
+        "fPP:j_id180:nomeAdv": "",
+        "fPP:j_id189:classeJudicial": "",
+        "fPP:j_id189:sgbClasseJudicial_selection": "",
+        "tipoMascaraDocumento": "on",
+        "fPP:dpDec:documentoParte": "",
+        "fPP:Decoration:numeroOAB": "",
+        "fPP:Decoration:j_id223": "",
+        "fPP:Decoration:estadoComboOAB": "org.jboss.seam.ui.NoSelectionConverter.noSelectionValue",
+        "fPP": "fPP",
+        "autoScroll": "",
+        "javax.faces.ViewState": estado.group(1) if estado else "j_id1",
+        "fPP:j_id244": "fPP:j_id244",
+        "AJAX:EVENTS_COUNT": "1",
+    }
+    cabecalhos = dict(_CABECALHO)
+    cabecalhos["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8"
+    cabecalhos["X-Requested-With"] = "XMLHttpRequest"
+    corpo = urllib.parse.urlencode(dados).encode()
+    try:
+        resposta = opener.open(urllib.request.Request(base, data=corpo, headers=cabecalhos),
+                               timeout=timeout).read().decode("utf-8", "replace")
+    except Exception:
+        return None
+    corte = resposta.find(numero_fmt)
+    trecho = resposta[:corte] if corte >= 0 else resposta
+    achados = re.findall(r"ca=([0-9a-f]{32,})", trecho)
+    return achados[-1] if achados else None
+
+
+def detalhe_pje(alias, numero, grau=None):
+    """URL da página de DETALHE do processo na Consulta Pública do PJe.
+
+    Descobre o ``ca`` e monta o endereço ``DetalheProcessoConsultaPublica``, que
+    abre o processo direto (sem cair no formulário de busca). Devolve ``None``
+    quando o tribunal não usa essa consulta (JSF) ou quando a busca falha.
+    """
+    base = _pje_consulta(alias, grau)
+    if not base or not base.endswith("ConsultaPublica/listView.seam"):
+        return None
+    if len(so_digitos(numero)) != 20:
+        return None
+    ca = _pje_ca(base, formatar_numero(numero))
+    if not ca:
+        return None
+    detalhe = base.replace("/ConsultaPublica/listView.seam",
+                           "/ConsultaPublica/DetalheProcessoConsultaPublica/listView.seam")
+    return f"{detalhe}?ca={ca}"
+
+
 def _sigla_tribunal(alias):
     """Sigla do tribunal (ex.: ``api_publica_tjce`` -> ``TJCE``)."""
     return (alias or "").replace("api_publica_", "").strip().upper()
@@ -577,12 +653,13 @@ def _comunica_processo(alias, numero):
             f"?numeroProcesso={fmt}&siglaTribunal={urllib.parse.quote(sigla)}")
 
 
-def links_processo(alias, numero, grau=None):
+def links_processo(alias, numero, grau=None, pje_detalhe=None):
     """Lista de (rótulo, url) para abrir o processo nos sites oficiais.
 
     Entrega links do PRÓPRIO tribunal: e-SAJ, site do tribunal (STJ/TST) e o
-    PJe local do estado (o SPA novo, quando o tribunal tem, ou a Consulta
-    Pública do PJe do próprio tribunal).
+    PJe local do estado (o SPA novo, quando o tribunal tem, ou a página de
+    detalhe da Consulta Pública do PJe). ``pje_detalhe`` permite reaproveitar um
+    link de detalhe já descoberto (evita repetir a busca).
     """
     dig = so_digitos(numero)
     saida = []
@@ -594,7 +671,7 @@ def links_processo(alias, numero, grau=None):
     modelo = DATAJUD_SITE.get(alias)
     if modelo:
         saida.append(("🔗 Abrir o processo no site do tribunal", modelo.format(dig=dig)))
-    pje = _pje_direto(alias, numero) or _pje_consulta(alias, grau)
+    pje = pje_detalhe or _pje_direto(alias, numero) or _pje_consulta(alias, grau)
     if pje:
         saida.append(("🔗 Abrir o processo no PJe", pje))
     if not saida:

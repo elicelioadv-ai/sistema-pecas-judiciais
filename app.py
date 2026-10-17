@@ -37,12 +37,23 @@ import usuarios
 importlib.reload(decisoes)
 
 
-def _links_processo(alias, numero, grau=None):
-    """Links oficiais do processo; tolera um `decisoes` antigo em cache."""
+def _links_processo(alias, numero, grau=None, com_detalhe=True):
+    """Links oficiais do processo; tolera um `decisoes` antigo em cache.
+
+    ``com_detalhe`` liga a busca do link DIRETO do PJe (página de detalhe).
+    """
     fn = getattr(decisoes, "links_processo", None)
-    if fn:
-        return fn(alias, numero, grau)
-    return [("🔗 Abrir no site do tribunal", decisoes.link_processo(alias, numero))]
+    if not fn:
+        return [("🔗 Abrir no site do tribunal", decisoes.link_processo(alias, numero))]
+    detalhe = _pje_detalhe(alias, numero, grau) if com_detalhe else None
+    return fn(alias, numero, grau, pje_detalhe=detalhe)
+
+
+@st.cache_data(ttl=3 * 3600, show_spinner=False)
+def _pje_detalhe(alias, numero, grau=None):
+    """Cache do link direto do PJe (página de detalhe); tolera `decisoes` antigo."""
+    fn = getattr(decisoes, "detalhe_pje", None)
+    return fn(alias, numero, grau) if fn else None
 
 
 def _links_processo_nome(alias, nome):
@@ -1616,7 +1627,7 @@ def aba_processos():
                            f"no e-SAJ:")
                 for numero in achados[:10]:
                     st.markdown(f"**{numero}**")
-                    opcoes = _links_processo(alias, numero)
+                    opcoes = _links_processo(alias, numero, com_detalhe=False)
                     for coluna, (rotulo_link, url_link) in zip(st.columns(len(opcoes)), opcoes):
                         coluna.link_button(rotulo_link, url_link)
                 if len(achados) > 10:

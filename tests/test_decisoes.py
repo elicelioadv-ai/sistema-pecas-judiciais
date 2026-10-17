@@ -59,6 +59,17 @@ class TestLinksProcesso(unittest.TestCase):
         self.assertFalse(any("formulário" in r for r in rotulos))
         self.assertFalse(any("comunica" in u.lower() for _, u in links))
 
+    def test_pje_detalhe_tem_precedencia(self):
+        link = ("https://exemplo/ConsultaPublica/DetalheProcessoConsultaPublica/"
+                "listView.seam?ca=abc")
+        links = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160",
+                                        "G1", pje_detalhe=link)
+        pje = [u for r, u in links if "no PJe" in r][0]
+        self.assertEqual(pje, link)
+
+    def test_detalhe_pje_ignora_tribunal_sem_consulta_jsf(self):
+        self.assertIsNone(decisoes.detalhe_pje("api_publica_trt7", "0001234-56.2024.5.07.0001"))
+
     def test_sigla_tribunal(self):
         self.assertEqual(decisoes._sigla_tribunal("api_publica_tjce"), "TJCE")
         self.assertEqual(decisoes._sigla_tribunal("api_publica_trf5"), "TRF5")
