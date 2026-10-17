@@ -23,13 +23,20 @@ class TestLinksProcesso(unittest.TestCase):
         links = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G2")
         self.assertIn("esaj.tjce.jus.br/cposg/search.do", links[0][1])
 
-    def test_pje_tjce_host_correto_por_grau(self):
-        g1 = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G1")
-        g2 = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G2")
-        pje1 = [u for r, u in g1 if "Consulta Pública do PJe" in r][0]
-        pje2 = [u for r, u in g2 if "Consulta Pública do PJe" in r][0]
-        self.assertEqual(pje1, "https://pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica/listView.seam")
-        self.assertEqual(pje2, "https://pje-consulta.tjce.jus.br/pje2grau/ConsultaPublica/listView.seam")
+    def test_pje_tjce_consulta_por_grau(self):
+        self.assertEqual(
+            decisoes._pje_consulta("api_publica_tjce", "G1"),
+            "https://pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica/listView.seam")
+        self.assertEqual(
+            decisoes._pje_consulta("api_publica_tjce", "G2"),
+            "https://pje-consulta.tjce.jus.br/pje2grau/ConsultaPublica/listView.seam")
+
+    def test_tjce_nao_mostra_formulario_quando_ha_link_direto(self):
+        links = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G1")
+        rotulos = [r for r, _ in links]
+        self.assertTrue(any("e-SAJ" in r for r in rotulos))
+        self.assertTrue(any("Comunica" in r for r in rotulos))
+        self.assertFalse(any("formulário" in r for r in rotulos))
 
     def test_pje_trt_abre_direto(self):
         links = decisoes.links_processo("api_publica_trt7", "0001234-56.2024.5.07.0001")

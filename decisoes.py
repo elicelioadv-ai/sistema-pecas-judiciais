@@ -580,27 +580,32 @@ def _comunica_processo(alias, numero):
 def links_processo(alias, numero, grau=None):
     """Lista de (rótulo, url) para abrir o processo nos sites oficiais.
 
-    Usa o e-SAJ (link que abre direto), outros links diretos (STJ/TST), o PJe
-    novo (link direto por numeração) e, por fim, a Consulta Pública do PJe.
+    Sempre que possível entrega um link que ABRE O PROCESSO DIRETO: e-SAJ,
+    site do tribunal (STJ/TST), PJe novo (SPA) e o Comunica PJe (CNJ), que
+    preenche e busca o número pela própria URL. O formulário da Consulta
+    Pública do PJe (que pede o número de novo) só aparece como último recurso,
+    quando não existe nenhum link direto.
     """
     dig = so_digitos(numero)
     saida = []
     sig = DATAJUD_ESAJ.get(alias)
     if sig:
         grau_txt = "2º grau" if _grau2(grau) else "1º grau"
-        saida.append((f"🔗 Abrir no e-SAJ ({grau_txt})", _esaj_processo(sig, numero, grau)))
+        saida.append((f"🔗 Abrir o processo no e-SAJ ({grau_txt})",
+                      _esaj_processo(sig, numero, grau)))
     modelo = DATAJUD_SITE.get(alias)
     if modelo:
-        saida.append(("🔗 Abrir no site do tribunal", modelo.format(dig=dig)))
+        saida.append(("🔗 Abrir o processo no site do tribunal", modelo.format(dig=dig)))
     direto = _pje_direto(alias, numero)
     if direto:
         saida.append(("🔗 Abrir o processo no PJe", direto))
     comunica = _comunica_processo(alias, numero)
     if comunica:
-        saida.append(("🔗 PJe — comunicações do processo", comunica))
-    pje = _pje_consulta(alias, grau)
-    if pje:
-        saida.append(("🔗 Consulta Pública do PJe", pje))
+        saida.append(("🔗 Abrir o processo no PJe (Comunica/CNJ)", comunica))
+    if not saida:
+        pje = _pje_consulta(alias, grau)
+        if pje:
+            saida.append(("🔎 Buscar no PJe (formulário)", pje))
     if not saida:
         consulta = urllib.parse.quote(f'"{formatar_numero(numero)}" site:jus.br')
         saida.append(("🔗 Localizar no site oficial (Google)",
