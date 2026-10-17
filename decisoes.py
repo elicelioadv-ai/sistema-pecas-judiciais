@@ -580,11 +580,9 @@ def _comunica_processo(alias, numero):
 def links_processo(alias, numero, grau=None):
     """Lista de (rótulo, url) para abrir o processo nos sites oficiais.
 
-    Sempre que possível entrega um link que ABRE O PROCESSO DIRETO: e-SAJ,
-    site do tribunal (STJ/TST), PJe novo (SPA) e o Comunica PJe (CNJ), que
-    preenche e busca o número pela própria URL. O formulário da Consulta
-    Pública do PJe (que pede o número de novo) só aparece como último recurso,
-    quando não existe nenhum link direto.
+    Entrega links do PRÓPRIO tribunal: e-SAJ, site do tribunal (STJ/TST) e o
+    PJe local do estado (o SPA novo, quando o tribunal tem, ou a Consulta
+    Pública do PJe do próprio tribunal).
     """
     dig = so_digitos(numero)
     saida = []
@@ -596,16 +594,9 @@ def links_processo(alias, numero, grau=None):
     modelo = DATAJUD_SITE.get(alias)
     if modelo:
         saida.append(("🔗 Abrir o processo no site do tribunal", modelo.format(dig=dig)))
-    direto = _pje_direto(alias, numero)
-    if direto:
-        saida.append(("🔗 Abrir o processo no PJe", direto))
-    comunica = _comunica_processo(alias, numero)
-    if comunica:
-        saida.append(("🔗 Abrir o processo no PJe (Comunica/CNJ)", comunica))
-    if not saida:
-        pje = _pje_consulta(alias, grau)
-        if pje:
-            saida.append(("🔎 Buscar no PJe (formulário)", pje))
+    pje = _pje_direto(alias, numero) or _pje_consulta(alias, grau)
+    if pje:
+        saida.append(("🔗 Abrir o processo no PJe", pje))
     if not saida:
         consulta = urllib.parse.quote(f'"{formatar_numero(numero)}" site:jus.br')
         saida.append(("🔗 Localizar no site oficial (Google)",

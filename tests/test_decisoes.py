@@ -31,12 +31,14 @@ class TestLinksProcesso(unittest.TestCase):
             decisoes._pje_consulta("api_publica_tjce", "G2"),
             "https://pje-consulta.tjce.jus.br/pje2grau/ConsultaPublica/listView.seam")
 
-    def test_tjce_nao_mostra_formulario_quando_ha_link_direto(self):
+    def test_tjce_botao_pje_aponta_pje_local(self):
         links = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G1")
         rotulos = [r for r, _ in links]
         self.assertTrue(any("e-SAJ" in r for r in rotulos))
-        self.assertTrue(any("Comunica" in r for r in rotulos))
-        self.assertFalse(any("formulário" in r for r in rotulos))
+        pje = [u for r, u in links if "no PJe" in r][0]
+        self.assertIn("pje-consulta.tjce.jus.br/pje1grau/ConsultaPublica", pje)
+        self.assertFalse(any("CNJ" in r for r in rotulos))
+        self.assertFalse(any("comunica" in u.lower() for _, u in links))
 
     def test_pje_trt_abre_direto(self):
         links = decisoes.links_processo("api_publica_trt7", "0001234-56.2024.5.07.0001")
@@ -50,12 +52,12 @@ class TestLinksProcesso(unittest.TestCase):
         url = decisoes.link_processo("api_publica_trt7", "0001234-56.2024.5.07.0001")
         self.assertIn("detalhe-processo", url)
 
-    def test_comunica_pje(self):
-        links = decisoes.links_processo("api_publica_tjce", "0200677-09.2023.8.06.0160", "G1")
-        comunica = [u for r, u in links if "comunica" in r.lower()][0]
-        self.assertIn("comunica.pje.jus.br/consulta", comunica)
-        self.assertIn("numeroProcesso=0200677-09.2023.8.06.0160", comunica)
-        self.assertIn("siglaTribunal=TJCE", comunica)
+    def test_trt_nao_mostra_formulario_pje(self):
+        links = decisoes.links_processo("api_publica_trt7", "0001234-56.2024.5.07.0001")
+        rotulos = [r for r, _ in links]
+        self.assertTrue(any("no PJe" in r for r in rotulos))
+        self.assertFalse(any("formulário" in r for r in rotulos))
+        self.assertFalse(any("comunica" in u.lower() for _, u in links))
 
     def test_sigla_tribunal(self):
         self.assertEqual(decisoes._sigla_tribunal("api_publica_tjce"), "TJCE")
