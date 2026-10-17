@@ -141,6 +141,16 @@ PJE_CONSULTA = {
     "api_publica_trt7": "https://pje.trt7.jus.br/consultaprocessual/",
 }
 
+# PJe novo (SPA "Consulta Processual"): abre o processo DIRETO pela rota
+# /detalhe-processo/<20 dígitos>, sem cair no formulário de busca.
+# {base} termina com "/". Confirmado nos TRTs abaixo.
+PJE_DIRETO = {
+    **{
+        f"api_publica_trt{n}": f"https://pje.trt{n}.jus.br/consultaprocessual/"
+        for n in (2, 4, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24)
+    },
+}
+
 
 # Atalhos oficiais (não é "feed": abre a busca no site do próprio órgão)
 ATALHOS = [    ("⚖️ Tribunais superiores", [
@@ -491,11 +501,20 @@ def buscar_nome_esaj(alias, nome):
     return achados
 
 
+def _pje_direto(alias, numero):
+    """Link do PJe novo (SPA) que abre o processo DIRETO pela numeração única."""
+    base = PJE_DIRETO.get(alias)
+    dig = so_digitos(numero)
+    if not base or len(dig) != 20:
+        return None
+    return f"{base}detalhe-processo/{dig}"
+
+
 def links_processo(alias, numero, grau=None):
     """Lista de (rótulo, url) para abrir o processo nos sites oficiais.
 
-    Usa o e-SAJ (link que abre direto), outros links diretos (STJ/TST), a
-    Consulta Pública do PJe e, em último caso, uma busca restrita ao judiciário.
+    Usa o e-SAJ (link que abre direto), outros links diretos (STJ/TST), o PJe
+    novo (link direto por numeração) e, por fim, a Consulta Pública do PJe.
     """
     dig = so_digitos(numero)
     saida = []
@@ -506,6 +525,9 @@ def links_processo(alias, numero, grau=None):
     modelo = DATAJUD_SITE.get(alias)
     if modelo:
         saida.append(("🔗 Abrir no site do tribunal", modelo.format(dig=dig)))
+    direto = _pje_direto(alias, numero)
+    if direto:
+        saida.append(("🔗 Abrir o processo no PJe", direto))
     pje = PJE_CONSULTA.get(alias)
     if pje:
         saida.append(("🔗 Consulta Pública do PJe", pje))
