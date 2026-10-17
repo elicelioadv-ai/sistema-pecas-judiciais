@@ -55,6 +55,9 @@ class TestLinksProcesso(unittest.TestCase):
         self.assertEqual(decisoes._sigla_tribunal("api_publica_trf5"), "TRF5")
         self.assertEqual(decisoes._sigla_tribunal("api_publica_tre-ce"), "TRE-CE")
 
+    def test_comunicacoes_numero_invalido(self):
+        self.assertIsNone(decisoes.comunicacoes_processo("api_publica_tjce", "123"))
+
 
 if __name__ == "__main__":
     unittest.main()

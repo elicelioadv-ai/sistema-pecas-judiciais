@@ -1392,6 +1392,13 @@ def _datajud_consultar(alias, numero):
     return decisoes.consultar_processo(alias, numero)
 
 
+@st.cache_data(ttl=1 * 3600, show_spinner=False)
+def _comunicacoes_processo(alias, numero):
+    """Comunicações (Diário/intimações) do processo; tolera `decisoes` antigo."""
+    fn = getattr(decisoes, "comunicacoes_processo", None)
+    return fn(alias, numero) if fn else None
+
+
 def aba_decisoes():
     st.subheader("📰 Decisões & Processos")
     st.caption(
@@ -1569,6 +1576,23 @@ def aba_processos():
                 with st.expander(f"Ver as demais {len(p['movimentos']) - 20} movimentações"):
                     for m in p["movimentos"][20:]:
                         st.markdown(f"- `{m['data']}` — {m['nome']}")
+            comunica = _comunicacoes_processo(alias, p["numero"])
+            if comunica:
+                st.markdown(f"**📬 Comunicações no Diário / PJe ({len(comunica)})** — mais recentes primeiro:")
+                for c in comunica[:20]:
+                    linha = f"- `{c['data']}` — **{c['tipo']}** — {c['orgao']}"
+                    if c["meio"]:
+                        linha += f"  _( {c['meio']} )_"
+                    st.markdown(linha)
+                    if c["texto"]:
+                        with st.expander("📄 ler o teor da comunicação"):
+                            st.write(c["texto"])
+                            if c["link"]:
+                                st.link_button("🔗 Abrir o documento no PJe", c["link"])
+                    elif c["link"]:
+                        st.link_button("🔗 Abrir o documento no PJe", c["link"])
+                if len(comunica) > 20:
+                    st.caption(f"Mostrando 20 de {len(comunica)} comunicações.")
             st.caption("Processos em segredo de justiça não aparecem. Confirme no site do tribunal.")
     else:
         st.caption("O **DataJud** não divulga nomes de partes. A busca por nome é feita no "

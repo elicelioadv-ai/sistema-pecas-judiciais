@@ -509,6 +509,42 @@ def buscar_nome_esaj(alias, nome):
     return achados
 
 
+COMUNICA_API = "https://comunicaapi.pje.jus.br/api/v1/comunicacao"
+
+
+def comunicacoes_processo(alias, numero):
+    """Comunicações (intimações/publicações) do processo, pela API do PJe/CNJ.
+
+    Devolve uma lista de dicts com ``data``, ``tipo``, ``orgao``, ``meio``,
+    ``texto`` e ``link`` (ordem: mais recentes primeiro); devolve ``None``
+    quando a consulta falha (tribunal sem cobertura, rede etc.).
+    """
+    sigla = _sigla_tribunal(alias)
+    dig = so_digitos(numero)
+    if not sigla or len(dig) != 20:
+        return None
+    url = (f"{COMUNICA_API}?numeroProcesso={urllib.parse.quote(formatar_numero(numero))}"
+           f"&siglaTribunal={urllib.parse.quote(sigla)}")
+    try:
+        dados = json.loads(_get_texto(url))
+    except Exception:
+        return None
+    itens = dados.get("items") or []
+    saida = []
+    for it in itens:
+        saida.append({
+            "data": it.get("datadisponibilizacao") or it.get("data_disponibilizacao") or "",
+            "ordena": it.get("data_disponibilizacao") or "",
+            "tipo": it.get("tipoComunicacao") or it.get("tipoDocumento") or "",
+            "orgao": it.get("nomeOrgao") or "",
+            "meio": it.get("meiocompleto") or "",
+            "texto": (it.get("texto") or "").strip(),
+            "link": it.get("link") or "",
+        })
+    saida.sort(key=lambda c: c["ordena"], reverse=True)
+    return saida
+
+
 def _pje_direto(alias, numero):
     """Link do PJe novo (SPA) que abre o processo DIRETO pela numeração única."""
     base = PJE_DIRETO.get(alias)
