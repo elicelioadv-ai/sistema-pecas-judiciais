@@ -1,0 +1,33 @@
+name: Manter o app acordado
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acordar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Baixar o repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar o Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar o navegador (Playwright)
+        run: |
+          pip install playwright
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Visitar o app e acordar se preciso
+        env:
+          STREAMLIT_APP_URL: https://sistema-pecas-judiciais.streamlit.app/
+        run: python keepalive.py
