@@ -719,6 +719,15 @@ _definir_idioma()
 # "cookie de sessao" assinado: ao voltar, o app entra sozinho.
 _COOKIE_SESSAO = "pecas_sessao"
 _DIAS_SESSAO = 30
+_BUILD = "87c0bb7-sessao"
+
+
+def _cookies_recebidas():
+    """Todos os cookies que o navegador mandou para o servidor."""
+    try:
+        return dict(st.context.cookies)
+    except Exception:
+        return {}
 
 
 def _token_sessao(usuario, admin):
@@ -738,15 +747,19 @@ def _cookie_sessao():
 
 
 def _gravar_cookie_sessao(usuario, admin):
-    """Manda o navegador lembrar o acesso (30 dias)."""
+    """Manda o navegador lembrar do acesso (30 dias)."""
     token = _token_sessao(usuario, admin)
+    valor = (_COOKIE_SESSAO + "=" + token + "; max-age=" + str(_DIAS_SESSAO * 24 * 3600)
+             + "; path=/; SameSite=Lax")
+    # escreve no iframe, no pai e na pagina de fora: assim funciona mesmo se o
+    # navegador bloquear o cookie dentro de um dos frames
+    js = ("<script>(function(){var c=" + json.dumps(valor) + ";"
+          "try{document.cookie=c;}catch(e){}"
+          "try{var p=window.parent;for(var i=0;i<6&&p;i++){"
+          "p.document.cookie=c;try{p=p.parent;}catch(x){break;}}}catch(e){}"
+          "})();</script>")
     try:
-        components.html(
-            "<script>try { document.cookie = '"
-            + _COOKIE_SESSAO + "=" + token + "; max-age=" + str(_DIAS_SESSAO * 24 * 3600)
-            + "; path=/; SameSite=Lax'; } catch (e) {}</script>",
-            height=0,
-        )
+        components.html(js, height=0)
     except Exception:
         pass
 
@@ -925,6 +938,14 @@ if not st.session_state.setdefault("autenticado", False):
             except Exception as e:
                 st.error(f"Não foi possível criar a conta: {e}")
 
+    # marcacao da versao + diagnostico ( invisivel para o usuario normal)
+    st.markdown("<div style='display:none' data-build='" + _BUILD + "'></div>",
+                unsafe_allow_html=True)
+    _ck = _cookies_recebidas()
+    if _ck.get("spj_diag") or st.query_params.get("diag"):
+        st.info("DIAG build=" + _BUILD + " | cookies recebidos: "
+                + (", ".join(sorted(_ck)) or "(nenhum)"))
+
     st.stop()
 
 # grava o cookie de sessao (agora que o app ja entrou): assim, ao atualizar a
@@ -932,6 +953,17 @@ if not st.session_state.setdefault("autenticado", False):
 _pendente_cookie = st.session_state.pop("_cookie_pendente", None)
 if _pendente_cookie:
     _gravar_cookie_sessao(_pendente_cookie[0], _pendente_cookie[1])
+    st.session_state["_cookie_conferido"] = False
+elif st.session_state.get("_cookie_conferido") is False:
+    # na execucao seguinte o cookie ja deveria ter chegado no servidor
+    st.session_state["_cookie_conferido"] = True
+    if not _cookie_sessao():
+        st.warning(
+            "⚠️ O seu navegador está bloqueando cookies: se você atualizar a página, "
+            "vai ter que entrar de novo. Permita cookies para este site "
+            "(cadeado ao lado do endereço) e entre mais uma vez.",
+            icon="⚠️",
+        )
 
 # tema visual do interior (aplicado só depois do login)
 st.markdown(_CSS_TEMA, unsafe_allow_html=True)
