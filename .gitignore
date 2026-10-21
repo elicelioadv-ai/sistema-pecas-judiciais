@@ -13,6 +13,7 @@ __pycache__/
 # Logs e dados gerados em tempo de uso
 gerador.log
 historico/*.json
+rascunhos/
 saida/*
 
 # Sistema

@@ -26,7 +26,8 @@ PASTA_BASE = PASTA / "base"
 PASTA_MODELOS = PASTA / "modelos"
 PASTA_SAIDA = PASTA / "saida"
 PASTA_HISTORICO = PASTA / "historico"
-for _p in (PASTA_BASE, PASTA_MODELOS, PASTA_SAIDA, PASTA_HISTORICO):
+PASTA_RASCUNHOS = PASTA / "rascunhos"
+for _p in (PASTA_BASE, PASTA_MODELOS, PASTA_SAIDA, PASTA_HISTORICO, PASTA_RASCUNHOS):
     _p.mkdir(exist_ok=True)
 
 _LOG = logging.getLogger("gerador")
@@ -408,7 +409,8 @@ Responda EXATAMENTE neste formato:
 
 
 def limpar_fatos(dados_caso, narrativa, anonimizador=None):
-    entrada = f"DADOS DO CASO:\n{dados_caso}\n\nNARRATIVA BRUTA DO CLIENTE:\n{narrativa}"
+    entrada = (f"DADOS DO CASO:\n{dados_caso}\n\nNARRATIVA BRUTA DO CLIENTE:\n"
+               f"{_texto_para_ia(narrativa)}")
     mapa = {}
     if anonimizador is not None:
         entrada, mapa = anonimizador.mascarar(entrada)
@@ -940,3 +942,60 @@ def apagar_caso(nome, dono=""):
     if caminho.exists():
         caminho.unlink()
     _backup_remover(f"{nome}.json", _subpasta_casos(dono))
+
+
+# ------------------------------------------------------------------ rascunho automático
+def _pasta_rascunho(dono, criar=True):
+    pasta = PASTA_RASCUNHOS / (_dono_seguro(dono) or "sem_dono")
+    if criar:
+        pasta.mkdir(parents=True, exist_ok=True)
+    return pasta
+
+
+def salvar_rascunho(dados, dono=""):
+    """Guarda o trabalho em andamento (relato/fatos/peça) para nunca perder.
+
+    É o que salva a página se o app fechar, o navegador travar ou a sessão cair.
+    """
+    caminho = _pasta_rascunho(dono) / "rascunho.json"
+    dados = dict(dados)
+    dados["_salvo_em"] = datetime.now().isoformat(timespec="seconds")
+    dados["_dono"] = (dono or "").strip()
+    caminho.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
+    return caminho
+
+
+def carregar_rascunho(dono=""):
+    """Devolve o rascunho salvo (ou None)."""
+    caminho = _pasta_rascunho(dono, criar=False) / "rascunho.json"
+    if not caminho.exists():
+        return None
+    try:
+        with open(caminho, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        _LOG.warning("Rascunho ilegível (%s)", caminho, exc_info=True)
+        return None
+
+
+def apagar_rascunho(dono=""):
+    """Apaga o rascunho (quando o trabalho foi salvo como caso)."""
+    caminho = _pasta_rascunho(dono, criar=False) / "rascunho.json"
+    try:
+        if caminho.exists():
+            caminho.unlink()
+        return True
+    except Exception:
+        return False
+
+
+def _texto_para_ia(texto):
+    """Tira as marcações visuais e deixa o texto pronto para a IA.
+
+    O lawyer marca o texto (negrito, sublinhado, destaque) só para highlight;
+    para a IA, negrito e itálico em markdown bastam.
+    """
+    t = texto or ""
+    t = re.sub(r"==(.+?)==", r"**\1**", t, flags=re.S)
+    t = re.sub(r"__(.+?)__", r"\1", t, flags=re.S)
+    return t

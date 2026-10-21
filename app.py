@@ -10,6 +10,7 @@ import html
 import importlib
 import json
 import random
+import re
 
 import pandas as pd
 import streamlit as st
@@ -392,6 +393,25 @@ a[data-testid^="stBaseLinkButton-"]:hover {
 [data-testid="stSidebar"] button[data-testid^="stBaseButton-"]:hover {
     background: var(--azul-petroleo) !important; border-color: rgba(255,255,255,0.35) !important;
     color: #FFFFFF !important;
+}
+/* barra de formatação do texto (tipo Word) */
+.__spj_barra__ {
+    display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+    background: #ECEFF1; border: 1px solid var(--botao-busca); border-radius: 6px;
+    padding: 4px 6px; margin: 0 0 6px 0;
+}
+.__spj_barra__ button {
+    min-width: 30px; height: 28px; padding: 0 6px; line-height: 1;
+    border: 1px solid var(--botao-busca); border-radius: 4px;
+    background: #FFFFFF; color: var(--azul-escuro); font-size: 14px;
+    cursor: pointer; font-family: inherit;
+}
+.__spj_barra__ button:hover { background: var(--aba-ativa); border-color: var(--azul-escuro); }
+.__spj_barra__ button:active { background: var(--botao-busca); }
+/* aviso de recuperacao do texto */
+.__spj_aviso__ {
+    background: #FFF8E1; border: 1px solid #F5AF00; color: #6B4B00;
+    border-radius: 6px; padding: 6px 10px; margin: 0 0 6px 0; font-size: 0.85rem;
 }
 </style>
 """
@@ -822,6 +842,276 @@ def alerta(nivel, msg):
     st.markdown(f"{icone} {msg}")
 
 
+# ------------------------------------------------- barra de formatação (tipo Word)
+# A caixa de texto do Streamlit é "crua". Esta barra injeta botões (negrito,
+# itálico, lista...) que marcam o texto selecionado, como no Word. As marcas
+# (**negrito**, _itálico_...) vão junto para a IA e aparecem formatadas na
+# pré-visualização.
+_JS_BARRA = r"""<script>
+(function () {
+  var ALVO = "__ALVO__";
+  var CHAVE = "__CHAVE__";
+  var P = window.parent;
+  var doc = P.document;
+  var MEU = "spj" + Math.random().toString(36).slice(2, 9);
+  var ultimo = null;
+  var restaurado = false;
+  var BTNS = [
+    {t:"Negrito",            i:"<b>N</b>",  a:"**", b:"**"},
+    {t:"Itálico",            i:"<i>I</i>",  a:"*",  b:"*"},
+    {t:"Sublinhado",         i:"<u>S</u>",  a:"__", b:"__"},
+    {t:"Tachado",            i:"<s>T</s>",  a:"~~", b:"~~"},
+    {t:"Destaque",           i:"<mark>A</mark>", a:"==", b:"=="},
+    {t:"Título",             i:"H",        p:"## "},
+    {t:"Lista",              i:"&#8226;",  p:"- "},
+    {t:"Lista numerada",     i:"1.",       p:"1. "},
+    {t:"Citação",            i:"&#10077;", p:"> "},
+    {t:"Desfazer",           i:"&#8630;",  u:true},
+    {t:"Refazer",            i:"&#8631;",  r:true},
+    {t:"Limpar formatação",  i:"&#129534;", c:true}
+  ];
+
+  function achar() {
+    var areas = doc.querySelectorAll(".stTextArea");
+    var achado = null;
+    for (var i = 0; i < areas.length; i++) {
+      var lbl = areas[i].querySelector("label");
+      if (lbl && lbl.textContent.indexOf(ALVO) === 0) {
+        if (!achado) achado = areas[i];
+        var r = areas[i].getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) return areas[i];
+      }
+    }
+    return achado;
+  }
+
+  function caixa() {
+    var c = achar();
+    return c ? c.querySelector("textarea") : null;
+  }
+
+  function sel(ta) { return {i: ta.selectionStart, f: ta.selectionEnd, v: ta.value}; }
+
+  function setValor(ta, novo) {
+    try {
+      var setter = Object.getOwnPropertyDescriptor(P.HTMLTextAreaElement.prototype, "value").set;
+      setter.call(ta, novo);
+      ta.dispatchEvent(new P.Event("input", {bubbles: true}));
+    } catch (e) { ta.value = novo; }
+  }
+
+  // manda o texto para o servidor sem tirar o foco do campo
+  function comitar(ta) {
+    try {
+      ta.dispatchEvent(new P.Event("focusout", {bubbles: true}));
+    } catch (e) {}
+  }
+
+  function gravar(ta, novo, i, f) {
+    setValor(ta, novo);
+    try { ta.focus(); ta.setSelectionRange(i, f); } catch (e) {}
+    salvarLocal(novo);
+  }
+
+  function envolver(ta, a, b) {
+    var s = sel(ta);
+    var t = s.v.slice(s.i, s.f) || "texto";
+    var novo = s.v.slice(0, s.i) + a + t + b + s.v.slice(s.f);
+    var p = s.i + a.length + t.length;
+    gravar(ta, novo, p, p);
+  }
+
+  function bloco(ta, pref) {
+    var s = sel(ta);
+    var ini = s.v.lastIndexOf("\n", Math.max(0, s.i - 1)) + 1;
+    var fim = s.v.indexOf("\n", s.f);
+    if (fim < 0) fim = s.v.length;
+    var linhas = s.v.slice(ini, fim).split("\n");
+    var novo = linhas.map(function (l) {
+      return pref + l.replace(/^\s*(#{1,6}\s+|[-*+]\s+|\d+\.\s+|>\s+)/, "");
+    }).join("\n");
+    var todo = s.v.slice(0, ini) + novo + s.v.slice(fim);
+    gravar(ta, todo, ini, ini + novo.length);
+  }
+
+  function limpar(ta) {
+    var s = sel(ta);
+    var t = s.v.slice(s.i, s.f) || s.v;
+    var limpo = t.replace(/\*\*|__|~~|==/g, "")
+                 .replace(/^\s*(#{1,6}\s+|[-*+]\s+|\d+\.\s+|>\s+)/gm, "");
+    var novo = s.v.slice(0, s.i) + limpo + s.v.slice(s.f);
+    gravar(ta, novo, s.i, s.i + limpo.length);
+  }
+
+  function aplicar(b) {
+    var cx = caixa();
+    if (!cx) return;
+    try { cx.focus(); } catch (e) {}
+    if (b.u) { try { doc.execCommand("undo"); } catch (e) {} return; }
+    if (b.r) { try { doc.execCommand("redo"); } catch (e) {} return; }
+    if (b.c) { limpar(cx); return; }
+    if (b.p) { bloco(cx, b.p); return; }
+    envolver(cx, b.a, b.b);
+  }
+
+  function ligar(btn, b) {
+    if (btn.getAttribute("data-spj-ligado") === MEU) return;
+    btn.setAttribute("data-spj-ligado", MEU);
+    btn.addEventListener("mousedown", function (ev) { ev.preventDefault(); });
+    btn.addEventListener("click", function () {
+      var agora = new Date().getTime();
+      if (doc.__spjAgora && (agora - doc.__spjAgora) < 80) return;
+      doc.__spjAgora = agora;
+      aplicar(b);
+      var cx = caixa();
+      if (cx) { ultimo = cx.value; comitar(cx); }
+    });
+  }
+
+  function montar(cont) {
+    if (!cont || cont.querySelector(".__spj_barra__")) return;
+    var ta = cont.querySelector("textarea");
+    if (!ta) return;
+    var barra = doc.createElement("div");
+    barra.className = "__spj_barra__";
+    BTNS.forEach(function (b) {
+      var btn = doc.createElement("button");
+      btn.type = "button";
+      btn.title = b.t;
+      btn.setAttribute("aria-label", b.t);
+      btn.innerHTML = b.i;
+      ligar(btn, b);
+      barra.appendChild(btn);
+    });
+    var lbl = cont.querySelector("label");
+    if (lbl && lbl.parentNode) {
+      lbl.parentNode.insertBefore(barra, lbl.nextSibling);
+    } else {
+      cont.insertBefore(barra, cont.firstChild);
+    }
+  }
+
+  // ---------------- backup no navegador (o texto nunca se perde) --------
+  function salvarLocal(txt) {
+    try {
+      if (!txt || !txt.trim()) { P.localStorage.removeItem(CHAVE); return; }
+      P.localStorage.setItem(CHAVE, JSON.stringify({t: txt, ts: new Date().getTime()}));
+    } catch (e) {}
+  }
+
+  function lerLocal() {
+    try {
+      var bruto = P.localStorage.getItem(CHAVE);
+      if (!bruto) return null;
+      var o = JSON.parse(bruto);
+      return (o && o.t) ? o.t : null;
+    } catch (e) { return null; }
+  }
+
+  P.__spjSalvar = salvarLocal;
+  P.__spjLer = lerLocal;
+  P.__spjApagar = function () {
+    try { P.localStorage.removeItem(CHAVE); } catch (e) {}
+  };
+
+  function aviso(cont, texto) {
+    try {
+      if (cont.querySelector(".__spj_aviso__")) return;
+      var av = doc.createElement("div");
+      av.className = "__spj_aviso__";
+      av.textContent = texto;
+      cont.insertBefore(av, cont.firstChild);
+    } catch (e) {}
+  }
+
+  function recuperar() {
+    if (restaurado) return;
+    var cont = achar();
+    if (!cont) return;
+    var ta = cont.querySelector("textarea");
+    if (!ta) return;
+    if ((ta.value || "").trim()) { restaurado = true; return; }
+    var salvo = lerLocal();
+    if (!salvo || !salvo.trim()) return;
+    restaurado = true;
+    setValor(ta, salvo);
+    ultimo = salvo;
+    aviso(cont, "💾 Recuperei o texto que você tinha digitado (ficou salvo no seu navegador).");
+    setTimeout(function () { comitar(ta); }, 400);
+  }
+
+  function vigiar() {
+    var cont = achar();
+    if (!cont) return;
+    var ta = cont.querySelector("textarea");
+    if (!ta) return;
+    if (ta.getAttribute("data-spj-vigia") !== MEU) {
+      ta.setAttribute("data-spj-vigia", MEU);
+      ta.addEventListener("input", function () { salvarLocal(ta.value); });
+    }
+  }
+
+  function garantir() {
+    try {
+      var cont = achar();
+      if (!cont) return;
+      var barra = cont.querySelector(".__spj_barra__");
+      if (!barra) { montar(cont); } else {
+        var bts = barra.querySelectorAll("button");
+        for (var i = 0; i < bts.length; i++) ligar(bts[i], BTNS[i]);
+      }
+      vigiar();
+      recuperar();
+    } catch (e) {
+      if (window.console) console.error("Barra de formatacao: " + e);
+    }
+  }
+
+  // manda o texto ao servidor de tempos em tempos (sem tirar o foco)
+  function autoComitar() {
+    try {
+      var ta = caixa();
+      if (!ta) return;
+      if (ultimo === null) { ultimo = ta.value; return; }
+      if (ta.value === ultimo) return;
+      ultimo = ta.value;
+      comitar(ta);
+    } catch (e) {}
+  }
+
+  garantir();
+  setInterval(garantir, 1000);
+  setInterval(autoComitar, 4000);
+  try {
+    if (window.frameElement) {
+      window.frameElement.style.display = "none";
+      window.frameElement.style.height = "0px";
+    }
+  } catch (e) {}
+})();
+</script>"""
+
+
+def barra_texto(alvo, chave="spj_relato"):
+    """Coloca a barra de formatação (tipo Word) em cima de uma caixa de texto."""
+    try:
+        html_js = _JS_BARRA.replace("__ALVO__", alvo).replace("__CHAVE__", chave)
+        components.html(html_js, height=0)
+    except Exception:
+        pass
+
+
+def previa_texto(texto):
+    """Mostra o texto com as marcações aplicadas (negrito, itálico, listas...)."""
+    t = html.escape(texto or "")
+    t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t, flags=re.S)
+    t = re.sub(r"__(.+?)__", r"<u>\1</u>", t, flags=re.S)
+    t = re.sub(r"==(.+?)==", r'<span style="background-color:#FFF59D">\1</span>', t, flags=re.S)
+    t = re.sub(r"~~(.+?)~~", r"<s>\1</s>", t, flags=re.S)
+    t = re.sub(r"(?<![*\w])\*([^*\n]+)\*(?!\*)", r"<i>\1</i>", t)
+    return t
+
+
 ROTULOS_PARTES = {
     "Requerente / Requerido": ("Requerente", "Requerido"),
     "Autor / Réu (ação criminal)": ("Autor", "Réu"),
@@ -839,6 +1129,69 @@ def _dono():
     if st.session_state.get("admin"):
         return ""
     return str(st.session_state.get("usuario", "") or "").strip()
+
+
+def _dados_rascunho():
+    """O que fica guardado automaticamente para não perder o trabalho."""
+    return {
+        "narrativa": st.session_state.get("narrativa", ""),
+        "fatos": st.session_state.get("fatos_edit", ""),
+        "peca": st.session_state.get("peca_edit", ""),
+        "pend": st.session_state.get("pend", ""),
+        "dados": st.session_state.get("dados", ""),
+        "nome_caso": st.session_state.get("nome_caso", ""),
+    }
+
+
+def _salvar_rascunho():
+    """Grava o rascunho agora (usado antes de operações pesadas)."""
+    try:
+        motor.salvar_rascunho(_dados_rascunho(), _dono())
+        st.session_state["_rascunho_ultimo"] = _dados_rascunho()
+    except Exception:
+        motor._LOG.warning("Não consegui salvar o rascunho", exc_info=True)
+
+
+def _recuperar_rascunho():
+    """Recupera o rascunho salvo (quando o app fechou ou a sessão caiu)."""
+    if st.session_state.get("_rascunho_recuperado"):
+        return
+    st.session_state["_rascunho_recuperado"] = True
+    try:
+        r = motor.carregar_rascunho(_dono())
+    except Exception:
+        return
+    if not r:
+        return
+    achou = False
+    for campo, chave in (("narrativa", "narrativa"), ("fatos", "fatos_edit"),
+                          ("peca", "peca_edit"), ("pend", "pend")):
+        valor = str(r.get(campo) or "")
+        if valor.strip() and not st.session_state.get(chave):
+            st.session_state[chave] = valor
+            achou = True
+    if not achou:
+        return
+    st.session_state["_rascunho_msg"] = (
+        f"✅ Recuperei seu rascunho (salvo em {r.get('_salvo_em', 'ontem')}). "
+        "Se for de outro trabalho, clique em ➕ **Nova peça** para começar limpo."
+    )
+
+
+@st.fragment(run_every=5)
+def _autosave_rascunho():
+    """Salva o que você está escrevendo a cada 5 segundos (pode deixar aberto)."""
+    dados = _dados_rascunho()
+    if dados == st.session_state.get("_rascunho_ultimo"):
+        return
+    try:
+        motor.salvar_rascunho(dados, _dono())
+        st.session_state["_rascunho_ultimo"] = dados
+    except Exception:
+        motor._LOG.warning("Não consegui salvar o rascunho", exc_info=True)
+
+
+_recuperar_rascunho()
 
 
 def _memorizar(mem_key, valor):
@@ -1015,6 +1368,13 @@ def iniciar_limpo(nome):
     _reseta_formulario()
     st.session_state["nome_caso"] = nome
     st.session_state["dados"] = compor_dados()
+    # o rascunho é do trabalho anterior: some para não voltar na próxima abertura
+    try:
+        motor.apagar_rascunho(_dono())
+    except Exception:
+        pass
+    st.session_state["_rascunho_ultimo"] = None
+    st.session_state.pop("_rascunho_msg", None)
 
 
 def _dados_caso():
@@ -1730,6 +2090,8 @@ with aba_anexo:
 
 with aba_fatos:
     st.subheader("Relato do cliente")
+    if st.session_state.get("_rascunho_msg"):
+        st.info(st.session_state.pop("_rascunho_msg"), icon="💾")
     audio = st.audio_input("🎙️ Grave o relato (opcional)")
     if audio is not None and st.button("Transcrever"):
         with st.status("Transcrevendo...", expanded=False) as s:
@@ -1739,13 +2101,24 @@ with aba_fatos:
         if texto:
             atual = st.session_state["narrativa"].strip()
             st.session_state["narrativa"] = f"{atual}\n{texto}".strip() if atual else texto
+            _salvar_rascunho()
             st.rerun()
+    barra_texto("Relato (dite ou escreva o que o cliente contou)",
+                "spj_relato_" + (_dono() or "admin"))
     st.text_area("Relato (dite ou escreva o que o cliente contou)", key="narrativa", height=150,
                  placeholder="ex.: 'A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026...'")
+    c_prev, c_aviso = st.columns([1, 3])
+    if c_prev.checkbox("👁 Ver com formatação", key="relato_preview"):
+        with st.container(border=True):
+            st.markdown(previa_texto(st.session_state.get("narrativa", "")),
+                        unsafe_allow_html=True)
+    c_aviso.caption("💾 Salvo sozinho a cada 5 segundos. Pode deixar o sistema aberto "
+                    "sem medo de perder o que escreveu.")
     if st.button("🧹 Limpar fatos e listar pendências", type="primary"):
         if not st.session_state["narrativa"].strip():
             st.warning("Escreva ou dite o relato primeiro.")
         else:
+            _salvar_rascunho()  # guarda o texto ANTES de chamar a IA
             with st.status("Organizando os fatos...", expanded=False) as s:
                 resultado = tentar(motor.limpar_fatos, st.session_state["dados"],
                                    st.session_state["narrativa"], anonimizador)
@@ -1893,3 +2266,6 @@ with aba_chat:
                 st.markdown(_resposta)
         if _resposta:
             st.session_state["chat_hist"].append({"role": "assistant", "content": _resposta})
+
+# salvamento automático do que está sendo escrito (roda sozinho a cada 5s)
+_autosave_rascunho()
