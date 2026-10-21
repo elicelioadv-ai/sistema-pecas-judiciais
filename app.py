@@ -247,6 +247,12 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 .st-key-login_campos .login-title { font-size: 1.45rem; }
 .st-key-login_campos input::placeholder { color: #ccd3d9 !important; opacity: 0.6; font-size: 0.60rem; }
 .st-key-login_campos input:focus::placeholder { opacity: 0.15; }
+/* campo escondido que leva o token de sessao do navegador para o servidor */
+.st-key-login_token, .st-key-login_token [data-testid="stTextInputRootElement"] {
+    position: absolute !important; width: 1px !important; height: 1px !important;
+    overflow: hidden !important; clip-path: inset(50%) !important; opacity: 0 !important;
+    margin: 0 !important; padding: 0 !important; border: 0 !important;
+}
 /* captcha de figuras (dentro do cartão, abaixo da senha) */
 .cap-titulo { color: #1F4E78 !important; font-weight: 700; font-size: 0.95rem; margin: 10px 0 4px 0; }
 .cap-pergunta { color: #000000 !important; font-size: 0.92rem; margin: 2px 0 8px 0; }
@@ -738,7 +744,7 @@ _definir_idioma()
 # "cookie de sessao" assinado: ao voltar, o app entra sozinho.
 _COOKIE_SESSAO = "pecas_sessao"
 _DIAS_SESSAO = 30
-_BUILD = "editor-word-2026-10-21"
+_BUILD = "editor-word-sessao-2026-10-21"
 
 
 def _cookies_recebidas():
@@ -760,9 +766,92 @@ def _ler_token_sessao(token):
 
 def _cookie_sessao():
     try:
+        if os.environ.get("SPJ_SEM_COOKIE"):
+            # apenas para teste: finge que o servidor nao recebe cookies
+            # (igual acontece na nuvem, onde o proxy nao os repassa)
+            return ""
         return (st.context.cookies.get(_COOKIE_SESSAO) or "").strip()
     except Exception:
         return ""
+
+
+def _token_do_widget():
+    """Token de sessao que o navegador escreveu no campo escondido."""
+    try:
+        return (st.session_state.get("_token_widget") or "").strip()
+    except Exception:
+        return ""
+
+
+# O navegador (ve _JS_SESSAO) le o token guardado no cookie/localStorage e
+# escreve num campo escondido. Isso e necessario porque, na nuvem, o proxy do
+# Streamlit nao repassa os cookies para o servidor: so assim o app consegue
+# lembrar quem entrou depois de dar F5.
+_JS_SESSAO = r"""<script>
+(function () {
+  var P = window.parent;
+  var doc = P.document;
+  var NOME = "__NOME__";
+  var CHAVE = "__CHAVE__";
+
+  function doCookie(qual) {
+    try {
+      var c = qual.cookie || "";
+      var partes = c.split(";");
+      for (var i = 0; i < partes.length; i++) {
+        var p = partes[i].trim();
+        if (p.indexOf(NOME + "=") === 0) return p.substring(NOME.length + 1);
+      }
+    } catch (e) {}
+    return "";
+  }
+
+  function doLocal() {
+    try {
+      var v = P.localStorage.getItem(CHAVE);
+      if (v) return v;
+    } catch (e) {}
+    try {
+      var v2 = window.localStorage.getItem(CHAVE);
+      if (v2) return v2;
+    } catch (e) {}
+    return "";
+  }
+
+  function token() {
+    return doCookie(doc) || doCookie(window.document) || doLocal();
+  }
+
+  function campo() {
+    var c1 = doc.querySelector(".st-key-_token_widget input");
+    if (c1) return c1;
+    var cont = doc.querySelector('[data-testid="st-key-_token_widget"]');
+    if (cont) return cont.querySelector("input");
+    var cont2 = doc.querySelector(".st-key-login_token input");
+    if (cont2) return cont2;
+    return null;
+  }
+
+  function tentar() {
+    var inp = campo();
+    if (!inp) return false;
+    if (inp.value && inp.value.length > 20) return true;
+    var t = token();
+    if (!t || t.length < 20) return false;
+    try {
+      var setter = Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype, "value").set;
+      setter.call(inp, t);
+      inp.dispatchEvent(new P.Event("input", {bubbles: true}));
+      inp.focus();
+      setTimeout(function () { try { inp.blur(); } catch (e) {} }, 80);
+    } catch (e) { return false; }
+    return true;
+  }
+
+  if (tentar()) { setTimeout(tentar, 800); }
+  setInterval(tentar, 1500);
+})();
+</script>"""
 
 
 def _gravar_cookie_sessao(usuario, admin):
@@ -781,6 +870,17 @@ def _gravar_cookie_sessao(usuario, admin):
         components.html(js, height=0)
     except Exception:
         pass
+    # guarda tambem no localStorage: e o que salva a sessao quando o servidor da
+    # nuvem nao consegue ler os cookies (o proxy nao os repassa)
+    try:
+        components.html(
+            "<script>(function(){try{"
+            "window.parent.localStorage.setItem(" + json.dumps("spj_token") + ","
+            + json.dumps(token) + ");}catch(e){}})();</script>",
+            height=0,
+        )
+    except Exception:
+        pass
 
 
 def _apagar_cookie_sessao():
@@ -788,7 +888,8 @@ def _apagar_cookie_sessao():
     try:
         components.html(
             "<script>try { document.cookie = '" + _COOKIE_SESSAO
-            + "=; max-age=0; path=/; SameSite=Lax'; } catch (e) {}</script>",
+            + "=; max-age=0; path=/; SameSite=Lax'; } catch (e) {}</script>"
+            "<script>try { window.parent.localStorage.removeItem('spj_token'); } catch (e) {}</script>",
             height=0,
         )
     except Exception:
@@ -804,10 +905,19 @@ def _marcar_cookie(usuario, admin):
 _apagando = st.session_state.pop("_cookie_apagar", False)
 if _apagando:
     _apagar_cookie_sessao()
+    # limpa o token guardado no campo escondido (senao entraria sozinho de novo)
+    try:
+        st.session_state["_token_widget"] = ""
+    except Exception:
+        pass
 else:
     # ja voltou com o cookie? entao entra direto, sem pedir a senha
     if not st.session_state.get("autenticado"):
         _sessao = _ler_token_sessao(_cookie_sessao())
+        if not _sessao:
+            # na nuvem o proxy nao repassa os cookies: o token vem pelo campo
+            # escondido, escrito pelo navegador (ver _JS_SESSAO)
+            _sessao = _ler_token_sessao(_token_do_widget())
         if _sessao:
             st.session_state.update(autenticado=True, usuario=_sessao["usuario"],
                                     admin=_sessao["admin"])
@@ -815,6 +925,18 @@ else:
 
 
 if not st.session_state.setdefault("autenticado", False):
+    # campo escondido: e por ele que o navegador entrega o token de sessao
+    # quando o servidor nao consegue ler os cookies (nuvem)
+    with st.container(key="login_token"):
+        st.text_input("sessao", key="_token_widget", label_visibility="collapsed",
+                      placeholder="")
+    try:
+        components.html(
+            _JS_SESSAO.replace("__NOME__", _COOKIE_SESSAO).replace("__CHAVE__", "spj_token"),
+            height=0,
+        )
+    except Exception:
+        pass
     if "msg_abertura" not in st.session_state:
         st.session_state["msg_abertura"] = random.choice(MENSAGENS_ABERTURA)
     st.markdown(_CSS_LOGIN, unsafe_allow_html=True)
@@ -962,8 +1084,11 @@ if not st.session_state.setdefault("autenticado", False):
                 unsafe_allow_html=True)
     _ck = _cookies_recebidas()
     if _ck.get("spj_diag") or st.query_params.get("diag"):
+        _tok = _token_do_widget()
         st.info("DIAG build=" + _BUILD + " | cookies recebidos: "
-                + (", ".join(sorted(_ck)) or "(nenhum)"))
+                + (", ".join(sorted(_ck)) or "(nenhum)")
+                + " | token no campo oculto: "
+                + (("sim (%d)" % len(_tok)) if _tok else "(nao)"))
 
     st.stop()
 
@@ -1063,6 +1188,41 @@ _JS_BARRA = r"""<script>
   }
 
   // ---------------- editor formatado (igual ao Word) --------------------
+  // texto antigo (com marcadores **) vira HTML de verdade
+  function mdParaHtml(t) {
+    if (!t) return "";
+    if (/<[a-zA-Z][^>]*>/.test(t)) return t;
+    var s = String(t);
+    if (!/(\*\*|__|~~|==|^\s*#|^\s*[-*+]\s|^\s*&gt;\s)/m.test(s)) return s;
+    s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+    s = s.replace(/(^|[^*\w])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+    s = s.replace(/__([^_]+)__/g, "<u>$1</u>");
+    s = s.replace(/~~([^~]+)~~/g, "<s>$1</s>");
+    s = s.replace(/==([^=]+)==/g, "<mark>$1</mark>");
+    var linhas = s.split(/\r?\n/);
+    var saida = "", emLista = false;
+    for (var i = 0; i < linhas.length; i++) {
+      var l = linhas[i];
+      if (/^\s*&gt;\s/.test(l)) {
+        l = "<blockquote>" + l.replace(/^\s*&gt;\s*/, "") + "</blockquote>";
+      } else if (/^\s*#\s/.test(l)) {
+        l = "<h2>" + l.replace(/^\s*#\s*/, "") + "</h2>";
+      } else if (/^\s*[-*+]\s/.test(l)) {
+        l = "<li>" + l.replace(/^\s*[-*+]\s*/, "") + "</li>";
+      }
+      if (l.indexOf("<li>") === 0) {
+        if (!emLista) { saida += "<ul>"; emLista = true; }
+        saida += l;
+        continue;
+      }
+      if (emLista) { saida += "</ul>"; emLista = false; }
+      saida += l + "<br>";
+    }
+    if (emLista) saida += "</ul>";
+    return saida;
+  }
+
   function criarEditor(cont) {
     var ja = cont.querySelector(".__spj_editor__");
     if (ja) return ja;
@@ -1070,6 +1230,8 @@ _JS_BARRA = r"""<script>
     if (!ta) return null;
     var raiz = ta.closest('[data-testid="stTextAreaRootElement"]') || ta.parentNode;
     if (!raiz) return null;
+    var servidor = ta.value || "";
+    var local = (P.__spjHtml !== undefined && P.__spjHtml !== null) ? P.__spjHtml : "";
     var ed = doc.createElement("div");
     ed.className = "__spj_editor__";
     ed.setAttribute("contenteditable", "true");
@@ -1078,7 +1240,9 @@ _JS_BARRA = r"""<script>
     ed.setAttribute("role", "textbox");
     ed.setAttribute("aria-multiline", "true");
     ed.setAttribute("aria-label", ALVO);
-    ed.innerHTML = (P.__spjHtml !== undefined && P.__spjHtml !== null) ? P.__spjHtml : (ta.value || "");
+    ed.innerHTML = mdParaHtml(servidor.trim() ? servidor : local);
+    ultimoHtml = ed.innerHTML;
+    P.__spjHtml = ultimoHtml;
     raiz.insertBefore(ed, ta);
     cont.classList.add("__spj_com_editor__");
     ed.addEventListener("input", function () { digitar(ed); });
@@ -1394,9 +1558,10 @@ _JS_BARRA = r"""<script>
       // o servidor mudou o texto? (ex.: transcricao) -> atualiza o editor
       var ta = cont.querySelector("textarea");
       if (ed && ta && ultimoHtml !== null && ta.value !== ultimoHtml) {
-        ed.innerHTML = ta.value;
-        P.__spjHtml = ta.value;
-        ultimoHtml = ta.value;
+        ed.innerHTML = mdParaHtml(ta.value);
+        P.__spjHtml = ed.innerHTML;
+        ultimoHtml = ed.innerHTML;
+        digitar(ed);
       }
     } catch (e) {
       if (window.console) console.error("Barra de formatacao: " + e);

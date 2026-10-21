@@ -76,5 +76,34 @@ class TestMensagemAmigavel(unittest.TestCase):
         self.assertEqual(motor.mensagem_amigavel(Exception("detalhe X")), "detalhe X")
 
 
+class TestSessaoNoApp(unittest.TestCase):
+    """O token entregue pelo navegador (campo escondido) deve abrir o app."""
+
+    def setUp(self):
+        self.senha_original = os.environ.get("SENHA_ACESSO")
+        os.environ["SENHA_ACESSO"] = "sha256:teste-sessao"
+
+    def tearDown(self):
+        if self.senha_original is None:
+            os.environ.pop("SENHA_ACESSO", None)
+        else:
+            os.environ["SENHA_ACESSO"] = self.senha_original
+
+    def test_token_valido_no_campo_oculto_entra_sozinho(self):
+        from streamlit.testing.v1 import AppTest
+        at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=60)
+        at.session_state["_token_widget"] = motor.token_sessao("admin", True)
+        at.run()
+        self.assertTrue(at.session_state.get("autenticado"))
+        self.assertEqual(at.session_state.get("usuario"), "admin")
+
+    def test_token_invalido_nao_entra(self):
+        from streamlit.testing.v1 import AppTest
+        at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=60)
+        at.session_state["_token_widget"] = "token|falso|0|assinatura"
+        at.run()
+        self.assertFalse(at.session_state.get("autenticado"))
+
+
 if __name__ == "__main__":
     unittest.main()
