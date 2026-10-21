@@ -64,7 +64,12 @@ async def main():
     if not APPS:
         sys.exit("Nenhum URL configurado em STREAMLIT_APP_URL")
     async with async_playwright() as p:
-        navegador = await p.chromium.launch(headless=True, args=["--no-sandbox"])
+        # Na nuvem usa o Chromium do Playwright; no PC pode usar o Edge local.
+        canal = os.environ.get("KEEPALIVE_NAVEGADOR", "").strip()
+        opcoes = {"headless": True, "args": ["--no-sandbox"]}
+        if canal:
+            opcoes["channel"] = canal
+        navegador = await p.chromium.launch(**opcoes)
         contexto = await navegador.new_context(user_agent=NAVEGADOR)
         pagina = await contexto.new_page()
         for url in APPS:
