@@ -41,14 +41,23 @@ async def visitar(pagina, url):
     await pagina.goto(url, wait_until="domcontentloaded", timeout=120000)
     await pagina.wait_for_timeout(8000)
     botao = await _botao_acordar(pagina)
-    if botao is not None:
+    if botao is None:
+        print("   ja estava acordado")
+    else:
         print("   dormindo - clicando para acordar...")
         await botao.click()
-        await pagina.wait_for_timeout(60000)
-        print("   clique feito; aguardando o app carregar")
-    else:
-        print("   ja estava acordado")
-    await pagina.wait_for_timeout(3000)
+        # O cold start pode levar minutos: so conta como visita quando o app
+        # termina de carregar. Se fechar o navegador antes, a sessao nao vale.
+        carregou = False
+        for tentativa in range(48):  # 48 x 5s = 4 minutos
+            await pagina.wait_for_timeout(5000)
+            if await _botao_acordar(pagina) is None:
+                carregou = True
+                print(f"   app carregou ({(tentativa + 1) * 5}s)")
+                break
+        if not carregou:
+            print("   o app nao carregou a tempo")
+    await pagina.wait_for_timeout(5000)
 
 
 async def main():
