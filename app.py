@@ -1,4 +1,4 @@
-﻿"""
+"""
 app.py - a TELA do programa (Streamlit).
 
 Fluxo: Caso -> Fatos -> Peça -> Conferência, além de histórico e editor da base legal.
@@ -354,6 +354,25 @@ input::placeholder, textarea::placeholder { color: var(--placeholder) !important
 .st-key-fatos_edit div[data-baseweb="textarea"] textarea,
 [class*="st-key-resp_"] div[data-baseweb="textarea"] textarea {
     background: #ECEFF1 !important;
+}
+/* editor formatado do Relato (igual ao Word: negrito, itálico, listas...) */
+.st-key-narrativa .__spj_com_editor__ textarea { display: none !important; }
+.st-key-narrativa .__spj_editor__ {
+    min-height: 150px; max-height: 430px; overflow-y: auto;
+    background: #ECEFF1 !important; border: 1px solid var(--botao-busca) !important;
+    border-radius: 8px; padding: 10px 12px; color: #1F2933 !important;
+    font-size: 1rem; line-height: 1.55; font-family: inherit;
+    white-space: pre-wrap; word-break: break-word; outline: none;
+}
+.st-key-narrativa .__spj_editor__ b, .st-key-narrativa .__spj_editor__ strong { font-weight: 700; }
+.st-key-narrativa .__spj_editor__ mark { background: #FFF59D !important; color: #1F2933; }
+.st-key-narrativa .__spj_editor__ blockquote {
+    border-left: 4px solid #90A4AE; margin: 6px 0; padding: 2px 10px; color: #37474F;
+}
+.st-key-narrativa .__spj_editor__ h2 { font-size: 1.15rem; margin: 6px 0; }
+.st-key-narrativa .__spj_editor__ ul, .st-key-narrativa .__spj_editor__ ol { padding-left: 22px; }
+.st-key-narrativa .__spj_editor__:empty:before {
+    content: "Digite seu texto aqui"; color: var(--placeholder); pointer-events: none;
 }
 /* abas */
 [data-baseweb="tab-list"] {
@@ -719,7 +738,7 @@ _definir_idioma()
 # "cookie de sessao" assinado: ao voltar, o app entra sozinho.
 _COOKIE_SESSAO = "pecas_sessao"
 _DIAS_SESSAO = 30
-_BUILD = "87c0bb7-sessao"
+_BUILD = "editor-word-2026-10-21"
 
 
 def _cookies_recebidas():
@@ -987,20 +1006,21 @@ _JS_BARRA = r"""<script>
   var doc = P.document;
   var MEU = "spj" + Math.random().toString(36).slice(2, 9);
   var ultimo = null;
+  var ultimoHtml = null;
   var restaurado = false;
   var BTNS = [
-    {t:"Negrito",            i:"<b>N</b>",  a:"**", b:"**"},
-    {t:"Itálico",            i:"<i>I</i>",  a:"*",  b:"*"},
-    {t:"Sublinhado",         i:"<u>S</u>",  a:"__", b:"__"},
-    {t:"Tachado",            i:"<s>T</s>",  a:"~~", b:"~~"},
-    {t:"Destaque",           i:"<mark>A</mark>", a:"==", b:"=="},
-    {t:"Título",             i:"H",        p:"## "},
-    {t:"Lista",              i:"&#8226;",  p:"- "},
-    {t:"Lista numerada",     i:"1.",       p:"1. "},
-    {t:"Citação",            i:"&#10077;", p:"> "},
-    {t:"Desfazer",           i:"&#8630;",  u:true},
-    {t:"Refazer",            i:"&#8631;",  r:true},
-    {t:"Limpar formatação",  i:"&#129534;", c:true}
+    {t:"Negrito",           i:"<b>N</b>",  cmd:"bold"},
+    {t:"Itálico",           i:"<i>I</i>",  cmd:"italic"},
+    {t:"Sublinhado",        i:"<u>S</u>",  cmd:"underline"},
+    {t:"Tachado",           i:"<s>T</s>",  cmd:"strikeThrough"},
+    {t:"Destaque",          i:"<mark>A</mark>", tag:"mark"},
+    {t:"Título",            i:"H",        bloco:"h2"},
+    {t:"Lista",             i:"&#8226;",  cmd:"insertUnorderedList"},
+    {t:"Lista numerada",    i:"1.",       cmd:"insertOrderedList"},
+    {t:"Citação",           i:"&#10077;", bloco:"blockquote"},
+    {t:"Desfazer",          i:"&#8630;",  cmd:"undo"},
+    {t:"Refazer",           i:"&#8631;",  cmd:"redo"},
+    {t:"Limpar formatação", i:"&#129534;", limpar:true}
   ];
 
   function achar() {
@@ -1022,6 +1042,11 @@ _JS_BARRA = r"""<script>
     return c ? c.querySelector("textarea") : null;
   }
 
+  function editor() {
+    var c = achar();
+    return c ? c.querySelector(".__spj_editor__") : null;
+  }
+
   function sel(ta) { return {i: ta.selectionStart, f: ta.selectionEnd, v: ta.value}; }
 
   function setValor(ta, novo) {
@@ -1034,11 +1059,149 @@ _JS_BARRA = r"""<script>
 
   // manda o texto para o servidor sem tirar o foco do campo
   function comitar(ta) {
+    try { ta.dispatchEvent(new P.Event("focusout", {bubbles: true})); } catch (e) {}
+  }
+
+  // ---------------- editor formatado (igual ao Word) --------------------
+  function criarEditor(cont) {
+    var ja = cont.querySelector(".__spj_editor__");
+    if (ja) return ja;
+    var ta = cont.querySelector("textarea");
+    if (!ta) return null;
+    var raiz = ta.closest('[data-testid="stTextAreaRootElement"]') || ta.parentNode;
+    if (!raiz) return null;
+    var ed = doc.createElement("div");
+    ed.className = "__spj_editor__";
+    ed.setAttribute("contenteditable", "true");
+    ed.setAttribute("spellcheck", "true");
+    ed.setAttribute("lang", "pt-BR");
+    ed.setAttribute("role", "textbox");
+    ed.setAttribute("aria-multiline", "true");
+    ed.setAttribute("aria-label", ALVO);
+    ed.innerHTML = (P.__spjHtml !== undefined && P.__spjHtml !== null) ? P.__spjHtml : (ta.value || "");
+    raiz.insertBefore(ed, ta);
+    cont.classList.add("__spj_com_editor__");
+    ed.addEventListener("input", function () { digitar(ed); });
+    ed.addEventListener("paste", function () { setTimeout(function () { digitar(ed); }, 30); });
+    return ed;
+  }
+
+  function digitar(ed) {
+    if (!ed) return;
+    var html = ed.innerHTML;
+    P.__spjHtml = html;
+    ultimoHtml = html;
+    var ta = caixa();
+    if (ta) { setValor(ta, html); }
+    salvarLocal(html);
+    agendarCommit();
+  }
+
+  // se o cursor esta no meio de uma palavra, pega a palavra inteira
+  function ampliarPalavra() {
     try {
-      ta.dispatchEvent(new P.Event("focusout", {bubbles: true}));
+      var sel = doc.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      var r = sel.getRangeAt(0);
+      if (!r.collapsed) return;
+      var node = r.startContainer;
+      if (node.nodeType !== 3) return;
+      var txt = node.textContent || "";
+      var ini = r.startOffset, fim = ini;
+      while (ini > 0 && !/\s/.test(txt.charAt(ini - 1))) ini--;
+      while (fim < txt.length && !/\s/.test(txt.charAt(fim))) fim++;
+      if (fim > ini) {
+        r.setStart(node, ini);
+        r.setEnd(node, fim);
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
     } catch (e) {}
   }
 
+  function envolverTag(tag) {
+    try {
+      var sel = doc.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      var r = sel.getRangeAt(0);
+      if (r.collapsed) return;
+      var el = doc.createElement(tag);
+      try { r.surroundContents(el); }
+      catch (e) { el.appendChild(r.extractContents()); r.insertNode(el); }
+    } catch (e) {}
+  }
+
+  function limparFormatacao(ed) {
+    try { doc.execCommand("removeFormat"); } catch (e) {}
+    try {
+      var listas = ed.querySelectorAll("ul,ol");
+      for (var i = 0; i < listas.length; i++) {
+        var itens = listas[i].querySelectorAll("li");
+        var linhas = [];
+        for (var j = 0; j < itens.length; j++) {
+          linhas.push((listas[i].tagName === "OL" ? (j + 1) + ". " : "- ") + itens[j].textContent);
+        }
+        var bloco = doc.createElement("div");
+        bloco.innerHTML = linhas.join("<br>");
+        listas[i].parentNode.replaceChild(bloco, listas[i]);
+      }
+      var resto = ed.querySelectorAll("b,strong,i,em,u,s,strike,mark,span[style],font");
+      for (var k = resto.length - 1; k >= 0; k--) {
+        var el = resto[k];
+        if (!el.parentNode) continue;
+        while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el);
+        el.parentNode.removeChild(el);
+      }
+      var divs = ed.querySelectorAll("div");
+      for (var d = divs.length - 1; d >= 0; d--) {
+        var dv = divs[d];
+        if (dv.parentNode === ed) continue;
+        while (dv.firstChild) dv.parentNode.insertBefore(dv.firstChild, dv);
+        dv.parentNode.removeChild(dv);
+      }
+    } catch (e) {}
+  }
+
+  function aplicar(b) {
+    var ed = editor();
+    if (ed) {
+      try { ed.focus(); } catch (e) {}
+      try {
+        if (b.cmd === "undo" || b.cmd === "redo") {
+          doc.execCommand(b.cmd);
+        } else if (b.limpar) {
+          limparFormatacao(ed);
+        } else if (b.tag) {
+          ampliarPalavra();
+          envolverTag(b.tag);
+        } else if (b.bloco) {
+          doc.execCommand("formatBlock", false, b.bloco);
+        } else if (b.cmd) {
+          ampliarPalavra();
+          doc.execCommand(b.cmd);
+        }
+      } catch (e) {}
+      digitar(ed);
+      return;
+    }
+    // sem editor: usa o modo antigo (marcadores **)
+    var cx = caixa();
+    if (!cx) return;
+    try { cx.focus(); } catch (e) {}
+    if (b.cmd === "undo") { try { doc.execCommand("undo"); } catch (e) {} return; }
+    if (b.cmd === "redo") { try { doc.execCommand("redo"); } catch (e) {} return; }
+    if (b.limpar) { limpar(cx); return; }
+    if (b.bloco) { blocoAntigo(cx, b.bloco === "h2" ? "## " : "> "); return; }
+    if (b.tag) { envolverAntigo(cx, "==", "=="); return; }
+    if (b.cmd === "bold") { envolver(cx, "**", "**"); return; }
+    if (b.cmd === "italic") { envolver(cx, "*", "*"); return; }
+    if (b.cmd === "underline") { envolver(cx, "__", "__"); return; }
+    if (b.cmd === "strikeThrough") { envolver(cx, "~~", "~~"); return; }
+    if (b.cmd === "insertUnorderedList") { blocoAntigo(cx, "- "); return; }
+    if (b.cmd === "insertOrderedList") { blocoAntigo(cx, "1. "); return; }
+  }
+
+  // ---- modo antigo (sem o editor) ----
   function gravar(ta, novo, i, f) {
     setValor(ta, novo);
     try { ta.focus(); ta.setSelectionRange(i, f); } catch (e) {}
@@ -1053,6 +1216,8 @@ _JS_BARRA = r"""<script>
     gravar(ta, novo, p, p);
   }
 
+  function envolverAntigo(ta, a, b) { envolver(ta, a, b); }
+
   function bloco(ta, pref) {
     var s = sel(ta);
     var ini = s.v.lastIndexOf("\n", Math.max(0, s.i - 1)) + 1;
@@ -1066,6 +1231,8 @@ _JS_BARRA = r"""<script>
     gravar(ta, todo, ini, ini + novo.length);
   }
 
+  function blocoAntigo(ta, pref) { bloco(ta, pref); }
+
   function limpar(ta) {
     var s = sel(ta);
     var t = s.v.slice(s.i, s.f) || s.v;
@@ -1073,17 +1240,6 @@ _JS_BARRA = r"""<script>
                  .replace(/^\s*(#{1,6}\s+|[-*+]\s+|\d+\.\s+|>\s+)/gm, "");
     var novo = s.v.slice(0, s.i) + limpo + s.v.slice(s.f);
     gravar(ta, novo, s.i, s.i + limpo.length);
-  }
-
-  function aplicar(b) {
-    var cx = caixa();
-    if (!cx) return;
-    try { cx.focus(); } catch (e) {}
-    if (b.u) { try { doc.execCommand("undo"); } catch (e) {} return; }
-    if (b.r) { try { doc.execCommand("redo"); } catch (e) {} return; }
-    if (b.c) { limpar(cx); return; }
-    if (b.p) { bloco(cx, b.p); return; }
-    envolver(cx, b.a, b.b);
   }
 
   function ligar(btn, b) {
@@ -1145,6 +1301,23 @@ _JS_BARRA = r"""<script>
   P.__spjApagar = function () {
     try { P.localStorage.removeItem(CHAVE); } catch (e) {}
   };
+  P.__spjAplicar = function (antigo, novo) {
+    try {
+      var ed = editor();
+      if (!ed) return false;
+      var partes = ed.innerHTML.split(/(<[^>]+>)/);
+      for (var i = 0; i < partes.length; i++) {
+        if (partes[i].charAt(0) === "<") continue;
+        if (partes[i].indexOf(antigo) >= 0) {
+          partes[i] = partes[i].replace(antigo, novo);
+          ed.innerHTML = partes.join("");
+          digitar(ed);
+          return true;
+        }
+      }
+    } catch (e) {}
+    return false;
+  };
 
   function aviso(cont, texto) {
     try {
@@ -1162,11 +1335,14 @@ _JS_BARRA = r"""<script>
     if (!cont) return;
     var ta = cont.querySelector("textarea");
     if (!ta) return;
-    if ((ta.value || "").trim()) { restaurado = true; return; }
+    var ed = cont.querySelector(".__spj_editor__");
+    var atual = ed ? (ed.innerText || "") : (ta.value || "");
+    if (atual && atual.trim()) { restaurado = true; return; }
     var salvo = lerLocal();
     if (!salvo || !salvo.trim()) return;
     restaurado = true;
-    setValor(ta, salvo);
+    if (ed) { ed.innerHTML = salvo; digitar(ed); }
+    else { setValor(ta, salvo); }
     ultimo = salvo;
     aviso(cont, "💾 Recuperei o texto que você tinha digitado (ficou salvo no seu navegador).");
     setTimeout(function () { comitar(ta); }, 400);
@@ -1180,7 +1356,7 @@ _JS_BARRA = r"""<script>
     if (ta.getAttribute("data-spj-vigia") !== MEU) {
       ta.setAttribute("data-spj-vigia", MEU);
       ta.addEventListener("input", function () {
-        salvarLocal(ta.value);
+        if (!cont.querySelector(".__spj_editor__")) { salvarLocal(ta.value); }
         agendarCommit();
       });
     }
@@ -1211,9 +1387,17 @@ _JS_BARRA = r"""<script>
         var bts = barra.querySelectorAll("button");
         for (var i = 0; i < bts.length; i++) ligar(bts[i], BTNS[i]);
       }
+      var ed = criarEditor(cont);
       vigiar();
       recuperar();
       ativarOrtografia();
+      // o servidor mudou o texto? (ex.: transcricao) -> atualiza o editor
+      var ta = cont.querySelector("textarea");
+      if (ed && ta && ultimoHtml !== null && ta.value !== ultimoHtml) {
+        ed.innerHTML = ta.value;
+        P.__spjHtml = ta.value;
+        ultimoHtml = ta.value;
+      }
     } catch (e) {
       if (window.console) console.error("Barra de formatacao: " + e);
     }
@@ -1264,7 +1448,11 @@ def barra_texto(alvo, chave="spj_relato"):
 
 def previa_texto(texto):
     """Mostra o texto com as marcações aplicadas (negrito, itálico, listas...)."""
-    t = html.escape(texto or "")
+    bruto = texto or ""
+    if "<" in bruto and re.search(r"<\s*[a-zA-Z][^>]*>", bruto):
+        # texto veio do editor formatado: mostra do jeito que o usuário digitou
+        return motor.html_seguro(bruto)
+    t = html.escape(bruto)
     t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t, flags=re.S)
     t = re.sub(r"__(.+?)__", r"<u>\1</u>", t, flags=re.S)
     t = re.sub(r"==(.+?)==", r'<span style="background-color:#FFF59D">\1</span>', t, flags=re.S)
@@ -1363,7 +1551,9 @@ def _aplicar_correcao_pendente():
         return
     errado, certo = pend
     texto = st.session_state.get("narrativa", "") or ""
-    novo = motor.aplicar_correcao(texto, errado, certo)
+    novo = motor.substituir_em_html(texto, errado, certo)
+    if novo is None:
+        novo = motor.aplicar_correcao(texto, errado, certo)
     if novo is None:
         return
     st.session_state["narrativa"] = novo
@@ -2284,8 +2474,9 @@ with aba_fatos:
             s.update(label="Transcrição concluída" if texto else "Falha",
                      state="complete" if texto else "error")
         if texto:
-            atual = st.session_state["narrativa"].strip()
-            st.session_state["narrativa"] = f"{atual}\n{texto}".strip() if atual else texto
+            atual = (st.session_state["narrativa"] or "").strip()
+            st.session_state["narrativa"] = (
+                (atual + "<br>" if atual else "") + html.escape(texto))
             _salvar_rascunho()
             st.rerun()
     barra_texto("Relato (dite ou escreva o que o cliente contou)",
@@ -2313,7 +2504,9 @@ with aba_fatos:
             st.warning("Escreva o relato primeiro.")
         else:
             with st.status("Revisando a escrita...", expanded=False) as s:
-                achados = tentar(motor.revisar_escrita, st.session_state["narrativa"], anonimizador)
+                achados = tentar(motor.revisar_escrita,
+                                 motor.texto_simples(st.session_state["narrativa"]),
+                                 anonimizador)
                 s.update(label="Revisão concluída" if achados is not None else "Falha",
                          state="complete" if achados is not None else "error")
             if achados is not None:
@@ -2340,7 +2533,8 @@ with aba_fatos:
             _salvar_rascunho()  # guarda o texto ANTES de chamar a IA
             with st.status("Organizando os fatos...", expanded=False) as s:
                 resultado = tentar(motor.limpar_fatos, st.session_state["dados"],
-                                   st.session_state["narrativa"], anonimizador)
+                                   motor.texto_simples(st.session_state["narrativa"]),
+                                   anonimizador)
                 s.update(label="Fatos organizados" if resultado else "Falha",
                          state="complete" if resultado else "error")
             if resultado:

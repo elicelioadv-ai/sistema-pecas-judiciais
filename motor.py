@@ -480,6 +480,60 @@ Se não houver erro algum, responda: {"correcoes":[]}
 """
 
 
+_TAGS_OK = {"b", "strong", "i", "em", "u", "s", "strike", "del", "mark", "h1", "h2", "h3",
+            "h4", "p", "div", "span", "ul", "ol", "li", "blockquote", "br", "pre", "code",
+            "hr", "sup", "sub", "a", "table", "thead", "tbody", "tr", "td", "th"}
+
+
+def html_seguro(html):
+    """Deixa passar apenas as tags de formatacao (nada de script)."""
+    if not html:
+        return ""
+    texto = str(html)
+
+    def tag(m):
+        nome = m.group(1).lower()
+        if nome in _TAGS_OK:
+            return m.group(0)
+        return ""
+
+    texto = re.sub(r"<\s*/?\s*([a-zA-Z0-9]+)[^>]*>", tag, texto)
+    texto = re.sub(r"\son\w+\s*=\s*(\"[^\"]*\"|'[^']*'|[^\s>]+)", "", texto, flags=re.I)
+    texto = re.sub(r"javascript\s*:[^\"'\s>]*", "", texto, flags=re.I)
+    return texto
+
+
+def texto_simples(texto):
+    """Tira a formatacao e devolve so o texto (para a IA ler)."""
+    if not texto:
+        return ""
+    t = str(texto)
+    if "<" in t:
+        t = re.sub(r"(?i)<br\s*/?>", "\n", t)
+        t = re.sub(r"(?i)</(p|div|h[1-6]|li|blockquote|tr)>", "\n", t)
+        t = re.sub(r"(?i)<li[^>]*>", "- ", t)
+        t = re.sub(r"<[^>]+>", "", t)
+    t = (t.replace("&nbsp;", " ").replace("&amp;", "&").replace("&lt;", "<")
+          .replace("&gt;", ">").replace("&quot;", '"').replace("&#39;", "'"))
+    t = re.sub(r"[ \t]+\n", "\n", t)
+    t = re.sub(r"\n{3,}", "\n\n", t)
+    return t.strip()
+
+
+def substituir_em_html(html, errado, certo):
+    """Troca a palavra errada pela correta, so dentro do texto (sem mexer nas tags)."""
+    if not html or not errado or not certo:
+        return None
+    partes = re.split(r"(<[^>]+>)", str(html))
+    for i, parte in enumerate(partes):
+        if parte.startswith("<"):
+            continue
+        if errado in parte:
+            partes[i] = parte.replace(errado, certo, 1)
+            return "".join(partes)
+    return None
+
+
 def aplicar_correcao(texto, errado, certo):
     """Troca a primeira ocorrencia da palavra errada pela correta. Devolve None se nao houver."""
     texto = texto or ""
