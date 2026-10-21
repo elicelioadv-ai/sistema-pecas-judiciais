@@ -311,14 +311,35 @@ h1, h2, h3 { color: var(--azul-escuro) !important; }
 /* links */
 [data-testid="stMarkdownContainer"] a { color: var(--link) !important; }
 hr { border-color: var(--botao-busca) !important; }
+/* campos do menu lateral: fundo branco com LETRA PRETA.
+   No Streamlit 1.65 o "select" virou .react-aria-ComboBox (input), entao
+   precisa do novo seletor senao a letra fica branca sobre a caixa branca. */
 [data-testid="stSidebar"] div[data-baseweb="select"] > div,
-[data-testid="stSidebar"] div[data-baseweb="input"] {
+[data-testid="stSidebar"] div[data-baseweb="input"],
+[data-testid="stSidebar"] .react-aria-ComboBox,
+[data-testid="stSidebar"] .react-aria-ComboBox > div,
+[data-testid="stSidebar"] [role="combobox"] {
     background: #F7F9FA !important; border: 1px solid rgba(255,255,255,0.35) !important;
     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 [data-testid="stSidebar"] div[data-baseweb="select"] *,
-[data-testid="stSidebar"] div[data-baseweb="input"] * {
+[data-testid="stSidebar"] div[data-baseweb="input"] *,
+[data-testid="stSidebar"] .react-aria-ComboBox *,
+[data-testid="stSidebar"] [role="combobox"] {
     color: #1F2933 !important;
+}
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] textarea {
+    color: #1F2933 !important; -webkit-text-fill-color: #1F2933 !important;
+    background: #FFFFFF !important;
+}
+[data-testid="stSidebar"] input::placeholder,
+[data-testid="stSidebar"] textarea::placeholder {
+    color: #55606B !important; -webkit-text-fill-color: #55606B !important;
+}
+/* etiqueta de status (ex.: "verificado") na lista da base legal do menu */
+[data-testid="stSidebar"] code {
+    color: #1F2933 !important; background: #ECEFF1 !important;
 }
 /* campos brancos */
 div[data-baseweb="input"], div[data-baseweb="select"] > div,
@@ -691,6 +712,76 @@ def _definir_idioma():
 
 _definir_idioma()
 
+
+# ------------------------------------------------- sessao que sobrevive a atualizacao
+# Quando o sistema e atualizado (ou a pagina e recarregada), o app volta para a
+# tela de entrada e o trabalho some. Para resolver, o navegador guarda um
+# "cookie de sessao" assinado: ao voltar, o app entra sozinho.
+_COOKIE_SESSAO = "pecas_sessao"
+_DIAS_SESSAO = 30
+
+
+def _token_sessao(usuario, admin):
+    return motor.token_sessao(usuario, admin, _DIAS_SESSAO)
+
+
+def _ler_token_sessao(token):
+    """Devolve {usuario, admin} se o cookie for valido; senao None."""
+    return motor.ler_token_sessao(token)
+
+
+def _cookie_sessao():
+    try:
+        return (st.context.cookies.get(_COOKIE_SESSAO) or "").strip()
+    except Exception:
+        return ""
+
+
+def _gravar_cookie_sessao(usuario, admin):
+    """Manda o navegador lembrar o acesso (30 dias)."""
+    token = _token_sessao(usuario, admin)
+    try:
+        components.html(
+            "<script>try { document.cookie = '"
+            + _COOKIE_SESSAO + "=" + token + "; max-age=" + str(_DIAS_SESSAO * 24 * 3600)
+            + "; path=/; SameSite=Lax'; } catch (e) {}</script>",
+            height=0,
+        )
+    except Exception:
+        pass
+
+
+def _apagar_cookie_sessao():
+    """Esquece o acesso guardado (botao 'Sair do sistema')."""
+    try:
+        components.html(
+            "<script>try { document.cookie = '" + _COOKIE_SESSAO
+            + "=; max-age=0; path=/; SameSite=Lax'; } catch (e) {}</script>",
+            height=0,
+        )
+    except Exception:
+        pass
+
+
+def _marcar_cookie(usuario, admin):
+    """Anota para gravar o cookie na proxima execucao (apos o rerun do login)."""
+    st.session_state["_cookie_pendente"] = (str(usuario or "").strip(), bool(admin))
+
+
+# o botao "Sair do sistema" pede para esquecer o acesso guardado
+_apagando = st.session_state.pop("_cookie_apagar", False)
+if _apagando:
+    _apagar_cookie_sessao()
+else:
+    # ja voltou com o cookie? entao entra direto, sem pedir a senha
+    if not st.session_state.get("autenticado"):
+        _sessao = _ler_token_sessao(_cookie_sessao())
+        if _sessao:
+            st.session_state.update(autenticado=True, usuario=_sessao["usuario"],
+                                    admin=_sessao["admin"])
+            _gravar_cookie_sessao(_sessao["usuario"], _sessao["admin"])
+
+
 if not st.session_state.setdefault("autenticado", False):
     if "msg_abertura" not in st.session_state:
         st.session_state["msg_abertura"] = random.choice(MENSAGENS_ABERTURA)
@@ -745,6 +836,7 @@ if not st.session_state.setdefault("autenticado", False):
                             try:
                                 motor.definir_acesso(u_novo, s1)
                                 st.session_state.update(autenticado=True, usuario=u_novo.strip(), admin=True)
+                                _marcar_cookie(u_novo.strip(), True)
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Não deu para definir o acesso: {e}")
@@ -807,13 +899,15 @@ if not st.session_state.setdefault("autenticado", False):
         if _precisa_captcha and not _captcha_valido():
             st.error("Para entrar, marque as figuras corretas na verificação de segurança.")
         elif motor.verificar_acesso(usuario_entrada, senha_entrada):
-            st.session_state.update(autenticado=True, admin=True,
-                                    usuario=motor.usuario_acesso() or usuario_entrada.strip())
+            _usuario_admin = motor.usuario_acesso() or usuario_entrada.strip()
+            st.session_state.update(autenticado=True, admin=True, usuario=_usuario_admin)
+            _marcar_cookie(_usuario_admin, True)
             st.rerun()
         else:
             resultado = usuarios.autenticar(usuario_entrada, senha_entrada)
             if resultado == usuarios.OK:
                 st.session_state.update(autenticado=True, admin=False, usuario=usuario_entrada.strip())
+                _marcar_cookie(usuario_entrada.strip(), False)
                 st.rerun()
             elif resultado == usuarios.PENDENTE:
                 st.warning("Sua conta foi criada, mas ainda aguarda a **aprovação** do administrador.")
@@ -832,6 +926,12 @@ if not st.session_state.setdefault("autenticado", False):
                 st.error(f"Não foi possível criar a conta: {e}")
 
     st.stop()
+
+# grava o cookie de sessao (agora que o app ja entrou): assim, ao atualizar a
+# pagina ou o sistema, ele volta direto para dentro, sem pedir a senha de novo
+_pendente_cookie = st.session_state.pop("_cookie_pendente", None)
+if _pendente_cookie:
+    _gravar_cookie_sessao(_pendente_cookie[0], _pendente_cookie[1])
 
 # tema visual do interior (aplicado só depois do login)
 st.markdown(_CSS_TEMA, unsafe_allow_html=True)
@@ -1047,8 +1147,27 @@ _JS_BARRA = r"""<script>
     if (!ta) return;
     if (ta.getAttribute("data-spj-vigia") !== MEU) {
       ta.setAttribute("data-spj-vigia", MEU);
-      ta.addEventListener("input", function () { salvarLocal(ta.value); });
+      ta.addEventListener("input", function () {
+        salvarLocal(ta.value);
+        agendarCommit();
+      });
     }
+  }
+
+  // deixa a correcao ortografica do navegador ligada (palavra errada fica
+  // sublinhada em vermelho e o botao direito mostra a correcao sugerida)
+  function ativarOrtografia() {
+    try {
+      var todos = doc.querySelectorAll(".stTextArea textarea");
+      for (var i = 0; i < todos.length; i++) {
+        var ta = todos[i];
+        if (ta.getAttribute("data-spj-spell") !== MEU) {
+          ta.setAttribute("data-spj-spell", MEU);
+          ta.setAttribute("spellcheck", "true");
+          ta.setAttribute("lang", "pt-BR");
+        }
+      }
+    } catch (e) {}
   }
 
   function garantir() {
@@ -1062,26 +1181,36 @@ _JS_BARRA = r"""<script>
       }
       vigiar();
       recuperar();
+      ativarOrtografia();
     } catch (e) {
       if (window.console) console.error("Barra de formatacao: " + e);
     }
   }
 
-  // manda o texto ao servidor de tempos em tempos (sem tirar o foco)
-  function autoComitar() {
+  // manda o texto ao servidor sem tirar o foco: quando o usuario PARA de digitar
+  // (2,5 s) ou, no maximo, a cada 15 s. Assim o sistema nao fica "atualizando" sozinho.
+  var timerCommit = null;
+
+  function autoComitar(agora) {
     try {
       var ta = caixa();
       if (!ta) return;
       if (ultimo === null) { ultimo = ta.value; return; }
       if (ta.value === ultimo) return;
+      if (!agora) return;
       ultimo = ta.value;
       comitar(ta);
     } catch (e) {}
   }
 
+  function agendarCommit() {
+    try { if (timerCommit) window.clearTimeout(timerCommit); } catch (e) {}
+    timerCommit = window.setTimeout(function () { autoComitar(true); }, 2500);
+  }
+
   garantir();
   setInterval(garantir, 1000);
-  setInterval(autoComitar, 4000);
+  setInterval(function () { autoComitar(true); }, 15000);
   try {
     if (window.frameElement) {
       window.frameElement.style.display = "none";
@@ -1143,11 +1272,14 @@ def _dados_rascunho():
     }
 
 
-def _salvar_rascunho():
-    """Grava o rascunho agora (usado antes de operações pesadas)."""
+def _salvar_rascunho(forcar=False):
+    """Grava o rascunho agora (usado antes de operações pesadas e a cada execução)."""
     try:
-        motor.salvar_rascunho(_dados_rascunho(), _dono())
-        st.session_state["_rascunho_ultimo"] = _dados_rascunho()
+        dados = _dados_rascunho()
+        if not forcar and dados == st.session_state.get("_rascunho_ultimo"):
+            return
+        motor.salvar_rascunho(dados, _dono())
+        st.session_state["_rascunho_ultimo"] = dados
     except Exception:
         motor._LOG.warning("Não consegui salvar o rascunho", exc_info=True)
 
@@ -1178,20 +1310,34 @@ def _recuperar_rascunho():
     )
 
 
-@st.fragment(run_every=5)
-def _autosave_rascunho():
-    """Salva o que você está escrevendo a cada 5 segundos (pode deixar aberto)."""
-    dados = _dados_rascunho()
-    if dados == st.session_state.get("_rascunho_ultimo"):
-        return
-    try:
-        motor.salvar_rascunho(dados, _dono())
-        st.session_state["_rascunho_ultimo"] = dados
-    except Exception:
-        motor._LOG.warning("Não consegui salvar o rascunho", exc_info=True)
-
-
 _recuperar_rascunho()
+
+
+def _sync_backup_navegador(texto):
+    """Mantem o backup do navegador em dia depois de mexer no texto pelo servidor."""
+    try:
+        js = ("<script>var t=" + json.dumps(texto or "") + ";"
+              "function f(){try{if(window.parent.__spjSalvar){window.parent.__spjSalvar(t);}}catch(e){}}"
+              "f();setTimeout(f,700);setTimeout(f,1800);</script>")
+        components.html(js, height=0)
+    except Exception:
+        pass
+
+
+def _aplicar_correcao_pendente():
+    """Aplica a correcao de escrita escolhida pelo usuario (antes de desenhar o campo)."""
+    pend = st.session_state.pop("_corr_pendente", None)
+    if not pend:
+        return
+    errado, certo = pend
+    texto = st.session_state.get("narrativa", "") or ""
+    novo = motor.aplicar_correcao(texto, errado, certo)
+    if novo is None:
+        return
+    st.session_state["narrativa"] = novo
+    _salvar_rascunho(forcar=True)
+    st.session_state["_corr_msg"] = f"✅ Corrigido: “{errado}” → “{certo}”"
+    _sync_backup_navegador(novo)
 
 
 def _memorizar(mem_key, valor):
@@ -1347,7 +1493,7 @@ def tentar(fn, *args, **kwargs):
         return fn(*args, **kwargs)
     except Exception as e:
         motor._LOG.exception("Erro na operação")
-        st.error(str(e))
+        st.error(motor.mensagem_amigavel(e))
         return None
 
 
@@ -1452,6 +1598,7 @@ with st.sidebar:
     if st.button("🚪 Sair do sistema", width="stretch"):
         st.session_state["autenticado"] = False
         st.session_state["chat_hist"] = []
+        st.session_state["_cookie_apagar"] = True
         st.rerun()
     st.divider()
 
@@ -1559,9 +1706,11 @@ with st.sidebar:
 
     st.divider()
     st.subheader("📝 Gerar peça")
-    modelo_nome = st.selectbox("Modelo da peça", motor.listar_modelos(), key="modelo_nome")
+    modelo_nome = st.selectbox("Modelo da peça", motor.listar_modelos(), key="modelo_nome",
+                               placeholder="Escolha o modelo da peça")
     st.caption("Sugerido conforme os fatos; você pode trocar.")
-    base_nome = st.selectbox("Base legal", motor.listar_bases(), key="base_nome")
+    base_nome = st.selectbox("Base legal", motor.listar_bases(), key="base_nome",
+                              placeholder="Escolha a base legal")
     with st.expander("Ver a base legal carregada"):
         for item in motor.carregar_base(base_nome):
             st.markdown(f"**{item['referencia']}** — status: `{item['status']}`")
@@ -1603,9 +1752,11 @@ with st.sidebar:
     with st.expander("⚙️ Configurações do provedor"):
         _m = motor.modo_uso()
         pago = st.selectbox("A conta Google tem faturamento (pago)?", ["não", "sim"],
-                            index=1 if _m["uso_pago"] else 0, key="cfg_pago")
+                            index=1 if _m["uso_pago"] else 0, key="cfg_pago",
+                            placeholder="Escolha uma opção")
         chave_modo = st.selectbox("Modo da chave", ["gemini", "vertex"],
-                                  index=0 if _m["modo_chave"] == "gemini" else 1, key="cfg_modo")
+                                  index=0 if _m["modo_chave"] == "gemini" else 1, key="cfg_modo",
+                                  placeholder="Escolha uma opção")
         regiao = st.text_input("Região (Vertex AI)", value=_m["regiao"],
                                placeholder="ex.: southamerica-east1", key="cfg_regiao")
         modelo_edit = st.text_input("Modelo", value=_m["modelo"], key="cfg_modelo")
@@ -2044,7 +2195,8 @@ with aba_caso:
         _cadastro_parte("req", r1)
     with c2:
         _cadastro_parte("rdo", r2)
-    st.text_area("Demais dados (datas, valores, números, o que mais importar)", key="f_outros", height=100)
+    st.text_area("Demais dados (datas, valores, números, o que mais importar)", key="f_outros",
+                 height=100, placeholder="Digite aqui as datas, valores e outros dados importantes")
     st.session_state["dados"] = compor_dados()
     with st.expander("Ver bloco de dados que vai para a IA"):
         st.code(st.session_state["dados"] or "(vazio)")
@@ -2079,7 +2231,8 @@ with aba_anexo:
             st.session_state["analise_alertas"] = []
             st.rerun()
         c2.caption("Dá para editar ou remover trechos direto no quadro abaixo, e também trocar/remover o anexo no 'x'.")
-        st.text_area("Relatório (editável)", key="analise_doc", height=420)
+        st.text_area("Relatório (editável)", key="analise_doc", height=420,
+                 placeholder="O relatório aparece aqui para você conferir e corrigir")
         with st.expander("Ver relatório formatado"):
             st.markdown(st.session_state["analise_doc"])
         if st.session_state.get("analise_alertas"):
@@ -2105,15 +2258,49 @@ with aba_fatos:
             st.rerun()
     barra_texto("Relato (dite ou escreva o que o cliente contou)",
                 "spj_relato_" + (_dono() or "admin"))
+    _aplicar_correcao_pendente()
+    if st.session_state.get("_corr_msg"):
+        st.success(st.session_state.pop("_corr_msg"), icon="✍️")
     st.text_area("Relato (dite ou escreva o que o cliente contou)", key="narrativa", height=150,
-                 placeholder="ex.: 'A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026...'")
+                 placeholder="Digite seu texto aqui")
     c_prev, c_aviso = st.columns([1, 3])
     if c_prev.checkbox("👁 Ver com formatação", key="relato_preview"):
         with st.container(border=True):
             st.markdown(previa_texto(st.session_state.get("narrativa", "")),
                         unsafe_allow_html=True)
-    c_aviso.caption("💾 Salvo sozinho a cada 5 segundos. Pode deixar o sistema aberto "
-                    "sem medo de perder o que escreveu.")
+    c_aviso.caption("💾 Salvo sozinho enquanto você digita (no seu navegador e no sistema). "
+                    "Pode deixar o sistema aberto sem medo de perder o que escreveu.")
+    st.caption("✍️ **Palavra errada?** Ela fica **sublinhada em vermelho** no campo acima: "
+               "clique com o botão direito na palavra e escolha a correção sugerida. "
+               "Exemplo: “A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026…”")
+
+    if st.button("🔤 Revisar minha escrita com a IA", key="btn_revisar_escrita"):
+        st.session_state["_correcoes"] = []
+        st.session_state["_revisou"] = False
+        if not st.session_state["narrativa"].strip():
+            st.warning("Escreva o relato primeiro.")
+        else:
+            with st.status("Revisando a escrita...", expanded=False) as s:
+                achados = tentar(motor.revisar_escrita, st.session_state["narrativa"], anonimizador)
+                s.update(label="Revisão concluída" if achados is not None else "Falha",
+                         state="complete" if achados is not None else "error")
+            if achados is not None:
+                st.session_state["_correcoes"] = achados
+                st.session_state["_revisou"] = True
+
+    achados = st.session_state.get("_correcoes") or []
+    if achados:
+        st.info(f"🔎 Encontrei {len(achados)} possível(is) erro(s) de escrita. "
+                "Clique no que quer corrigir:")
+        for i, achado in enumerate(achados[:12]):
+            col1, col2 = st.columns([3, 4])
+            if col1.button(f"❌ {achado['errado']}  →  ✅ {achado['certo']}", key=f"corr_{i}"):
+                st.session_state["_corr_pendente"] = (achado["errado"], achado["certo"])
+                st.rerun()
+            col2.caption(achado.get("motivo", ""))
+    elif st.session_state.get("_revisou"):
+        st.success("✅ Não encontrei erros de escrita no relato.")
+
     if st.button("🧹 Limpar fatos e listar pendências", type="primary"):
         if not st.session_state["narrativa"].strip():
             st.warning("Escreva ou dite o relato primeiro.")
@@ -2137,7 +2324,8 @@ with aba_fatos:
     if not st.session_state["fatos_edit"]:
         st.info("Escreva o relato acima, clique em 'Limpar fatos' e os fatos aparecerão aqui.")
     else:
-        st.text_area("Fatos", key="fatos_edit", height=280)
+        st.text_area("Fatos", key="fatos_edit", height=280,
+                     placeholder="Os fatos organizados aparecem aqui — pode editar à vontade")
     st.caption("Quando estiver pronto, gere a peça pelo botão **📝 Gerar peça** na barra lateral.")
 
     perguntas = [p.strip().lstrip("-").strip()
@@ -2175,7 +2363,8 @@ with aba_peca:
     if not st.session_state["peca_edit"]:
         st.info("Gere a peça na aba 2️⃣.")
     else:
-        texto = st.text_area("Texto da peça", key="peca_edit", height=520)
+        texto = st.text_area("Texto da peça", key="peca_edit", height=520,
+                         placeholder="A peça aparece aqui — pode corrigir antes de exportar")
         exportar(texto)
 
 with aba_conf:
@@ -2204,7 +2393,8 @@ with aba_conf:
             st.session_state["juris_sugerida"] = ""
             st.rerun()
         c2.caption("Você pode editar ou remover sugestões direto no quadro abaixo.")
-        st.text_area("Sugestões (editável)", key="juris_sugerida", height=360)
+        st.text_area("Sugestões (editável)", key="juris_sugerida", height=360,
+                 placeholder="As sugestões de jurisprudência e de legislação aparecem aqui")
         st.markdown("**🔗 Abrir cada sugestão na fonte oficial** (clique para pesquisar no site do tribunal):")
         itens = decisoes.parse_sugestoes_juris(st.session_state["juris_sugerida"])
         if not itens:
@@ -2267,5 +2457,78 @@ with aba_chat:
         if _resposta:
             st.session_state["chat_hist"].append({"role": "assistant", "content": _resposta})
 
-# salvamento automático do que está sendo escrito (roda sozinho a cada 5s)
-_autosave_rascunho()
+# salva o que está sendo escrito (roda a cada execução, sem recarregar a tela)
+_salvar_rascunho()
+
+# guarda a aba em que você estava, para voltar para a mesma tela após atualizar
+_JS_ABAS = """
+<script>
+(function () {
+  var P = window.parent;
+  var doc = P.document;
+  var CHAVE = "spj_aba";
+  var MEU = "spj-aba-" + Math.random().toString(36).slice(2);
+
+  function lista() {
+    var listas = doc.querySelectorAll('div[data-testid="stAppViewContainer"] [role="tablist"]');
+    for (var i = 0; i < listas.length; i++) {
+      var ts = listas[i].querySelectorAll('[role="tab"]');
+      if (ts.length >= 5) return ts;
+    }
+    return null;
+  }
+
+  function indiceAtual(ts) {
+    for (var i = 0; i < ts.length; i++) {
+      if (ts[i].getAttribute("aria-selected") === "true") return i;
+    }
+    return -1;
+  }
+
+  function salvar(i) {
+    try { P.localStorage.setItem(CHAVE, String(i)); } catch (e) {}
+  }
+
+  function restaurar(ts) {
+    var guardado = null;
+    try { guardado = P.localStorage.getItem(CHAVE); } catch (e) {}
+    if (guardado === null) return;
+    var alvo = parseInt(guardado, 10);
+    if (isNaN(alvo) || alvo < 0 || alvo >= ts.length) return;
+    if (indiceAtual(ts) === alvo) return;
+    try { ts[alvo].click(); } catch (e) {}
+  }
+
+  function marcarAoClicar(ts) {
+    var caixa = ts[0] ? ts[0].parentNode : null;
+    if (!caixa || caixa.getAttribute("data-spj-aba") === MEU) return;
+    caixa.setAttribute("data-spj-aba", MEU);
+    caixa.addEventListener("click", function (ev) {
+      var alvo = ev.target && ev.target.closest ? ev.target.closest('[role="tab"]') : null;
+      if (!alvo) return;
+      var ts2 = lista();
+      if (!ts2) return;
+      for (var i = 0; i < ts2.length; i++) {
+        if (ts2[i] === alvo) { salvar(i); return; }
+      }
+    }, true);
+  }
+
+  function rodar() {
+    try {
+      var ts = lista();
+      if (!ts) return;
+      marcarAoClicar(ts);
+      restaurar(ts);
+    } catch (e) {}
+  }
+
+  rodar();
+  setInterval(rodar, 700);
+})();
+</script>
+"""
+try:
+    components.html(_JS_ABAS, height=0)
+except Exception:
+    pass

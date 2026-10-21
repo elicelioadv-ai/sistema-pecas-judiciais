@@ -9,10 +9,13 @@ Responsabilidades:
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
 import os
 import re
+import time
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -330,15 +333,76 @@ def _cliente_gemini():
     chave = _limpar_chave("GEMINI_API_KEY")
     if not chave or "cole_" in chave:
         raise RuntimeError("Chave do Gemini não configurada. Veja o arquivo .env")
+    # tempo maximo de 2 minutos por chamada e sem retentativa automatica da
+    # biblioteca (o retry fica sob nosso controle, para a tela nao travar)
+    opcoes = {"timeout": 120000}
+    try:
+        from google.genai import types as _types
+        opcoes = {"timeout": 120000,
+                  "retry_options": _types.HttpRetryOptions(attempts=1, initial_delay=0.0,
+                                                          max_delay=0.0, exp_base=1.0, jitter=0.0)}
+    except Exception:
+        pass
     if os.getenv("MODO_CHAVE", "gemini").strip().lower() == "vertex":
         regiao = os.getenv("REGIAO", "").strip()
         if regiao:
             try:
-                return genai.Client(vertexai=True, api_key=chave, location=regiao)
+                return genai.Client(vertexai=True, api_key=chave, location=regiao, http_options=opcoes)
             except Exception:
                 _LOG.warning("Falha ao usar a região '%s'; tentando sem região.", regiao)
-        return genai.Client(vertexai=True, api_key=chave)
-    return genai.Client(api_key=chave)
+        return genai.Client(vertexai=True, api_key=chave, http_options=opcoes)
+    return genai.Client(api_key=chave, http_options=opcoes)
+
+
+def _segredo_sessao():
+    """Chave do cookie de sessao (fica so no servidor; muda se a senha mudar)."""
+    base = senha_acesso() or usuario_acesso() or "pecas-local"
+    return hashlib.sha256(("pecas-sessao-v1|" + base).encode("utf-8")).hexdigest()
+
+
+def token_sessao(usuario, admin, dias=30):
+    """Cria o cookie de sessao (assinado): mantem o acesso apos uma atualizacao."""
+    exp = int(time.time()) + int(dias) * 24 * 3600
+    dados = f"{usuario}|{'1' if admin else '0'}|{exp}"
+    assinatura = hmac.new(_segredo_sessao().encode("utf-8"), dados.encode("utf-8"),
+                           hashlib.sha256).hexdigest()
+    return f"{dados}|{assinatura}"
+
+
+def ler_token_sessao(token):
+    """Devolve {usuario, admin} se o cookie for valido; senao None."""
+    try:
+        usuario, admin, exp, assinatura = (token or "").split("|")
+        if int(exp) < time.time():
+            return None
+        dados = f"{usuario}|{admin}|{exp}"
+        esperado = hmac.new(_segredo_sessao().encode("utf-8"), dados.encode("utf-8"),
+                            hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(assinatura, esperado):
+            return None
+        return {"usuario": usuario, "admin": admin == "1"}
+    except Exception:
+        return None
+
+
+def mensagem_amigavel(erro):
+    msg = str(erro)
+    baixo = msg.lower()
+    if "503" in msg or "unavailable" in baixo or "high demand" in baixo or "sobrecarregada" in baixo:
+        return ("A IA está sobrecarregada agora (o Google está com muita demanda). "
+                "Nada foi perdido: o que você escreveu continua salvo. "
+                "Tente de novo em alguns minutos.")
+    if "429" in msg or "resource_exhausted" in baixo or "cota" in baixo:
+        return ("A cota gratuita da IA acabou por hoje. Aguarde o limite se resetar ou "
+                "ative faturamento/Vertex AI nas ⚙️ Configurações.")
+    if "timeout" in baixo or "timed out" in baixo or "deadline" in baixo:
+        return ("A IA demorou demais para responder e foi interrompida. Nada foi perdido. "
+                "Tente de novo em alguns minutos.")
+    if "api key" in baixo or "key not valid" in baixo or "api_key" in baixo:
+        return "A chave da IA não está válida. Confira nas ⚙️ Configurações (ou nos Secrets da nuvem)."
+    if "connection" in baixo or "network" in baixo or "ssl" in baixo:
+        return "A conexão com a IA falhou. Verifique a internet e tente de novo."
+    return msg
 
 
 def _chamar_ia(system, contents, max_tokens=6000):
@@ -358,7 +422,7 @@ def _chamar_gemini(system, contents, max_tokens):
         temperature=0.2,
         max_output_tokens=max_tokens * 3,  # margem: alguns modelos gastam tokens "pensando"
     )
-    for tentativa in range(4):
+    for tentativa in range(3):
         try:
             resp = cliente.models.generate_content(model=MODELO, contents=contents, config=config)
             if not resp.text:
@@ -373,7 +437,18 @@ def _chamar_gemini(system, contents, max_tokens):
                     "Aguarde o prazo indicado pelo Google, troque o MODELO no .env "
                     "ou ative faturamento/Vertex AI nas ⚙️ Configurações."
                 ) from e
-            if any(x in msg for x in ("429", "RESOURCE_EXHAUSTED", "503", "UNAVAILABLE")) and tentativa < 3:
+            # servidor sobrecarregado (o Google está com alta demanda): tenta uma
+            # vez e, se continuar, avisa de forma clara (antes a tela ficava travada)
+            if any(x in msg for x in ("503", "UNAVAILABLE", "high demand", "overloaded")):
+                if tentativa < 1:
+                    time.sleep(10)
+                    continue
+                raise RuntimeError(
+                    "A IA está sobrecarregada agora (o Google está com muita demanda). "
+                    "Nada foi perdido: o que você escreveu continua salvo. "
+                    "Tente de novo em alguns minutos."
+                ) from e
+            if "429" in msg and tentativa < 2:
                 time.sleep(20)
                 continue
             raise
@@ -393,6 +468,66 @@ def _chamar_claude(system, contents, max_tokens):
     resp = cliente.messages.create(model=MODELO, max_tokens=max_tokens, system=system,
                                    messages=[{"role": "user", "content": contents}])
     return "".join(b.text for b in resp.content if b.type == "text")
+
+
+REGRAS_ESCRITA = """Você é revisor de português do Brasil. Corrija APENAS erros de ortografia, acentuação e gramática básica.
+REGRAS ABSOLUTAS:
+- NÃO mude o sentido, NÃO reescreva, NÃO troque por sinônimos, NÃO mexa em nomes próprios, datas, valores, números, termos jurídicos ou nas marcações de formatação (**, __, ==, ~~, ##, - ).
+- Só acerte o que estiver realmente errado. Se o texto estiver correto, não invente problema.
+Responda EXATAMENTE com um JSON e nada mais:
+{"correcoes":[{"errado":"trecho errado como está no texto","certo":"trecho correto","motivo":"explicação curtinha"}]}
+Se não houver erro algum, responda: {"correcoes":[]}
+"""
+
+
+def aplicar_correcao(texto, errado, certo):
+    """Troca a primeira ocorrencia da palavra errada pela correta. Devolve None se nao houver."""
+    texto = texto or ""
+    if not errado or not certo or errado not in texto:
+        return None
+    return texto.replace(errado, certo, 1)
+
+
+def _extrair_correcoes(saida):
+    """Pega a lista de correções que a IA devolveu (aceita JSON puro ou com cercas)."""
+    texto = (saida or "").strip()
+    if texto.startswith("```"):
+        texto = re.sub(r"^```[a-zA-Z]*\s*", "", texto)
+        texto = re.sub(r"```\s*$", "", texto).strip()
+    itens = []
+    try:
+        obj = json.loads(texto)
+        itens = obj.get("correcoes", []) if isinstance(obj, dict) else []
+    except Exception:
+        bloco = re.search(r"\{.*\}", texto, re.S)
+        if bloco:
+            try:
+                obj = json.loads(bloco.group(0))
+                itens = obj.get("correcoes", []) if isinstance(obj, dict) else []
+            except Exception:
+                itens = []
+    limpas = []
+    for item in itens:
+        if not isinstance(item, dict):
+            continue
+        errado = str(item.get("errado", "")).strip()
+        certo = str(item.get("certo", "")).strip()
+        motivo = str(item.get("motivo", "")).strip()
+        if errado and certo and errado != certo:
+            limpas.append({"errado": errado, "certo": certo, "motivo": motivo})
+    return limpas
+
+
+def revisar_escrita(texto, anonimizador=None):
+    """Procura erros de escrita e devolve [{errado, certo, motivo}]."""
+    entrada = _texto_para_ia(texto)
+    mapa = {}
+    if anonimizador is not None:
+        entrada, mapa = anonimizador.mascarar(entrada)
+    saida = _chamar_ia(REGRAS_ESCRITA, entrada, 1000)
+    if anonimizador is not None:
+        saida = anonimizador.restaurar(saida, mapa)
+    return _extrair_correcoes(saida)
 
 
 REGRAS_FATOS = """Você é assistente de um escritório de advocacia brasileiro.
