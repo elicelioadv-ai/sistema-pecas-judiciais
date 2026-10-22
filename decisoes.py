@@ -119,6 +119,80 @@ DATAJUD_ESAJ = {
     "api_publica_tjsp": "tjsp",
 }
 
+# ---------------------------------------------------------------------------
+# Número CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO
+#   J  = segmento da Justiça (1 STF, 2 CNJ, 3 STJ, 4 Federal, 5 Trabalho,
+#        6 Eleitoral, 7 Militar, 8 Estadual, 9 Militar estadual)
+#   TR = tribunal/unidade (nos tribunais estaduais e eleitorais é o código da
+#        unidade federativa; nos demais é o número do tribunal)
+# O número indica em QUE tribunal o processo está: usar isso evita procurar
+# no tribunal errado (o caso mais comum de "processo não encontrado").
+# ---------------------------------------------------------------------------
+CNJ_ESTADOS = {
+    "01": "ac", "02": "al", "03": "ap", "04": "am", "05": "ba", "06": "ce",
+    "07": "df", "08": "es", "09": "go", "10": "ma", "11": "mt", "12": "ms",
+    "13": "mg", "14": "pa", "15": "pb", "16": "pr", "17": "pe", "18": "pi",
+    "19": "rj", "20": "rn", "21": "rs", "22": "ro", "23": "rr", "24": "sc",
+    "25": "se", "26": "sp", "27": "to",
+}
+
+
+def alias_do_numero(numero):
+    """Descobre o tribunal (alias da API do DataJud) pelo número CNJ.
+
+    Devolve ``None`` quando o número não permite deduzir o tribunal.
+    """
+    d = so_digitos(numero)
+    if len(d) != 20:
+        return None
+    j = d[13]
+    tr = d[14:16]
+    if j == "3":
+        return "api_publica_stj"
+    if j == "4":
+        n = int(tr)
+        return f"api_publica_trf{n}" if 1 <= n <= 6 else None
+    if j == "5":
+        if tr == "90":
+            return "api_publica_tst"
+        n = int(tr)
+        return f"api_publica_trt{n}" if 1 <= n <= 24 else None
+    if j == "6":
+        uf = CNJ_ESTADOS.get(tr)
+        return f"api_publica_tre-{uf}" if uf else None
+    if j == "7":
+        return "api_publica_stm"
+    if j == "8":
+        uf = CNJ_ESTADOS.get(tr)
+        if not uf:
+            return None
+        return "api_publica_tjdft" if uf == "df" else f"api_publica_tj{uf}"
+    if j == "9":
+        uf = CNJ_ESTADOS.get(tr)
+        return f"api_publica_tjm{uf}" if uf else None
+    return None
+
+
+def aliases_do_segmento(numero):
+    """Todos os tribunais do mesmo segmento do número (busca ampla)."""
+    d = so_digitos(numero)
+    if len(d) != 20:
+        return []
+    j = d[13]
+    if j == "4":
+        return [f"api_publica_trf{n}" for n in range(1, 7)]
+    if j == "5":
+        return [f"api_publica_trt{n}" for n in range(1, 25)]
+    if j == "6":
+        return [a for _, a in DATAJUD_RAMOS["Justiça Eleitoral"]]
+    if j == "8":
+        return [a for _, a in DATAJUD_RAMOS["Justiça Estadual"]]
+    if j == "9":
+        return [a for _, a in DATAJUD_RAMOS["Justiça Militar"]]
+    if j in ("3", "7"):
+        return [a for _, a in DATAJUD_RAMOS["Tribunais superiores"]]
+    return []
+
 # Outros links diretos por número (sites que abrem o processo pela própria URL).
 # {dig} = número com 20 dígitos, sem pontos/traços.
 DATAJUD_SITE = {
@@ -448,6 +522,53 @@ def consultar_processo(alias, numero):
         raise RuntimeError(f"Não consegui falar com o DataJud (verifique a internet): {e.reason}") from e
     hits = (dados.get("hits") or {}).get("hits") or []
     return [_normalizar_processo(h.get("_source") or {}) for h in hits]
+
+
+def consultar_processo_numero(numero, alias_preferido=None, busca_ampla=False):
+    """Procura o processo pelo número, deduzindo o tribunal a partir do número.
+
+    O número CNJ já diz em que tribunal o processo está (segmento J + unidade TR).
+    Antes o sistema consultava só o tribunal escolhido na tela, e por isso
+    processos de outras varas (de outro TRT, por exemplo) não eram encontrados.
+
+    Devolve ``(processos, alias_usado)``: ``alias_usado`` é o tribunal em que o
+    processo foi encontrado (ou ``None`` se não foi encontrado em lugar nenhum).
+    """
+    digitos = so_digitos(numero)
+    if len(digitos) != 20:
+        raise ValueError("O número do processo deve ter 20 dígitos (formato CNJ: "
+                         "NNNNNNN-DD.AAAA.J.TR.OOOO).")
+    derivados = alias_do_numero(digitos)
+    alvos = []
+    if derivados:
+        alvos.append(derivados)
+    if alias_preferido and alias_preferido not in alvos:
+        alvos.append(alias_preferido)
+    erros = {}
+    for alias in alvos:
+        try:
+            procs = consultar_processo(alias, digitos)
+        except Exception as e:  # rede/tribunal fora do ar: tenta o próximo
+            erros[alias] = str(e)
+            continue
+        if procs:
+            return procs, alias
+    if busca_ampla:
+        # não achou: procura em todos os tribunais do mesmo segmento
+        for alias in aliases_do_segmento(digitos):
+            if alias in alvos or alias in erros:
+                continue
+            try:
+                procs = consultar_processo(alias, digitos)
+            except Exception as e:
+                erros[alias] = str(e)
+                continue
+            if procs:
+                return procs, alias
+    if erros and len(erros) == len(alvos):
+        # todos os tribunais tentados falharam (erro de rede/chave): mostra o erro
+        raise RuntimeError(next(iter(erros.values())))
+    return [], None
 
 
 def _grau2(grau):

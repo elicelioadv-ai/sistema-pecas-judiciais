@@ -57,6 +57,15 @@ def _pje_detalhe(alias, numero, grau=None):
     return fn(alias, numero, grau) if fn else None
 
 
+def _nome_tribunal(alias):
+    """Nome curto do tribunal (ex.: ``api_publica_trt2`` -> ``TRT 2ª Região``)."""
+    for _ramo, _opcoes in getattr(decisoes, "DATAJUD_RAMOS", {}).items():
+        for _rot, _alias in _opcoes:
+            if _alias == alias:
+                return _rot
+    return alias or ""
+
+
 def _links_processo_nome(alias, nome):
     """Links oficiais de busca por nome; tolera um `decisoes` antigo em cache."""
     fn = getattr(decisoes, "links_processo_nome", None)
@@ -785,7 +794,7 @@ _definir_idioma()
 # "cookie de sessao" assinado: ao voltar, o app entra sozinho.
 _COOKIE_SESSAO = "pecas_sessao"
 _DIAS_SESSAO = 30
-_BUILD = "editor-word-destaque-2026-10-21"
+_BUILD = "consulta-processo-tribunal-2026-10-22"
 
 
 def _cookies_recebidas():
@@ -1355,12 +1364,24 @@ _JS_BARRA = r"""<script>
     if (!ta0) return null;
     var raiz0 = ta0.closest('[data-testid="stTextAreaRootElement"]') || ta0.parentNode;
     if (raiz0) {
+      // o editor da tela anterior: se ainda da para usar, ele volta no lugar
+      // (assim o texto e a selecao do usuario nao se perdem na atualizacao)
+      var anterior = P.__spjEditor;
+      if (anterior && !anterior.isConnected) {
+        try {
+          raiz0.insertBefore(anterior, ta0);
+          var c2 = raiz0.closest(".stTextArea");
+          if (c2) c2.classList.add("__spj_com_editor__");
+          P.__spjEditor = anterior;
+          return anterior;
+        } catch (e) {}
+      }
       var ja = null;
       var velhos = raiz0.querySelectorAll(".__spj_editor__");
       for (var i = 0; i < velhos.length; i++) {
         if (velhos[i].isConnected && !ja) ja = velhos[i];
       }
-      if (ja) return ja;
+      if (ja) { P.__spjEditor = ja; return ja; }
       // sobrou editor de uma tela anterior? tira, para nao mexer no errado
       for (var j = 0; j < velhos.length; j++) {
         try { velhos[j].parentNode.removeChild(velhos[j]); } catch (e) {}
@@ -1380,10 +1401,15 @@ _JS_BARRA = r"""<script>
     ed.setAttribute("role", "textbox");
     ed.setAttribute("aria-multiline", "true");
     ed.setAttribute("aria-label", ALVO);
-    ed.innerHTML = mdParaHtml(servidor.trim() ? servidor : local);
+    // se o usuario ainda tem mudanca nao enviada, o texto dele manda
+    // (senao a atualizacao da tela apagaria a formatacao recem aplicada)
+    var usarLocal = (local && local.trim() && (P.__spjPendente || !servidor.trim()));
+    ed.innerHTML = mdParaHtml(usarLocal ? local : servidor);
+    if (!usarLocal) { try { P.__spjPendente = false; } catch (e) {} }
     ultimoHtml = ed.innerHTML;
     P.__spjHtml = ultimoHtml;
     raiz.insertBefore(ed, ta);
+    P.__spjEditor = ed;
     cont.classList.add("__spj_com_editor__");
     ed.addEventListener("input", function () { digitar(ed); });
     ed.addEventListener("paste", function () { setTimeout(function () { digitar(ed); }, 30); });
@@ -1392,6 +1418,7 @@ _JS_BARRA = r"""<script>
 
   function digitar(ed) {
     if (!ed) return;
+    P.__spjPendente = true;
     var html = ed.innerHTML;
     P.__spjHtml = html;
     ultimoHtml = html;
@@ -1500,15 +1527,19 @@ _JS_BARRA = r"""<script>
       var fim = posicaoDe(ed, r.endContainer, r.endOffset);
       if (fim < ini) { var t = ini; ini = fim; fim = t; }
       selSalva = {ini: ini, fim: fim};
+      // guarda tambem no documento pai: se a tela se atualizar e o editor for
+      // recriado, o trecho escolhido continua valendo
+      P.__spjSel = {ini: ini, fim: fim};
     } catch (e) {}
   }
 
   function restaurarSelecao() {
     try {
       var ed = editor();
-      if (!ed || !selSalva) return false;
-      var a = noEPosicaoDe(ed, selSalva.ini);
-      var b = noEPosicaoDe(ed, selSalva.fim);
+      var ss = selSalva || P.__spjSel;
+      if (!ed || !ss) return false;
+      var a = noEPosicaoDe(ed, ss.ini);
+      var b = noEPosicaoDe(ed, ss.fim);
       if (!a || !b) return false;
       var r = doc.createRange();
       r.setStart(a.no, a.off);
@@ -1571,7 +1602,8 @@ _JS_BARRA = r"""<script>
         if (b > a) return {ini: a, fim: b};
       }
     }
-    if (selSalva && selSalva.fim > selSalva.ini) return {ini: selSalva.ini, fim: selSalva.fim};
+    var ss = selSalva || P.__spjSel;
+    if (ss && ss.fim > ss.ini) return {ini: ss.ini, fim: ss.fim};
     return null;
   }
 
@@ -1639,20 +1671,21 @@ _JS_BARRA = r"""<script>
     // tira as marcas que ja existem no trecho
     var lista = nosDeTexto(ed);
     var marcas = ed.querySelectorAll("mark");
-    var mesmas = marcas.length > 0;
     var alvo = [];
+    var mesmaCor = false;
     for (var i = 0; i < marcas.length; i++) {
       var iv = intervaloDaMarca(lista, marcas[i]);
       if (iv.ini < 0) continue;
       if (iv.ini < trecho.fim && iv.fim > trecho.ini) {
         alvo.push(marcas[i]);
-        if ((marcas[i].className || "") !== (classe || "")) mesmas = false;
+        if ((marcas[i].className || "") === (classe || "")) mesmaCor = true;
       }
     }
     for (var j = 0; j < alvo.length; j++) { tirarMarca(alvo[j]); }
 
-    // se o trecho ja estava com essa cor, e so desmarcar (nao pinta de novo)
-    if (classe && !mesmas) {
+    // se o trecho ja estava com essa cor, e so desmarcar (nao pinta de novo).
+    // (so conta a marca do proprio trecho: marca em outro lugar nao impede)
+    if (classe && !(alvo.length > 0 && mesmaCor)) {
       envolverPorPosicao(ed, trecho.ini, trecho.fim, classe);
     }
     digitar(ed);
@@ -1972,7 +2005,7 @@ _JS_BARRA = r"""<script>
       }
       var ed = criarEditor(cont);
       // o editor foi recriado (a tela atualizou): devolve a selecao do usuario
-      if (ed && selSalva) {
+      if (ed && (selSalva || P.__spjSel)) {
         try { restaurarSelecao(); } catch (e) {}
       }
       vigiar();
@@ -1990,11 +2023,39 @@ _JS_BARRA = r"""<script>
         ed.innerHTML = mdParaHtml(ta.value);
         P.__spjHtml = ed.innerHTML;
         ultimoHtml = ed.innerHTML;
+        try { P.__spjPendente = false; } catch (e) {}
         digitar(ed);
       }
     } catch (e) {
       if (window.console) console.error("Barra de formatacao: " + e);
     }
+  }
+
+  // a tela do Streamlit recria os elementos a cada atualizacao: se o editor
+  // for removido, ele volta no mesmo lugar (com o texto e a selecao do usuario)
+  function vigiarEdicao() {
+    try {
+      if (!P.MutationObserver) return;
+      if (P.__spjObs) { try { P.__spjObs.disconnect(); } catch (e) {} }
+      var obs = new P.MutationObserver(function () {
+        var ed = P.__spjEditor;
+        if (!ed || ed.isConnected) return;
+        try {
+          var c = achar();
+          if (!c) return;
+          var ta = c.querySelector("textarea");
+          if (!ta) return;
+          var raiz = ta.closest('[data-testid="stTextAreaRootElement"]') || ta.parentNode;
+          if (!raiz) return;
+          raiz.insertBefore(ed, ta);
+          var c2 = raiz.closest(".stTextArea");
+          if (c2) c2.classList.add("__spj_com_editor__");
+          try { restaurarSelecao(); } catch (e) {}
+        } catch (e) {}
+      });
+      obs.observe(P.document.body, {childList: true, subtree: true});
+      P.__spjObs = obs;
+    } catch (e) {}
   }
 
   // manda o texto ao servidor sem tirar o foco: quando o usuario PARA de digitar
@@ -2020,6 +2081,7 @@ _JS_BARRA = r"""<script>
   }
 
   garantir();
+  vigiarEdicao();
   setInterval(garantir, 1000);
   setInterval(function () { autoComitar(true); }, 15000);
   try {
@@ -2729,6 +2791,15 @@ def _stj_acordaos(datasets, limite):
 
 
 @st.cache_data(ttl=1 * 3600, show_spinner=False)
+def _datajud_consultar_numero(numero, alias_preferido=None, busca_ampla=False):
+    """Consulta o processo deduzindo o tribunal pelo número (com cache)."""
+    fn = getattr(decisoes, "consultar_processo_numero", None)
+    if not fn:
+        return decisoes.consultar_processo(alias_preferido, numero), alias_preferido
+    return fn(numero, alias_preferido, busca_ampla)
+
+
+@st.cache_data(ttl=1 * 3600, show_spinner=False)
 def _datajud_consultar(alias, numero):
     return decisoes.consultar_processo(alias, numero)
 
@@ -2876,31 +2947,52 @@ def aba_processos():
             st.session_state.pop("dj_procs", None)
             st.session_state.pop("dj_erro", None)
             st.session_state.pop("dj_nome_busca", None)
+            st.session_state.pop("dj_alias", None)
             st.rerun()
             st.rerun()
+        busca_ampla = st.checkbox(
+            "🔎 Se não encontrar, procurar em todos os tribunais do ramo",
+            value=bool(st.session_state.get("dj_busca_ampla")),
+            key="dj_busca_ampla",
+            help="Útil quando o número do processo foi digitado com a vara errada "
+                 "ou quando o processo não está no tribunal escolhido acima.")
         if consultar:
             if not numero.strip():
                 st.warning("Digite o número do processo.")
             else:
                 try:
                     with st.status("Consultando o DataJud...", expanded=False) as s:
-                        procs = _datajud_consultar(alias, numero)
+                        procs, achado_em = _datajud_consultar_numero(
+                            numero, alias, busca_ampla)
                         s.update(label=f"{len(procs)} processo(s) encontrado(s)",
                                  state="complete" if procs else "error")
                     st.session_state["dj_procs"] = procs
+                    st.session_state["dj_alias"] = achado_em or alias
                     st.session_state["dj_erro"] = ""
                 except Exception as e:
                     st.session_state["dj_procs"] = []
+                    st.session_state["dj_alias"] = alias
                     st.session_state["dj_erro"] = str(e)
         if st.session_state.get("dj_erro"):
             st.error(st.session_state["dj_erro"])
         procs = st.session_state.get("dj_procs") or []
         if not procs and not st.session_state.get("dj_erro"):
             st.info("Digite o número e clique em **🔍 Consultar processo**.")
+        alias_uso = st.session_state.get("dj_alias") or alias
+        if procs and alias_uso != alias:
+            st.info("✅ O processo foi encontrado no **%s**. (O número do processo "
+                    "indica esse tribunal; o da tela era %s.)"
+                    % (_nome_tribunal(alias_uso), _nome_tribunal(alias)))
+        if not procs and not st.session_state.get("dj_erro"):
+            st.warning("Não encontrei esse processo no **%s**.\n\n"
+                       "Confira o número (20 dígitos) ou marque a opção de procurar "
+                       "em todos os tribunais do ramo. Processos em **segredo de "
+                       "justiça** não aparecem no DataJud."
+                       % _nome_tribunal(alias))
         for p in procs:
             st.markdown(f"### {p['numero']} — {p['tribunal']} ({p['grau']})")
             st.caption("Abrir o processo direto no site oficial:")
-            for rotulo_link, url_link in _links_processo(alias, p["numero"], p.get("grau")):
+            for rotulo_link, url_link in _links_processo(alias_uso, p["numero"], p.get("grau")):
                 st.link_button(rotulo_link, url_link)
             if p["classe"]:
                 st.markdown(f"**Classe:** {p['classe']}")
@@ -2917,7 +3009,7 @@ def aba_processos():
                 with st.expander(f"Ver as demais {len(p['movimentos']) - 20} movimentações"):
                     for m in p["movimentos"][20:]:
                         st.markdown(f"- `{m['data']}` — {m['nome']}")
-            comunica = _comunicacoes_processo(alias, p["numero"])
+            comunica = _comunicacoes_processo(alias_uso, p["numero"])
             if comunica:
                 st.markdown(f"**📬 Comunicações no Diário / PJe ({len(comunica)})** — mais recentes primeiro:")
                 for c in comunica[:20]:
