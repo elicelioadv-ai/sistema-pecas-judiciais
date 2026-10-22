@@ -794,7 +794,7 @@ _definir_idioma()
 # "cookie de sessao" assinado: ao voltar, o app entra sozinho.
 _COOKIE_SESSAO = "pecas_sessao"
 _DIAS_SESSAO = 30
-_BUILD = "consulta-processo-tribunal-2026-10-22"
+_BUILD = "consulta-processo-tribunal-2026-10-22b"
 
 
 def _cookies_recebidas():
@@ -2948,11 +2948,10 @@ def aba_processos():
             st.session_state.pop("dj_erro", None)
             st.session_state.pop("dj_nome_busca", None)
             st.session_state.pop("dj_alias", None)
-            st.rerun()
+            st.session_state.pop("dj_consultou", None)
             st.rerun()
         busca_ampla = st.checkbox(
             "🔎 Se não encontrar, procurar em todos os tribunais do ramo",
-            value=bool(st.session_state.get("dj_busca_ampla")),
             key="dj_busca_ampla",
             help="Útil quando o número do processo foi digitado com a vara errada "
                  "ou quando o processo não está no tribunal escolhido acima.")
@@ -2969,21 +2968,24 @@ def aba_processos():
                     st.session_state["dj_procs"] = procs
                     st.session_state["dj_alias"] = achado_em or alias
                     st.session_state["dj_erro"] = ""
+                    st.session_state["dj_consultou"] = True
                 except Exception as e:
                     st.session_state["dj_procs"] = []
                     st.session_state["dj_alias"] = alias
                     st.session_state["dj_erro"] = str(e)
+                    st.session_state["dj_consultou"] = True
         if st.session_state.get("dj_erro"):
             st.error(st.session_state["dj_erro"])
         procs = st.session_state.get("dj_procs") or []
-        if not procs and not st.session_state.get("dj_erro"):
+        consultou = bool(st.session_state.get("dj_consultou"))
+        if not procs and not st.session_state.get("dj_erro") and not consultou:
             st.info("Digite o número e clique em **🔍 Consultar processo**.")
         alias_uso = st.session_state.get("dj_alias") or alias
         if procs and alias_uso != alias:
             st.info("✅ O processo foi encontrado no **%s**. (O número do processo "
                     "indica esse tribunal; o da tela era %s.)"
                     % (_nome_tribunal(alias_uso), _nome_tribunal(alias)))
-        if not procs and not st.session_state.get("dj_erro"):
+        if not procs and consultou and not st.session_state.get("dj_erro"):
             st.warning("Não encontrei esse processo no **%s**.\n\n"
                        "Confira o número (20 dígitos) ou marque a opção de procurar "
                        "em todos os tribunais do ramo. Processos em **segredo de "
