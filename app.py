@@ -372,6 +372,40 @@ input::placeholder, textarea::placeholder { color: var(--placeholder) !important
 }
 .st-key-narrativa .__spj_editor__ b, .st-key-narrativa .__spj_editor__ strong { font-weight: 700; }
 .st-key-narrativa .__spj_editor__ mark { background: #FFF59D !important; color: #1F2933; }
+/* cores do destaque (marka-texto) */
+.st-key-narrativa .__spj_editor__ mark.hl_d1 { background: #FFF59D !important; color: #1F2933 !important; }
+.st-key-narrativa .__spj_editor__ mark.hl_d2 { background: #C8E6C9 !important; color: #1F2933 !important; }
+.st-key-narrativa .__spj_editor__ mark.hl_d3 { background: #BBDEFB !important; color: #1F2933 !important; }
+.st-key-narrativa .__spj_editor__ mark.hl_d4 { background: #F8BBD0 !important; color: #1F2933 !important; }
+.st-key-narrativa .__spj_editor__ mark.hl_d5 { background: #FFE0B2 !important; color: #1F2933 !important; }
+.st-key-narrativa .__spj_editor__ mark.hl_d6 { background: #E0E0E0 !important; color: #1F2933 !important; }
+mark.hl_d1 { background: #FFF59D !important; color: #1F2933 !important; }
+mark.hl_d2 { background: #C8E6C9 !important; color: #1F2933 !important; }
+mark.hl_d3 { background: #BBDEFB !important; color: #1F2933 !important; }
+mark.hl_d4 { background: #F8BBD0 !important; color: #1F2933 !important; }
+mark.hl_d5 { background: #FFE0B2 !important; color: #1F2933 !important; }
+mark.hl_d6 { background: #E0E0E0 !important; color: #1F2933 !important; }
+/* paletinha de cores do botao Destaque */
+.__spj_paleta__ {
+    position: absolute; z-index: 999999; display: flex; gap: 4px; padding: 6px;
+    background: #ffffff; border: 1px solid #C3D1D9;
+    border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+.__spj_paleta__ button {
+    width: 24px; height: 24px; border-radius: 5px; border: 1px solid #b0bec5;
+    cursor: pointer; padding: 0; margin: 0; background: #ffffff;
+}
+.__spj_paleta__ button:hover { outline: 2px solid #2d6aa3; outline-offset: 1px; }
+.__spj_paleta__ .sem_cor {
+    background: #ffffff !important;
+    background-image: linear-gradient(45deg, #e53935 44%, transparent 44%, transparent 56%, #e53935 56%) !important;
+}
+.__spj_paleta__ .hl_d1 { background: #FFF59D !important; }
+.__spj_paleta__ .hl_d2 { background: #C8E6C9 !important; }
+.__spj_paleta__ .hl_d3 { background: #BBDEFB !important; }
+.__spj_paleta__ .hl_d4 { background: #F8BBD0 !important; }
+.__spj_paleta__ .hl_d5 { background: #FFE0B2 !important; }
+.__spj_paleta__ .hl_d6 { background: #E0E0E0 !important; }
 .st-key-narrativa .__spj_editor__ blockquote {
     border-left: 4px solid #90A4AE; margin: 6px 0; padding: 2px 10px; color: #37474F;
 }
@@ -454,6 +488,13 @@ a[data-testid^="stBaseLinkButton-"]:hover {
 }
 .__spj_barra__ button:hover { background: var(--aba-ativa); border-color: var(--azul-escuro); }
 .__spj_barra__ button:active { background: var(--botao-busca); }
+/* o botao de destaque mostra as cores (indica que abre a paletinha) */
+.__spj_barra__ button[aria-label="Destaque"] {
+    position: relative; padding-bottom: 6px;
+    background-image: linear-gradient(90deg, #FFF59D 0%, #C8E6C9 25%, #BBDEFB 50%,
+                                     #F8BBD0 75%, #FFE0B2 100%);
+}
+.__spj_barra__ button[aria-label="Destaque"] mark { background: transparent; color: #1F2933; }
 /* aviso de recuperacao do texto */
 .__spj_aviso__ {
     background: #FFF8E1; border: 1px solid #F5AF00; color: #6B4B00;
@@ -744,7 +785,7 @@ _definir_idioma()
 # "cookie de sessao" assinado: ao voltar, o app entra sozinho.
 _COOKIE_SESSAO = "pecas_sessao"
 _DIAS_SESSAO = 30
-_BUILD = "editor-word-sessao-2026-10-21"
+_BUILD = "editor-word-destaque-2026-10-21"
 
 
 def _cookies_recebidas():
@@ -1123,22 +1164,82 @@ def alerta(nivel, msg):
 # itálico, lista...) que marcam o texto selecionado, como no Word. As marcas
 # (**negrito**, _itálico_...) vão junto para a IA e aparecem formatadas na
 # pré-visualização.
+#
+# Esta folha de estilo vai para a PÁGINA DE FORA (a barra e a paletinha de cores
+# são criadas no documento principal, não dentro do app): por isso o CSS usa
+# cores fixas, e não as variáveis do tema.
+_CSS_BARRA = """
+.__spj_barra__ {
+    display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+    background: #ECEFF1; border: 1px solid #C3D1D9; border-radius: 6px;
+    padding: 4px 6px; margin: 0 0 6px 0;
+}
+.__spj_barra__ button {
+    min-width: 30px; height: 28px; padding: 0 6px; line-height: 1;
+    border: 1px solid #C3D1D9; border-radius: 4px;
+    background: #FFFFFF; color: #003F65; font-size: 14px;
+    cursor: pointer; font-family: inherit;
+}
+.__spj_barra__ button:hover { background: #D2D4D5; border-color: #003F65; }
+.__spj_barra__ button:active { background: #C3D1D9; }
+.__spj_barra__ button[aria-label="Destaque"] {
+    position: relative; padding-bottom: 6px;
+    background-image: linear-gradient(90deg, #FFF59D 0%, #C8E6C9 25%, #BBDEFB 50%,
+                                     #F8BBD0 75%, #FFE0B2 100%);
+}
+.__spj_barra__ button[aria-label="Destaque"] mark { background: transparent; color: #1F2933; }
+.__spj_paleta__ {
+    position: absolute; z-index: 999999; display: flex; gap: 4px; padding: 6px;
+    background: #ffffff; border: 1px solid #C3D1D9;
+    border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+.__spj_paleta__ button {
+    width: 24px; height: 24px; border-radius: 5px; border: 1px solid #b0bec5;
+    cursor: pointer; padding: 0; margin: 0; background: #ffffff;
+}
+.__spj_paleta__ button:hover { outline: 2px solid #2d6aa3; outline-offset: 1px; }
+.__spj_paleta__ .sem_cor {
+    background: #ffffff !important;
+    background-image: linear-gradient(45deg, #e53935 44%, transparent 44%, transparent 56%, #e53935 56%) !important;
+}
+.__spj_paleta__ .hl_d1 { background: #FFF59D !important; }
+.__spj_paleta__ .hl_d2 { background: #C8E6C9 !important; }
+.__spj_paleta__ .hl_d3 { background: #BBDEFB !important; }
+.__spj_paleta__ .hl_d4 { background: #F8BBD0 !important; }
+.__spj_paleta__ .hl_d5 { background: #FFE0B2 !important; }
+.__spj_paleta__ .hl_d6 { background: #E0E0E0 !important; }
+"""
+
 _JS_BARRA = r"""<script>
 (function () {
   var ALVO = "__ALVO__";
   var CHAVE = "__CHAVE__";
+  var CSS = __CSS_BARRA__;
   var P = window.parent;
   var doc = P.document;
   var MEU = "spj" + Math.random().toString(36).slice(2, 9);
-  var ultimo = null;
+  var ultimo = null;        // texto que ja foi enviado ao servidor
+  var ultimoIniciado = false;
   var ultimoHtml = null;
   var restaurado = false;
+
+  // leva o estilo da barra e da paletinha para a pagina de fora
+  function injetarEstilo() {
+    try {
+      if (doc.getElementById("__spj_estilo__")) return;
+      var s = doc.createElement("style");
+      s.id = "__spj_estilo__";
+      s.textContent = CSS;
+      (doc.head || doc.documentElement).appendChild(s);
+    } catch (e) {}
+  }
+  injetarEstilo();
   var BTNS = [
     {t:"Negrito",           i:"<b>N</b>",  cmd:"bold"},
     {t:"Itálico",           i:"<i>I</i>",  cmd:"italic"},
     {t:"Sublinhado",        i:"<u>S</u>",  cmd:"underline"},
     {t:"Tachado",           i:"<s>T</s>",  cmd:"strikeThrough"},
-    {t:"Destaque",          i:"<mark>A</mark>", tag:"mark"},
+    {t:"Destaque",          i:"<mark>A</mark>", destaque:true},
     {t:"Título",            i:"H",        bloco:"h2"},
     {t:"Lista",             i:"&#8226;",  cmd:"insertUnorderedList"},
     {t:"Lista numerada",    i:"1.",       cmd:"insertOrderedList"},
@@ -1146,6 +1247,16 @@ _JS_BARRA = r"""<script>
     {t:"Desfazer",          i:"&#8630;",  cmd:"undo"},
     {t:"Refazer",           i:"&#8631;",  cmd:"redo"},
     {t:"Limpar formatação", i:"&#129534;", limpar:true}
+  ];
+  // cores do destaque (igual ao Word): a primeira e "sem destaque"
+  var CORES = [
+    {classe:"",           nome:"Sem destaque", estilo:"#ffffff"},
+    {classe:"hl_d1",      nome:"Amarelo",      estilo:"#FFF59D"},
+    {classe:"hl_d2",      nome:"Verde",        estilo:"#C8E6C9"},
+    {classe:"hl_d3",      nome:"Azul",         estilo:"#BBDEFB"},
+    {classe:"hl_d4",      nome:"Rosa",         estilo:"#F8BBD0"},
+    {classe:"hl_d5",      nome:"Laranja",      estilo:"#FFE0B2"},
+    {classe:"hl_d6",      nome:"Cinza",        estilo:"#E0E0E0"}
   ];
 
   function achar() {
@@ -1167,9 +1278,25 @@ _JS_BARRA = r"""<script>
     return c ? c.querySelector("textarea") : null;
   }
 
+  // o editor que esta VALENDO agora: o que esta na mesma caixa de texto
+  // (quando a tela atualiza, podem sobrar editores antigos por perto)
   function editor() {
     var c = achar();
-    return c ? c.querySelector(".__spj_editor__") : null;
+    if (!c) return null;
+    var ta = c.querySelector("textarea");
+    if (!ta) return null;
+    var raiz = ta.closest('[data-testid="stTextAreaRootElement"]') || ta.parentNode;
+    if (!raiz) return null;
+    var e = null;
+    var todos = raiz.querySelectorAll(".__spj_editor__");
+    for (var i = todos.length - 1; i >= 0; i--) {
+      if (todos[i].isConnected) { e = todos[i]; break; }
+    }
+    if (!e) {
+      // a tela acabou de atualizar e o editor ainda nao foi refeito: cria agora
+      try { e = criarEditor(c); } catch (e2) {}
+    }
+    return e;
   }
 
   function sel(ta) { return {i: ta.selectionStart, f: ta.selectionEnd, v: ta.value}; }
@@ -1224,8 +1351,21 @@ _JS_BARRA = r"""<script>
   }
 
   function criarEditor(cont) {
-    var ja = cont.querySelector(".__spj_editor__");
-    if (ja) return ja;
+    var ta0 = cont.querySelector("textarea");
+    if (!ta0) return null;
+    var raiz0 = ta0.closest('[data-testid="stTextAreaRootElement"]') || ta0.parentNode;
+    if (raiz0) {
+      var ja = null;
+      var velhos = raiz0.querySelectorAll(".__spj_editor__");
+      for (var i = 0; i < velhos.length; i++) {
+        if (velhos[i].isConnected && !ja) ja = velhos[i];
+      }
+      if (ja) return ja;
+      // sobrou editor de uma tela anterior? tira, para nao mexer no errado
+      for (var j = 0; j < velhos.length; j++) {
+        try { velhos[j].parentNode.removeChild(velhos[j]); } catch (e) {}
+      }
+    }
     var ta = cont.querySelector("textarea");
     if (!ta) return null;
     var raiz = ta.closest('[data-testid="stTextAreaRootElement"]') || ta.parentNode;
@@ -1269,9 +1409,21 @@ _JS_BARRA = r"""<script>
       var r = sel.getRangeAt(0);
       if (!r.collapsed) return;
       var node = r.startContainer;
-      if (node.nodeType !== 3) return;
+      var off = r.startOffset;
+      if (node.nodeType !== 3) {
+        // cursor num elemento (ex.: o proprio editor): acha o texto la dentro
+        var txtNode = null;
+        var filhos = node.childNodes;
+        if (filhos && filhos.length) {
+          var f = filhos[Math.min(off, filhos.length - 1)];
+          while (f && f.nodeType !== 3) f = f.firstChild;
+          if (f) { txtNode = f; off = 0; }
+        }
+        if (!txtNode) return;
+        node = txtNode;
+      }
       var txt = node.textContent || "";
-      var ini = r.startOffset, fim = ini;
+      var ini = off, fim = off;
       while (ini > 0 && !/\s/.test(txt.charAt(ini - 1))) ini--;
       while (fim < txt.length && !/\s/.test(txt.charAt(fim))) fim++;
       if (fim > ini) {
@@ -1293,6 +1445,257 @@ _JS_BARRA = r"""<script>
       try { r.surroundContents(el); }
       catch (e) { el.appendChild(r.extractContents()); r.insertNode(el); }
     } catch (e) {}
+  }
+
+  // ------------------- destaque (marca-texto com cor) --------------------
+  // A selecao e guardada por POSICAO no texto (e nao por no do DOM), porque o
+  // Streamlit recria o editor a cada atualizacao da tela: assim o trecho
+  // escolhido continua valendo mesmo depois do recarregamento.
+  var selSalva = null;   // {ini: posicao, fim: posicao}
+
+  function nosDeTexto(ed) {
+    var lista = [];
+    try {
+      var w = doc.createTreeWalker(ed, NodeFilter.SHOW_TEXT, null);
+      var n, pos = 0;
+      while ((n = w.nextNode())) {
+        var tam = (n.textContent || "").length;
+        lista.push({no: n, ini: pos, tam: tam});
+        pos += tam;
+      }
+    } catch (e) {}
+    return lista;
+  }
+
+  function posicaoDe(ed, no, off) {
+    var lista = nosDeTexto(ed);
+    var total = 0;
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].no === no) return lista[i].ini + off;
+      total += lista[i].tam;
+    }
+    return total;
+  }
+
+  function noEPosicaoDe(ed, pos) {
+    var lista = nosDeTexto(ed);
+    if (!lista.length) return null;
+    for (var i = 0; i < lista.length; i++) {
+      if (pos >= lista[i].ini && pos <= lista[i].ini + lista[i].tam) {
+        return {no: lista[i].no, off: pos - lista[i].ini};
+      }
+    }
+    var u = lista[lista.length - 1];
+    return {no: u.no, off: u.tam};
+  }
+
+  function guardarSelecao() {
+    try {
+      var ed = editor();
+      if (!ed) return;
+      var sel = doc.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      var r = sel.getRangeAt(0);
+      var ini = posicaoDe(ed, r.startContainer, r.startOffset);
+      var fim = posicaoDe(ed, r.endContainer, r.endOffset);
+      if (fim < ini) { var t = ini; ini = fim; fim = t; }
+      selSalva = {ini: ini, fim: fim};
+    } catch (e) {}
+  }
+
+  function restaurarSelecao() {
+    try {
+      var ed = editor();
+      if (!ed || !selSalva) return false;
+      var a = noEPosicaoDe(ed, selSalva.ini);
+      var b = noEPosicaoDe(ed, selSalva.fim);
+      if (!a || !b) return false;
+      var r = doc.createRange();
+      r.setStart(a.no, a.off);
+      r.setEnd(b.no, b.off);
+      if (r.collapsed) return false;
+      var sel = doc.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function envolverClasse(tag, classe) {
+    try {
+      var sel = doc.getSelection();
+      if (!sel || sel.rangeCount === 0) return;
+      var r = sel.getRangeAt(0);
+      if (r.collapsed) return;
+      var el = doc.createElement(tag);
+      if (classe) el.className = classe;
+      try { r.surroundContents(el); }
+      catch (e) { el.appendChild(r.extractContents()); r.insertNode(el); }
+    } catch (e) {}
+  }
+
+  function tirarMarca(m) {
+    try {
+      var pai = m.parentNode;
+      if (!pai) return;
+      while (m.firstChild) pai.insertBefore(m.firstChild, m);
+      pai.removeChild(m);
+    } catch (e) {}
+  }
+
+  function marcasDoTrecho(ed, r) {
+    var res = [];
+    try {
+      var marcas = ed.querySelectorAll("mark");
+      for (var i = 0; i < marcas.length; i++) {
+        var m = marcas[i];
+        if (!r.intersectsNode || r.intersectsNode(m)) res.push(m);
+      }
+    } catch (e) {}
+    return res;
+  }
+
+  // o trecho onde a marca deve ficar (em posicoes do texto do editor)
+  function trechoEscolhido(ed) {
+    var sel = doc.getSelection();
+    var r = (sel && sel.rangeCount) ? sel.getRangeAt(0) : null;
+    if (r && !r.collapsed) {
+      // a selecao vale so se ainda estiver dentro do editor (a tela pode ter
+      // recriado o editor no meantime)
+      var dentro = false;
+      try { dentro = ed.contains(r.startContainer) && ed.contains(r.endContainer); } catch (e) {}
+      if (dentro) {
+        var a = posicaoDe(ed, r.startContainer, r.startOffset);
+        var b = posicaoDe(ed, r.endContainer, r.endOffset);
+        if (b < a) { var t = a; a = b; b = t; }
+        if (b > a) return {ini: a, fim: b};
+      }
+    }
+    if (selSalva && selSalva.fim > selSalva.ini) return {ini: selSalva.ini, fim: selSalva.fim};
+    return null;
+  }
+
+  // intervalo de texto coberto por uma marca
+  function intervaloDaMarca(lista, m) {
+    var ini = -1, fim = -1;
+    for (var i = 0; i < lista.length; i++) {
+      var dentro = false;
+      try { dentro = m.contains(lista[i].no); } catch (e) {}
+      if (dentro) {
+        if (ini < 0) ini = lista[i].ini;
+        fim = lista[i].ini + lista[i].tam;
+      }
+    }
+    return {ini: ini, fim: fim};
+  }
+
+  // marca o trecho (por posicao) com a cor escolhida
+  function envolverPorPosicao(ed, ini, fim, classe) {
+    var lista = nosDeTexto(ed);
+    var a = null, b = null;
+    for (var i = 0; i < lista.length; i++) {
+      if (!a && ini >= lista[i].ini && ini <= lista[i].ini + lista[i].tam) {
+        a = {no: lista[i].no, off: ini - lista[i].ini};
+      }
+      if (fim >= lista[i].ini && fim <= lista[i].ini + lista[i].tam) {
+        b = {no: lista[i].no, off: fim - lista[i].ini};
+      }
+    }
+    if (!a || !b) return false;
+    if (a.no === b.no && a.off === b.off) return false;
+    var r = doc.createRange();
+    try {
+      r.setStart(a.no, a.off);
+      r.setEnd(b.no, b.off);
+    } catch (e) { return false; }
+    var el = doc.createElement("mark");
+    el.className = classe;
+    try { r.surroundContents(el); }
+    catch (e) { el.appendChild(r.extractContents()); r.insertNode(el); }
+    return true;
+  }
+
+  // aplica a cor escolhida; se o trecho ja estiver com a mesma cor, desmarca
+  function aplicarDestaque(classe) {
+    var ed = editor();
+    if (!ed) {
+      // a tela esta se atualizando e o editor sumiu: tenta de novo em instantes
+      var tentativas = 0;
+      var timer = setInterval(function () {
+        tentativas++;
+        if (editor()) {
+          clearInterval(timer);
+          aplicarDestaque(classe);
+        } else if (tentativas > 25) {
+          clearInterval(timer);
+        }
+      }, 120);
+      return;
+    }
+    var trecho = trechoEscolhido(ed);
+    if (!trecho) return;
+    selSalva = {ini: trecho.ini, fim: trecho.fim};
+
+    // tira as marcas que ja existem no trecho
+    var lista = nosDeTexto(ed);
+    var marcas = ed.querySelectorAll("mark");
+    var mesmas = marcas.length > 0;
+    var alvo = [];
+    for (var i = 0; i < marcas.length; i++) {
+      var iv = intervaloDaMarca(lista, marcas[i]);
+      if (iv.ini < 0) continue;
+      if (iv.ini < trecho.fim && iv.fim > trecho.ini) {
+        alvo.push(marcas[i]);
+        if ((marcas[i].className || "") !== (classe || "")) mesmas = false;
+      }
+    }
+    for (var j = 0; j < alvo.length; j++) { tirarMarca(alvo[j]); }
+
+    // se o trecho ja estava com essa cor, e so desmarcar (nao pinta de novo)
+    if (classe && !mesmas) {
+      envolverPorPosicao(ed, trecho.ini, trecho.fim, classe);
+    }
+    digitar(ed);
+  }
+
+  function fecharPaleta() {
+    try {
+      var pal = doc.querySelector(".__spj_paleta__");
+      if (pal) pal.parentNode.removeChild(pal);
+    } catch (e) {}
+  }
+
+  function abrirPaleta(btn) {
+    try { fecharPaleta(); } catch (e) {}
+    var pal = doc.createElement("div");
+    pal.className = "__spj_paleta__";
+    CORES.forEach(function (c) {
+      var sw = doc.createElement("button");
+      sw.type = "button";
+      sw.title = c.nome;
+      sw.setAttribute("aria-label", "Destaque " + c.nome);
+      if (c.classe) { sw.className = c.classe; } else { sw.className = "sem_cor"; }
+      sw.addEventListener("mousedown", function (ev) { ev.preventDefault(); });
+      sw.addEventListener("click", function () {
+        aplicarDestaque(c.classe);
+        fecharPaleta();
+      });
+      pal.appendChild(sw);
+    });
+    doc.body.appendChild(pal);
+    var r = btn.getBoundingClientRect();
+    var sx = (doc.defaultView && doc.defaultView.scrollX) || 0;
+    var sy = (doc.defaultView && doc.defaultView.scrollY) || 0;
+    pal.style.left = Math.max(6, r.left + sx) + "px";
+    pal.style.top = (r.bottom + sy + 6) + "px";
+    // clicking anywhere else closes the palette
+    setTimeout(function () {
+      try {
+        doc.addEventListener("click", function (ev) {
+          if (pal.parentNode && !pal.contains(ev.target)) { fecharPaleta(); }
+        }, true);
+      } catch (e) {}
+    }, 30);
   }
 
   function limparFormatacao(ed) {
@@ -1326,10 +1729,27 @@ _JS_BARRA = r"""<script>
     } catch (e) {}
   }
 
-  function aplicar(b) {
+  // foca o editor sem apagar o que o usuario ja selecionou
+  function focar(el) {
+    try {
+      if (!el) return;
+      if (doc.activeElement === el) return;
+      el.focus();
+    } catch (e) {}
+  }
+
+  function aplicar(b, btn) {
     var ed = editor();
     if (ed) {
-      try { ed.focus(); } catch (e) {}
+      if (b.destaque) {
+        // guarda o trecho escolhido ANTES de mexer no foco (a paletinha
+        // precisa saber o que o usuario queria marcar)
+        guardarSelecao();
+        focar(ed);
+        try { abrirPaleta(btn); } catch (e) {}
+        return;
+      }
+      focar(ed);
       try {
         if (b.cmd === "undo" || b.cmd === "redo") {
           doc.execCommand(b.cmd);
@@ -1414,9 +1834,9 @@ _JS_BARRA = r"""<script>
       var agora = new Date().getTime();
       if (doc.__spjAgora && (agora - doc.__spjAgora) < 80) return;
       doc.__spjAgora = agora;
-      aplicar(b);
-      var cx = caixa();
-      if (cx) { ultimo = cx.value; comitar(cx); }
+      aplicar(b, btn);
+      // nao manda para o servidor agora: isso atualizaria a tela e apagaria
+      // a selecao do usuario. O envio fica para o "autoComitar" (2,5 s depois).
     });
   }
 
@@ -1507,7 +1927,6 @@ _JS_BARRA = r"""<script>
     restaurado = true;
     if (ed) { ed.innerHTML = salvo; digitar(ed); }
     else { setValor(ta, salvo); }
-    ultimo = salvo;
     aviso(cont, "💾 Recuperei o texto que você tinha digitado (ficou salvo no seu navegador).");
     setTimeout(function () { comitar(ta); }, 400);
   }
@@ -1552,12 +1971,22 @@ _JS_BARRA = r"""<script>
         for (var i = 0; i < bts.length; i++) ligar(bts[i], BTNS[i]);
       }
       var ed = criarEditor(cont);
+      // o editor foi recriado (a tela atualizou): devolve a selecao do usuario
+      if (ed && selSalva) {
+        try { restaurarSelecao(); } catch (e) {}
+      }
       vigiar();
       recuperar();
       ativarOrtografia();
       // o servidor mudou o texto? (ex.: transcricao) -> atualiza o editor
       var ta = cont.querySelector("textarea");
-      if (ed && ta && ultimoHtml !== null && ta.value !== ultimoHtml) {
+      // na primeira vez, guarda o texto que ja estava no servidor: assim
+      // qualquer mudanca do usuario e enviada (e nao se perde no caminho)
+      if (ta && !ultimoIniciado) { ultimo = ta.value; ultimoIniciado = true; }
+      // o servidor mandou um texto novo? (ex.: transcricao) -> atualiza o editor.
+      // So quando o usuario nao tem nada pendente: se ele acabou de formatar,
+      // o texto dele manda (senao a atualizacao da tela apagaria a formatacao).
+      if (ed && ta && ultimoHtml !== null && ta.value !== ultimoHtml && ultimoHtml === ultimo) {
         ed.innerHTML = mdParaHtml(ta.value);
         P.__spjHtml = ed.innerHTML;
         ultimoHtml = ed.innerHTML;
@@ -1576,7 +2005,8 @@ _JS_BARRA = r"""<script>
     try {
       var ta = caixa();
       if (!ta) return;
-      if (ultimo === null) { ultimo = ta.value; return; }
+      // no primeiro uso so guardamos o valor atual (para saber o que mudou)
+      if (ultimo === null) { ultimo = ta.value; ultimoIniciado = true; }
       if (ta.value === ultimo) return;
       if (!agora) return;
       ultimo = ta.value;
@@ -1605,7 +2035,9 @@ _JS_BARRA = r"""<script>
 def barra_texto(alvo, chave="spj_relato"):
     """Coloca a barra de formatação (tipo Word) em cima de uma caixa de texto."""
     try:
-        html_js = _JS_BARRA.replace("__ALVO__", alvo).replace("__CHAVE__", chave)
+        html_js = (_JS_BARRA.replace("__ALVO__", alvo)
+                          .replace("__CHAVE__", chave)
+                          .replace("__CSS_BARRA__", json.dumps(_CSS_BARRA)))
         components.html(html_js, height=0)
     except Exception:
         pass
