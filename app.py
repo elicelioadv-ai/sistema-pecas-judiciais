@@ -2605,9 +2605,15 @@ with st.sidebar:
             st.session_state.pop("export_docx", None)
             st.session_state.pop("export_pdf", None)
             base = motor.carregar_base(base_nome)
+            _anon = None
+            if st.session_state.get("modo_seguro", True):
+                try:
+                    _anon = motor.Anonimizador([])
+                except Exception:
+                    _anon = None
             with st.status("Redigindo a peça...", expanded=False) as s:
                 bruto = tentar(motor.gerar_peca, motor.carregar_modelo(modelo_nome),
-                               st.session_state["dados"], fatos, base, anonimizador)
+                               st.session_state["dados"], fatos, base, _anon)
                 if bruto:
                     conf = motor.conferir_citacoes(bruto, base, f"{st.session_state['dados']}\n{fatos}")
                     st.session_state.update(peca_edit=conf["texto"], alertas=conf["alertas"], usadas=conf["usadas"])
@@ -3110,6 +3116,18 @@ with aba_caso:
         _cadastro_parte("rdo", r2)
     st.text_area("Demais dados (datas, valores, números, o que mais importar)", key="f_outros",
                  height=100, placeholder="Digite aqui as datas, valores e outros dados importantes")
+    cbl1, cbl2 = st.columns([9, 1])
+    with cbl2:
+        if st.button("💾", help="Salvar dados das partes", key="salvar_dados_partes", use_container_width=True):
+            st.session_state["dados"] = compor_dados()
+            try:
+                _salvar_rascunho(forcar=True)
+            except Exception:
+                pass
+            st.toast("Dados dos requerente/requerido salvos", icon="💾")
+    with cbl1:
+        if st.button("🔄 Atualizar bloco para a IA", key="atualizar_bloco_ia", use_container_width=True):
+            st.session_state["dados"] = compor_dados()
     st.session_state["dados"] = compor_dados()
     with st.expander("Ver bloco de dados que vai para a IA"):
         st.code(st.session_state["dados"] or "(vazio)")
@@ -3367,8 +3385,15 @@ with aba_chat:
             _contexto = "\n\n".join(_partes)
         with st.chat_message("assistant"):
             with st.spinner("Pensando..."):
-                _resposta = tentar(motor.responder_chat, st.session_state["chat_hist"],
-                                   _contexto, anonimizador)
+                try:
+                    _resposta = motor.responder_chat(st.session_state["chat_hist"], _contexto, anonimizador)
+                except Exception as e:
+                    try:
+                        motor._LOG.exception("Erro no chat")
+                        st.error(motor.mensagem_amigavel(e))
+                    except Exception:
+                        st.error(str(e))
+                    _resposta = None
             if _resposta:
                 st.markdown(_resposta)
         if _resposta:

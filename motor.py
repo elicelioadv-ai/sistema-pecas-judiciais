@@ -69,6 +69,15 @@ def _backup_remover(nome_arquivo, subpasta="casos"):
 PROVEDOR = os.getenv("PROVEDOR", "gemini").strip().lower()
 _MODELOS_PADRAO = {"gemini": "gemini-2.5-flash", "anthropic": "claude-sonnet-4-5"}
 MODELO = os.getenv("MODELO", "").strip() or _MODELOS_PADRAO.get(PROVEDOR, "")
+_MODELOS_FALLBACK_GEMINI = [
+    "gemini-flash-latest",
+]
+_MODELOS_FALLBACK = [
+    "gemini-2.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+]
 
 
 def _recarregar_config():
@@ -388,20 +397,38 @@ def ler_token_sessao(token):
 def mensagem_amigavel(erro):
     msg = str(erro)
     baixo = msg.lower()
-    if "503" in msg or "unavailable" in baixo or "high demand" in baixo or "sobrecarregada" in baixo:
+    # Só trata como sobrecarga REAL quando há indícios explícitos
+    if ("overloaded" in baixo or "high demand" in baixo or "model is overloaded" in baixo
+            or ("503" in msg and ("overloaded" in baixo or "high demand" in baixo or "model is overloaded" in baixo))):
         return ("A IA está sobrecarregada agora (o Google está com muita demanda). "
                 "Nada foi perdido: o que você escreveu continua salvo. "
                 "Tente de novo em alguns minutos.")
-    if "429" in msg or "resource_exhausted" in baixo or "cota" in baixo:
-        return ("A cota gratuita da IA acabou por hoje. Aguarde o limite se resetar ou "
-                "ative faturamento/Vertex AI nas ⚙️ Configurações.")
+    if "503" in msg or "unavailable" in baixo:
+        return ("O serviço de IA está temporariamente indisponível. "
+                "Nada foi perdido: o que você escreveu continua salvo. "
+                "Tente de novo em alguns instantes.")
+    if "429" in msg or "resource_exhausted" in baixo or "quota" in baixo or "rate limit" in baixo:
+        if "cota" in baixo or "perday" in baixo or "free_tier" in baixo or "resource_exhausted" in baixo:
+            return ("A cota gratuita da IA acabou por hoje. Aguarde o limite se resetar ou "
+                    "ative faturamento/Vertex AI nas ⚙️ Configurações.")
+        return ("Limite temporário de requisições atingido. "
+                "Nada foi perdido: o que você escreveu continua salvo. "
+                "Aguarde alguns minutos e tente novamente.")
     if "timeout" in baixo or "timed out" in baixo or "deadline" in baixo:
         return ("A IA demorou demais para responder e foi interrompida. Nada foi perdido. "
                 "Tente de novo em alguns minutos.")
-    if "api key" in baixo or "key not valid" in baixo or "api_key" in baixo:
+    if "api key" in baixo or "key not valid" in baixo or "api_key" in baixo or "invalid api key" in baixo:
         return "A chave da IA não está válida. Confira nas ⚙️ Configurações (ou nos Secrets da nuvem)."
-    if "connection" in baixo or "network" in baixo or "ssl" in baixo:
+    if "connection" in baixo or "network" in baixo or "ssl" in baixo or "failed to connect" in baixo:
         return "A conexão com a IA falhou. Verifique a internet e tente de novo."
+    if "permission" in baixo or "forbidden" in baixo or "403" in msg:
+        return "Acesso negado pela API. Verifique a chave ou as permissões da conta."
+    if "not found" in baixo or "404" in msg:
+        return "Modelo não encontrado. Verifique o nome do modelo nas configurações."
+    if "sobrecarregada" in baixo:
+        return ("A IA está sobrecarregada agora (o Google está com muita demanda). "
+                "Nada foi perdido: o que você escreveu continua salvo. "
+                "Tente de novo em alguns minutos.")
     return msg
 
 
@@ -420,38 +447,35 @@ def _chamar_gemini(system, contents, max_tokens):
     config = types.GenerateContentConfig(
         system_instruction=system,
         temperature=0.2,
-        max_output_tokens=max_tokens * 3,  # margem: alguns modelos gastam tokens "pensando"
+        max_output_tokens=max_tokens * 3,
     )
-    for tentativa in range(3):
-        try:
-            resp = cliente.models.generate_content(model=MODELO, contents=contents, config=config)
-            if not resp.text:
-                raise RuntimeError("A IA não devolveu texto (resposta bloqueada ou vazia). Tente de novo.")
-            return resp.text
-        except Exception as e:
-            msg = str(e)
-            _LOG.warning("Falha na chamada à IA (tentativa %d): %s", tentativa + 1, msg)
-            if "PerDay" in msg or "free_tier_requests" in msg:
-                raise RuntimeError(
-                    "Cota gratuita da IA esgotada (limite de requisições POR DIA). "
-                    "Aguarde o prazo indicado pelo Google, troque o MODELO no .env "
-                    "ou ative faturamento/Vertex AI nas ⚙️ Configurações."
-                ) from e
-            # servidor sobrecarregado (o Google está com alta demanda): tenta uma
-            # vez e, se continuar, avisa de forma clara (antes a tela ficava travada)
-            if any(x in msg for x in ("503", "UNAVAILABLE", "high demand", "overloaded")):
-                if tentativa < 1:
-                    time.sleep(10)
-                    continue
-                raise RuntimeError(
-                    "A IA está sobrecarregada agora (o Google está com muita demanda). "
-                    "Nada foi perdido: o que você escreveu continua salvo. "
-                    "Tente de novo em alguns minutos."
-                ) from e
-            if "429" in msg and tentativa < 2:
-                time.sleep(20)
-                continue
-            raise
+    modelo = MODELO
+    try:
+        resp = cliente.models.generate_content(model=modelo, contents=contents, config=config)
+        if not resp.text:
+            raise RuntimeError("A IA não devolveu texto (resposta bloqueada ou vazia). Tente de novo.")
+        return resp.text
+    except Exception as e:
+        msg = str(e)
+        baixo = msg.lower()
+        _LOG.warning("Falha na chamada à IA (modelo %s): %s", modelo, msg)
+        if "PerDay" in msg or "free_tier_requests" in msg or "resource_exhausted" in baixo:
+            raise RuntimeError(
+                "A cota gratuita da IA acabou por hoje. Aguarde o limite se resetar ou "
+                "ative faturamento/Vertex AI nas ⚙️ Configurações."
+            ) from e
+        if any(x in baixo for x in ("overloaded", "high demand", "model is overloaded")) or \
+           ("503" in msg):
+            raise RuntimeError(
+                "O serviço de IA está sobrecarregado agora. Nada foi perdido: o que você escreveu continua salvo. "
+                "Tente novamente em 1 a 2 minutos."
+            ) from e
+        if "429" in msg:
+            raise RuntimeError(
+                "Muitas requisições no momento. Nada foi perdido: o que você escreveu continua salvo. "
+                "Aguarde um pouco e tente novamente."
+            ) from e
+        raise
 
 
 def _chamar_claude(system, contents, max_tokens):
