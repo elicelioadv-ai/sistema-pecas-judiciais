@@ -265,20 +265,25 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 /* captcha de figuras (dentro do cartão, abaixo da senha) */
 .cap-titulo { color: #1F4E78 !important; font-weight: 700; font-size: 0.95rem; margin: 10px 0 4px 0; }
 .cap-pergunta { color: #000000 !important; font-size: 0.92rem; margin: 2px 0 8px 0; }
-/* "Não sou um robô" (discreto) */
+/* "Não sou um robô" moderno */
+.st-key-captcha_humano_btn { width: 100%; }
 .st-key-captcha_humano_btn button {
-    justify-content: flex-start !important; width: auto !important; min-height: 32px !important;
-    background: #fafafa !important; color: #555555 !important;
-    border: 1px solid #e4e4e4 !important; border-radius: 4px !important;
-    font-weight: 400 !important; padding: 3px 10px !important;
-    box-shadow: none !important;
+    justify-content: flex-start !important; width: 100% !important; min-height: 74px !important;
+    background: #ffffff !important; color: #202124 !important;
+    border: 1px solid #dadce0 !important; border-radius: 6px !important;
+    font-weight: 500 !important; padding: 12px 18px !important;
+    box-shadow: 0 1px 2px rgba(60,64,67,0.08) !important;
+    gap: 14px !important;
 }
 .st-key-captcha_humano_btn button::before {
-    content: ''; width: 15px; height: 15px; border: 1.5px solid #cfcfcf; border-radius: 3px;
-    background: #ffffff; margin-right: 8px; display: inline-block; flex-shrink: 0;
+    content: ''; width: 28px; height: 28px; border: 2px solid #9aa0a6; border-radius: 4px;
+    background: #ffffff; margin-right: 0; display: inline-block; flex-shrink: 0;
 }
-.st-key-captcha_humano_btn button p { color: #666666 !important; font-size: 0.78rem !important; }
-.st-key-captcha_humano_btn button:hover { background: #f2f2f2 !important; }
+.st-key-captcha_humano_btn button:hover {
+    background: #f8f9fa !important;
+    box-shadow: 0 1px 3px rgba(60,64,67,0.15) !important;
+}
+.st-key-captcha_humano_btn button p { color: #202124 !important; font-size: 0.95rem !important; }
 /* grade de figuras */
 .st-key-captcha_nativo [data-testid="stHorizontalBlock"] { gap: 8px !important; }
 .st-key-captcha_nativo [data-testid="stButton"] { margin: 0 !important; }
@@ -1062,37 +1067,43 @@ if not st.session_state.setdefault("autenticado", False):
               function ajustar() {
                 try {
                   var d = window.parent.document;
-                  d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"]')
-                    .forEach(function (el) {
-                      el.setAttribute('autocomplete', 'off');
-                      el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2));
-                      el.setAttribute('type', 'text');
-                      el.style.setProperty('-webkit-text-security', 'disc', 'important');
-                      el.style.setProperty('letter-spacing', '2px', 'important');
-                    });
+                  var campos = d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"], input[aria-label="Senha"]');
+                  campos.forEach(function (el) {
+                    try { el.setAttribute('autocomplete', 'new-password'); } catch(e){}
+                    try { el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2)); } catch(e){}
+                    try { el.setAttribute('type', 'password'); } catch(e){}
+                    try { el.style.removeProperty('-webkit-text-security'); } catch(e){}
+                    try { el.style.removeProperty('letter-spacing'); } catch(e){}
+                  });
                   var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
                   if (!campo) return;
                   var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
-                  if (!caixa || caixa.querySelector('.olho-login')) return;
+                  if (!caixa) return;
+                  if (caixa.querySelector('.olho-login')) return;
                   caixa.style.position = 'relative';
                   var b = d.createElement('span');
                   b.className = 'olho-login';
                   b.title = 'Mostrar senha';
+                  b.setAttribute('role', 'button');
+                  b.setAttribute('tabindex', '0');
                   b.innerHTML = ABERTO;
                   var mostrando = false;
-                  b.onclick = function () {
+                  function toggle(){
                     mostrando = !mostrando;
-                    campo.style.setProperty('-webkit-text-security', mostrando ? 'none' : 'disc', 'important');
-                    campo.style.setProperty('letter-spacing', mostrando ? 'normal' : '2px', 'important');
+                    try { campo.setAttribute('type', mostrando ? 'text' : 'password'); } catch(e){}
                     b.innerHTML = mostrando ? FECHADO : ABERTO;
                     b.title = mostrando ? 'Ocultar senha' : 'Mostrar senha';
-                  };
+                    try { campo.focus(); } catch(e){}
+                  }
+                  b.onclick = toggle;
+                  b.onkeydown = function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); } };
                   caixa.appendChild(b);
                 } catch (e) {}
               }
               ajustar();
-              setTimeout(ajustar, 500);
-              setTimeout(ajustar, 1500);
+              setTimeout(ajustar, 400);
+              setTimeout(ajustar, 1000);
+              setTimeout(ajustar, 2000);
             })();
             </script>
             """,
@@ -2232,14 +2243,8 @@ def _memorizar(mem_key, valor):
 
 
 def _memoria_select(label, mem_key, alvo_key):
-    alvo = _g(alvo_key)
-    opcoes = [m for m in st.session_state.get(mem_key, []) if m != alvo]
-    if not opcoes:
-        return
-    sel = st.selectbox(f"↩ {label}", ["—"] + opcoes, key=f"sel_{alvo_key}")
-    if sel and sel != "—":
-        st.session_state[alvo_key] = sel
-        st.rerun()
+    # Oculta sugestões "usado pela última vez" conforme solicitação
+    return
 
 
 def complementos_cidade(prefixo):
@@ -2307,6 +2312,45 @@ def _documentos(prefixo):
     return docs
 
 
+def _documentos_parte(prefixo, indice):
+    docs = []
+    cpf = str(st.session_state.get(f"{prefixo}_cpf_{indice}", "") or "").strip()
+    if cpf:
+        docs.append(f"CPF: {cpf}")
+    cnpj = str(st.session_state.get(f"{prefixo}_cnpj_{indice}", "") or "").strip()
+    if cnpj:
+        docs.append(f"CNPJ: {cnpj}")
+    rg = str(st.session_state.get(f"{prefixo}_rg_{indice}", "") or "").strip()
+    if rg:
+        docs.append(f"RG: {rg}")
+    return docs
+
+
+def _endereco_resumo_parte(prefixo, indice):
+    partes = []
+    rua = str(st.session_state.get(f"{prefixo}_rua_{indice}", "") or "").strip()
+    num = str(st.session_state.get(f"{prefixo}_num_{indice}", "") or "").strip()
+    if rua:
+        partes.append(rua + (f", {num}" if num else ""))
+    bairro = str(st.session_state.get(f"{prefixo}_bairro_{indice}", "") or "").strip()
+    if bairro:
+        partes.append(f"bairro {bairro}")
+    cidade = str(st.session_state.get(f"{prefixo}_cidade_{indice}", "") or "").strip()
+    if cidade == "✏️ outra (digitar)":
+        cidade = str(st.session_state.get(f"{prefixo}_cidade_livre_{indice}", "") or "").strip() or cidade
+    if cidade and cidade != "✏️ outra (digitar)":
+        ufv = str(st.session_state.get(f"{prefixo}_uf_{indice}", "") or "").strip()
+        uf = SIGLA_UF.get(ufv, ufv)
+        partes.append(cidade + (f" – {uf}" if uf and uf != "—" else ""))
+    cep = str(st.session_state.get(f"{prefixo}_cep_{indice}", "") or "").strip()
+    if cep:
+        partes.append(f"CEP {cep}")
+    compl = str(st.session_state.get(f"{prefixo}_compl_{indice}", "") or "").strip()
+    if compl:
+        partes.append(compl)
+    return ", ".join(partes)
+
+
 def _doc_do_caso(caso, prefixo):
     """Lê os documentos do caso salvo, migrando o antigo campo único (doc)."""
     cpf = caso.get(f"{prefixo}_cpf", "")
@@ -2321,32 +2365,38 @@ def _doc_do_caso(caso, prefixo):
     return cpf, cnpj, rg
 
 
-def _cadastro_parte(prefixo, rotulo):
+def _cadastro_parte(prefixo, rotulo, indice=0):
     """Painel 'cadastro' de uma parte, com endereço em campos com memória."""
-    with st.expander(f"📋 {rotulo} (cadastro)"):
-        st.text_input("Nome completo", key=f"{prefixo}_nome", placeholder="Nome e sobrenome")
+    chave_exp = f"exp_{prefixo}_{indice}"
+    with st.expander(f"📋 {rotulo} (cadastro)", expanded=True):
+        st.text_input("Nome completo", key=f"{prefixo}_nome_{indice}", placeholder="Nome e sobrenome")
         c1, c2 = st.columns(2)
-        c1.text_input("Estado civil", key=f"{prefixo}_civil", placeholder="ex.: casado(a)")
-        c2.text_input("Profissão", key=f"{prefixo}_prof", placeholder="ex.: vendedor(a)")
+        c1.text_input("Estado civil", key=f"{prefixo}_civil_{indice}", placeholder="ex.: casado(a)")
+        c2.text_input("Profissão", key=f"{prefixo}_prof_{indice}", placeholder="ex.: vendedor(a)")
         d1, d2, d3 = st.columns(3)
-        d1.text_input("CPF", key=f"{prefixo}_cpf", placeholder="000.000.000-00")
-        d2.text_input("CNPJ", key=f"{prefixo}_cnpj", placeholder="00.000.000/0001-00")
-        d3.text_input("RG", key=f"{prefixo}_rg", placeholder="nº ...")
+        d1.text_input("CPF", key=f"{prefixo}_cpf_{indice}", placeholder="000.000.000-00")
+        d2.text_input("CNPJ", key=f"{prefixo}_cnpj_{indice}", placeholder="00.000.000/0001-00")
+        d3.text_input("RG", key=f"{prefixo}_rg_{indice}", placeholder="nº ...")
         st.markdown("**Endereço**")
         l1, l2 = st.columns([3, 1])
-        l1.text_input("Rua", key=f"{prefixo}_rua", placeholder="Av. ...")
-        l2.text_input("Número", key=f"{prefixo}_num", placeholder="123")
-        _memorizar("mem_ruas", st.session_state.get(f"{prefixo}_rua", ""))
-        _memoria_select("rua já usada", "mem_ruas", f"{prefixo}_rua")
+        l1.text_input("Rua", key=f"{prefixo}_rua_{indice}", placeholder="Av. ...")
+        l2.text_input("Número", key=f"{prefixo}_num_{indice}", placeholder="123")
+        _memorizar("mem_ruas", st.session_state.get(f"{prefixo}_rua_{indice}", ""))
         l3, l4 = st.columns([3, 1])
-        l3.text_input("Bairro", key=f"{prefixo}_bairro", placeholder="Centro")
-        l4.text_input("CEP", key=f"{prefixo}_cep", placeholder="00000-000")
-        _memorizar("mem_bairros", st.session_state.get(f"{prefixo}_bairro", ""))
-        _memoria_select("bairro já usado", "mem_bairros", f"{prefixo}_bairro")
-        _memorizar("mem_ceps", st.session_state.get(f"{prefixo}_cep", ""))
-        _memoria_select("CEP já usado", "mem_ceps", f"{prefixo}_cep")
-        complementos_cidade(prefixo)
-        st.text_input("Complemento (apto/bloco, e-mail...)", key=f"{prefixo}_compl")
+        l3.text_input("Bairro", key=f"{prefixo}_bairro_{indice}", placeholder="Centro")
+        l4.text_input("CEP", key=f"{prefixo}_cep_{indice}", placeholder="00000-000")
+        _memorizar("mem_bairros", st.session_state.get(f"{prefixo}_bairro_{indice}", ""))
+        _memorizar("mem_ceps", st.session_state.get(f"{prefixo}_cep_{indice}", ""))
+        # cidade/UF por índice
+        c5, c6 = st.columns([3, 1])
+        uf = st.session_state.get(f"{prefixo}_uf_{indice}", "—")
+        lista = MUNICIPIOS.get(SIGLA_UF.get(uf, ""), []) if uf != "—" else []
+        opcoes = ["—"] + lista + (["✏️ outra (digitar)"] if uf != "—" else [])
+        c5.selectbox("Cidade", opcoes, key=f"{prefixo}_cidade_{indice}")
+        c6.selectbox("UF", OPCOES_UF, key=f"{prefixo}_uf_{indice}")
+        if st.session_state.get(f"{prefixo}_cidade_{indice}", "") == "✏️ outra (digitar)":
+            st.text_input("Digite a cidade", key=f"{prefixo}_cidade_livre_{indice}", placeholder="Nome da cidade")
+        st.text_input("Complemento (apto/bloco, e-mail...)", key=f"{prefixo}_compl_{indice}")
 
 
 def compor_dados():
@@ -2356,14 +2406,22 @@ def compor_dados():
     partes = []
     if _g("f_juizo"):
         partes.append(f"Juízo/Vara: {_g('f_juizo')}")
-    endr1 = _endereco_resumo("req")
-    q1 = _qualificacao(_g("req_nome"), _g("req_civil"), _g("req_prof"), _documentos("req"), endr1)
-    if q1:
-        partes.append(f"{r1}: {q1}")
-    endr2 = _endereco_resumo("rdo")
-    q2 = _qualificacao(_g("rdo_nome"), _g("rdo_civil"), _g("rdo_prof"), _documentos("rdo"), endr2)
-    if q2:
-        partes.append(f"{r2}: {q2}")
+    req_count = int(st.session_state.get("req_count", 1) or 1)
+    for i in range(req_count):
+        endr1 = _endereco_resumo_parte("req", i)
+        q1 = _qualificacao(st.session_state.get(f"req_nome_{i}", ""), st.session_state.get(f"req_civil_{i}", ""),
+                           st.session_state.get(f"req_prof_{i}", ""), _documentos_parte("req", i), endr1)
+        if q1:
+            rot = r1 if req_count == 1 else f"{r1} {i+1}"
+            partes.append(f"{rot}: {q1}")
+    rdo_count = int(st.session_state.get("rdo_count", 1) or 1)
+    for i in range(rdo_count):
+        endr2 = _endereco_resumo_parte("rdo", i)
+        q2 = _qualificacao(st.session_state.get(f"rdo_nome_{i}", ""), st.session_state.get(f"rdo_civil_{i}", ""),
+                           st.session_state.get(f"rdo_prof_{i}", ""), _documentos_parte("rdo", i), endr2)
+        if q2:
+            rot = r2 if rdo_count == 1 else f"{r2} {i+1}"
+            partes.append(f"{rot}: {q2}")
     if _g("f_outros"):
         partes.append(f"Demais dados: {_g('f_outros')}")
     return "\n".join(partes)
@@ -3109,11 +3167,23 @@ with aba_caso:
     st.selectbox("Como chamar as partes", list(ROTULOS_PARTES), key="f_rotulo",
                  help="Requerente/Requerido no geral; Autor/Réu em ação criminal; Recorrente/Recorrido em recurso; etc.")
     r1, r2 = ROTULOS_PARTES[st.session_state.get("f_rotulo", "Requerente / Requerido")]
-    c1, c2 = st.columns(2)
-    with c1:
-        _cadastro_parte("req", r1)
-    with c2:
-        _cadastro_parte("rdo", r2)
+    st.markdown(f"### {r1}(s)")
+    if "req_count" not in st.session_state:
+        st.session_state["req_count"] = 1
+    for i in range(st.session_state["req_count"]):
+        _cadastro_parte("req", r1 if i == 0 else f"{r1} {i+1}", indice=i)
+    if st.button(f"➕ Adicionar outro(a) {r1}", key="add_req"):
+        st.session_state["req_count"] += 1
+        st.rerun()
+    st.divider()
+    st.markdown(f"### {r2}(s)")
+    if "rdo_count" not in st.session_state:
+        st.session_state["rdo_count"] = 1
+    for i in range(st.session_state["rdo_count"]):
+        _cadastro_parte("rdo", r2 if i == 0 else f"{r2} {i+1}", indice=i)
+    if st.button(f"➕ Adicionar outro(a) {r2}", key="add_rdo"):
+        st.session_state["rdo_count"] += 1
+        st.rerun()
     st.text_area("Demais dados (datas, valores, números, o que mais importar)", key="f_outros",
                  height=100, placeholder="Digite aqui as datas, valores e outros dados importantes")
     cbl1, cbl2 = st.columns([9, 1])
