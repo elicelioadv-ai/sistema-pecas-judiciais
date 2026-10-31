@@ -1067,43 +1067,44 @@ if not st.session_state.setdefault("autenticado", False):
               function ajustar() {
                 try {
                   var d = window.parent.document;
-                  var campos = d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"], input[aria-label="Senha"]');
+                  var campos = d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"], .st-key-login_campos input[type="password"], .st-key-login_campos input');
                   campos.forEach(function (el) {
-                    try { el.setAttribute('autocomplete', 'new-password'); } catch(e){}
-                    try { el.setAttribute('name', 'senha_' + Math.random().toString(36).slice(2)); } catch(e){}
-                    try { el.setAttribute('type', 'password'); } catch(e){}
-                    try { el.style.removeProperty('-webkit-text-security'); } catch(e){}
-                    try { el.style.removeProperty('letter-spacing'); } catch(e){}
+                    if (el.getAttribute('data-spj-eye') === '1') return;
+                    el.setAttribute('data-spj-eye', '1');
+                    try { el.setAttribute('autocomplete', 'current-password'); } catch(e){}
+                    try { if (el.getAttribute('type') !== 'password') el.setAttribute('type', 'password'); } catch(e){}
+                    try { el.style.setProperty('-webkit-text-security', 'disc', 'important'); } catch(e){}
+                    try { el.style.setProperty('letter-spacing', '2px', 'important'); } catch(e){}
+                    var caixa = el.closest('[data-baseweb="input"]') || el.closest('[data-testid="stTextInputRootElement"]') || el.parentElement;
+                    if (!caixa) return;
+                    if (caixa.querySelector('.olho-login')) return;
+                    caixa.style.position = 'relative';
+                    var b = d.createElement('span');
+                    b.className = 'olho-login';
+                    b.title = 'Mostrar senha';
+                    b.setAttribute('role', 'button');
+                    b.setAttribute('tabindex', '0');
+                    b.innerHTML = ABERTO;
+                    var mostrando = false;
+                    function toggle(){
+                      mostrando = !mostrando;
+                      try { el.setAttribute('type', mostrando ? 'text' : 'password'); } catch(e){}
+                      try { el.style.setProperty('-webkit-text-security', mostrando ? 'none' : 'disc', 'important'); } catch(e){}
+                      try { el.style.setProperty('letter-spacing', mostrando ? 'normal' : '2px', 'important'); } catch(e){}
+                      b.innerHTML = mostrando ? FECHADO : ABERTO;
+                      b.title = mostrando ? 'Ocultar senha' : 'Mostrar senha';
+                      try { el.focus(); } catch(e){}
+                    }
+                    b.onclick = toggle;
+                    b.onkeydown = function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); } };
+                    caixa.appendChild(b);
                   });
-                  var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
-                  if (!campo) return;
-                  var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
-                  if (!caixa) return;
-                  if (caixa.querySelector('.olho-login')) return;
-                  caixa.style.position = 'relative';
-                  var b = d.createElement('span');
-                  b.className = 'olho-login';
-                  b.title = 'Mostrar senha';
-                  b.setAttribute('role', 'button');
-                  b.setAttribute('tabindex', '0');
-                  b.innerHTML = ABERTO;
-                  var mostrando = false;
-                  function toggle(){
-                    mostrando = !mostrando;
-                    try { campo.setAttribute('type', mostrando ? 'text' : 'password'); } catch(e){}
-                    b.innerHTML = mostrando ? FECHADO : ABERTO;
-                    b.title = mostrando ? 'Ocultar senha' : 'Mostrar senha';
-                    try { campo.focus(); } catch(e){}
-                  }
-                  b.onclick = toggle;
-                  b.onkeydown = function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); } };
-                  caixa.appendChild(b);
                 } catch (e) {}
               }
               ajustar();
-              setTimeout(ajustar, 400);
-              setTimeout(ajustar, 1000);
-              setTimeout(ajustar, 2000);
+              var obs = new MutationObserver(ajustar);
+              try { obs.observe(window.parent.document.body, {childList:true, subtree:true}); } catch(e){}
+              setInterval(ajustar, 500);
             })();
             </script>
             """,
@@ -3305,16 +3306,16 @@ with aba_fatos:
     elif st.session_state.get("_revisou"):
         st.success("✅ Não encontrei erros de escrita no relato.")
 
-    if st.button("🧹 Limpar fatos e listar pendências", type="primary"):
+    if st.button("✍️ Corrigir e organizar fatos (gramática/ABNT)", type="primary"):
         if not st.session_state["narrativa"].strip():
             st.warning("Escreva ou dite o relato primeiro.")
         else:
-            _salvar_rascunho()  # guarda o texto ANTES de chamar a IA
-            with st.status("Organizando os fatos...", expanded=False) as s:
+            _salvar_rascunho()
+            with st.status("Corrigindo e organizando...", expanded=False) as s:
                 resultado = tentar(motor.limpar_fatos, st.session_state["dados"],
                                    motor.texto_simples(st.session_state["narrativa"]),
                                    anonimizador)
-                s.update(label="Fatos organizados" if resultado else "Falha",
+                s.update(label="Texto corrigido" if resultado else "Falha",
                          state="complete" if resultado else "error")
             if resultado:
                 st.session_state["fatos_edit"] = resultado[0]
@@ -3322,16 +3323,52 @@ with aba_fatos:
                 sugerido = motor.identificar_modelo(resultado[0], motor.listar_modelos())
                 if sugerido and sugerido != st.session_state.get("modelo_nome"):
                     st.session_state["modelo_nome"] = sugerido
-                st.success(f"Fatos organizados abaixo. Modelo sugerido: **{sugerido or '—'}** (confira na barra lateral).")
+                st.success("Texto corrigido e organizado em parágrafos abaixo. Se houver perguntas, responda logo abaixo.")
 
     st.divider()
-    st.subheader("Fatos organizados (edite à vontade)")
+    st.subheader("Fatos corrigidos/organizados (edite à vontade)")
     if not st.session_state["fatos_edit"]:
-        st.info("Escreva o relato acima, clique em 'Limpar fatos' e os fatos aparecerão aqui.")
+        st.info("Escreva ou dite o relato acima e clique em 'Corrigir e organizar fatos' para ver o resultado aqui.")
     else:
-        st.text_area("Fatos", key="fatos_edit", height=280,
-                     placeholder="Os fatos organizados aparecem aqui — pode editar à vontade")
-    st.caption("Quando estiver pronto, gere a peça pelo botão **📝 Gerar peça** na barra lateral.")
+        st.text_area("Fatos corrigidos", key="fatos_edit", height=320,
+                     placeholder="O texto corrigido e organizado em parágrafos aparece aqui — pode editar à vontade")
+
+    st.divider()
+    st.subheader("📝 Gerar peça nesta aba")
+    modelo_nome = st.session_state.get("modelo_nome") or (motor.listar_modelos()[0] if motor.listar_modelos() else "")
+    base_nome = st.session_state.get("base_nome") or (motor.listar_bases()[0] if motor.listar_bases() else None)
+    if st.button("📝 Gerar a peça", type="primary", use_container_width=True):
+        fatos = st.session_state.get("fatos_edit") or ""
+        if not fatos.strip():
+            st.warning("Corrija/organize os fatos primeiro ou cole o relato corrigido acima.")
+        else:
+            st.session_state.update(peca_edit="", alertas=[], usadas=[])
+            st.session_state.pop("export_docx", None)
+            st.session_state.pop("export_pdf", None)
+            base = motor.carregar_base(base_nome) if base_nome else []
+            _anon = None
+            if st.session_state.get("modo_seguro", True):
+                try:
+                    _anon = motor.Anonimizador([])
+                except Exception:
+                    _anon = None
+            with st.status("Redigindo a peça...", expanded=False) as s:
+                bruto = tentar(motor.gerar_peca, motor.carregar_modelo(modelo_nome),
+                               st.session_state.get("dados", ""), fatos, base, _anon)
+                if bruto:
+                    conf = motor.conferir_citacoes(bruto, base, f"{st.session_state.get('dados','')}\n{fatos}")
+                    st.session_state.update(peca_edit=conf["texto"], alertas=conf["alertas"], usadas=conf["usadas"])
+                    s.update(label="Peça gerada e conferida", state="complete")
+                else:
+                    s.update(label="Falha ao gerar", state="error")
+            st.rerun()
+
+    if st.session_state.get("peca_edit"):
+        st.divider()
+        st.subheader("Peça gerada (edite à vontade)")
+        texto = st.text_area("Texto da peça", key="peca_edit", height=520,
+                             placeholder="A peça aparece aqui — pode corrigir antes de exportar")
+        exportar(texto)
 
     perguntas = [p.strip().lstrip("-").strip()
                  for p in st.session_state["pend"].splitlines() if p.strip()]

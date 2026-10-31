@@ -608,17 +608,15 @@ def revisar_escrita(texto, anonimizador=None):
     return _extrair_correcoes(saida)
 
 
-REGRAS_FATOS = """Você é assistente de um escritório de advocacia brasileiro.
-Tarefa: organizar a narrativa bruta de um cliente em FATOS claros, em ordem cronológica, linguagem jurídica simples.
+REGRAS_FATOS = """Voce e assistente de um escritorio de advocacia brasileiro.
+Tarefa: APENAS corrigir ortografia, gramatica, pontuacao e organizar o texto em paragrafos conforme a norma culta da lingua portuguesa (ABNT). NAO resuma, NAO omita, NAO acrescente, NAO invente fatos, datas, valores, nomes ou informacoes. NAO faca argumentacao juridica, NAO cite leis.
 REGRAS ABSOLUTAS:
-- NÃO invente nem acrescente nenhum fato, data, hora, valor ou nome que não esteja no texto recebido.
-- NÃO faça argumentação jurídica nem cite leis.
-- Se algo importante estiver faltando ou ambíguo, NÃO preencha: liste em PENDÊNCIAS como pergunta ao cliente.
-Responda EXATAMENTE neste formato:
-=== FATOS ===
-(texto dos fatos)
-=== PENDENCIAS ===
-(uma pergunta por linha, começando com '- ')"""
+- Mantenha TODO o conteudo do relato original sem reducao.
+- Organize em paragrafos claros e coerentes.
+- Se algo importante estiver faltando para entender o fato, pergunte APENAS o estritamente necessario.
+- Toda pergunta deve vir em uma linha começando com PERGUNTA: sem explicação.
+- Retorne SOMENTE: primeiro o TEXTO CORRIGIDO E ORGANIZADO EM PARAGRAFOS. Depois, se houver, as perguntas no formato PERGUNTA: ...
+Nao use marcadores '-' nem titulos === FATOS === ou === PENDENCIAS ===."""
 
 
 def limpar_fatos(dados_caso, narrativa, anonimizador=None):
