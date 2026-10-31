@@ -223,15 +223,20 @@ div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
 }
 /* Olhinho: mostrar/ocultar a senha */
 .st-key-login_senha [data-baseweb="input"],
-.st-key-login_senha [data-testid="stTextInputRootElement"] { position: relative !important; }
-.st-key-login_senha input { padding-right: 42px !important; }
-.olho-login {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: #555555; border-radius: 6px; z-index: 5;
+.st-key-login_senha [data-testid="stTextInputRootElement"],
+input[aria-label="Senha de acesso"] {
+    position: relative !important;
 }
-.olho-login:hover { background: rgba(31, 78, 120, 0.10); }
-.olho-login svg { width: 20px; height: 20px; display: block; }
+.st-key-login_senha input,
+input[aria-label="Senha de acesso"] { padding-right: 44px !important; }
+.olho-login {
+    position: absolute !important; right: 6px !important; top: 50% !important; transform: translateY(-50%) !important;
+    width: 32px !important; height: 32px !important; display: flex !important; align-items: center !important; justify-content: center !important;
+    cursor: pointer !important; color: #5f6368 !important; border-radius: 50% !important; z-index: 9999 !important;
+    background: transparent !important; border: none !important; padding: 0 !important; margin: 0 !important;
+}
+.olho-login:hover { background: rgba(60,64,67,0.08) !important; }
+.olho-login svg { width: 22px !important; height: 22px !important; display: block !important; pointer-events: none !important; }
 /* "Esqueceu a senha?": apenas o texto com o símbolo, sem caixa */
 div[data-testid="stForm"] [data-testid="stExpander"],
 div[data-testid="stForm"] [data-testid="stExpander"] details,
@@ -1065,55 +1070,37 @@ if not st.session_state.setdefault("autenticado", False):
             (function () {
               var ABERTO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
               var FECHADO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-              function ajustar() {
+              function fix(){
                 try {
                   var d = window.parent.document;
                   var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
                   if (!campo) return;
-                  if (caixaOk(campo)) return;
-                  campo.setAttribute('data-spj-eye-pass', '1');
-                  try { campo.setAttribute('autocomplete', 'current-password'); } catch(e){}
-                  try { campo.setAttribute('type', 'password'); } catch(e){}
-                  var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
+                  var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]');
                   if (!caixa) return;
                   if (caixa.querySelector('.olho-login')) return;
+                  try { campo.setAttribute('type','password'); } catch(e){}
                   caixa.style.position = 'relative';
                   var b = d.createElement('button');
                   b.type = 'button';
                   b.className = 'olho-login';
-                  b.title = 'Mostrar senha';
-                  b.setAttribute('aria-label', 'Mostrar senha');
                   b.innerHTML = ABERTO;
-                  var mostrando = false;
-                  function toggle(e){
-                    if (e) { e.preventDefault(); e.stopPropagation(); }
-                    mostrando = !mostrando;
-                    try { campo.setAttribute('type', mostrando ? 'text' : 'password'); } catch(e){}
-                    try { campo.type = mostrando ? 'text' : 'password'; } catch(e){}
-                    b.innerHTML = mostrando ? FECHADO : ABERTO;
-                    b.title = mostrando ? 'Ocultar senha' : 'Mostrar senha';
-                    b.setAttribute('aria-label', mostrando ? 'Ocultar senha' : 'Mostrar senha');
-                    try { campo.focus(); } catch(e){}
+                  var on = false;
+                  function t(ev){
+                    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+                    on = !on;
+                    try { campo.setAttribute('type', on ? 'text' : 'password'); } catch(e){}
+                    b.innerHTML = on ? FECHADO : ABERTO;
                   }
-                  b.addEventListener('mousedown', toggle);
-                  b.addEventListener('click', toggle);
-                  b.addEventListener('keydown', function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(ev); } });
+                  b.addEventListener('mousedown', t, true);
+                  b.addEventListener('click', t, true);
+                  b.addEventListener('touchstart', t, true);
                   caixa.appendChild(b);
-                } catch (e) {}
+                } catch(e){}
               }
-              function caixaOk(campo){
-                try {
-                  var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
-                  return caixa && caixa.querySelector('.olho-login');
-                } catch(e){ return false; }
-              }
-              ajustar();
-              setTimeout(ajustar, 300);
-              setTimeout(ajustar, 700);
-              setTimeout(ajustar, 1200);
-              var obs = new MutationObserver(ajustar);
+              fix();
+              setInterval(fix, 400);
+              var obs = new MutationObserver(fix);
               try { obs.observe(window.parent.document.body, {childList:true, subtree:true}); } catch(e){}
-              setInterval(ajustar, 600);
             })();
             </script>
             """,
