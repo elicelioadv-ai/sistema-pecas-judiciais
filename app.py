@@ -1067,44 +1067,43 @@ if not st.session_state.setdefault("autenticado", False):
               function ajustar() {
                 try {
                   var d = window.parent.document;
-                  var campos = d.querySelectorAll('.st-key-login_senha input, input[aria-label="Senha de acesso"], .st-key-login_campos input[type="password"], .st-key-login_campos input');
-                  campos.forEach(function (el) {
-                    if (el.getAttribute('data-spj-eye') === '1') return;
-                    el.setAttribute('data-spj-eye', '1');
-                    try { el.setAttribute('autocomplete', 'current-password'); } catch(e){}
-                    try { if (el.getAttribute('type') !== 'password') el.setAttribute('type', 'password'); } catch(e){}
-                    try { el.style.setProperty('-webkit-text-security', 'disc', 'important'); } catch(e){}
-                    try { el.style.setProperty('letter-spacing', '2px', 'important'); } catch(e){}
-                    var caixa = el.closest('[data-baseweb="input"]') || el.closest('[data-testid="stTextInputRootElement"]') || el.parentElement;
-                    if (!caixa) return;
-                    if (caixa.querySelector('.olho-login')) return;
-                    caixa.style.position = 'relative';
-                    var b = d.createElement('span');
-                    b.className = 'olho-login';
-                    b.title = 'Mostrar senha';
-                    b.setAttribute('role', 'button');
-                    b.setAttribute('tabindex', '0');
-                    b.innerHTML = ABERTO;
-                    var mostrando = false;
-                    function toggle(){
-                      mostrando = !mostrando;
-                      try { el.setAttribute('type', mostrando ? 'text' : 'password'); } catch(e){}
-                      try { el.style.setProperty('-webkit-text-security', mostrando ? 'none' : 'disc', 'important'); } catch(e){}
-                      try { el.style.setProperty('letter-spacing', mostrando ? 'normal' : '2px', 'important'); } catch(e){}
-                      b.innerHTML = mostrando ? FECHADO : ABERTO;
-                      b.title = mostrando ? 'Ocultar senha' : 'Mostrar senha';
-                      try { el.focus(); } catch(e){}
-                    }
-                    b.onclick = toggle;
-                    b.onkeydown = function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); } };
-                    caixa.appendChild(b);
-                  });
+                  var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
+                  if (!campo) return;
+                  if (campo.getAttribute('data-spj-eye-pass') === '1') return;
+                  campo.setAttribute('data-spj-eye-pass', '1');
+                  try { campo.setAttribute('autocomplete', 'current-password'); } catch(e){}
+                  try { campo.setAttribute('type', 'password'); } catch(e){}
+                  try { campo.style.setProperty('-webkit-text-security', 'disc', 'important'); } catch(e){}
+                  try { campo.style.setProperty('letter-spacing', '2px', 'important'); } catch(e){}
+                  var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]') || campo.parentElement;
+                  if (!caixa) return;
+                  if (caixa.querySelector('.olho-login')) return;
+                  caixa.style.position = 'relative';
+                  var b = d.createElement('span');
+                  b.className = 'olho-login';
+                  b.title = 'Mostrar senha';
+                  b.setAttribute('role', 'button');
+                  b.setAttribute('tabindex', '0');
+                  b.innerHTML = ABERTO;
+                  var mostrando = false;
+                  function toggle(){
+                    mostrando = !mostrando;
+                    try { campo.setAttribute('type', mostrando ? 'text' : 'password'); } catch(e){}
+                    try { campo.style.setProperty('-webkit-text-security', mostrando ? 'none' : 'disc', 'important'); } catch(e){}
+                    try { campo.style.setProperty('letter-spacing', mostrando ? 'normal' : '2px', 'important'); } catch(e){}
+                    b.innerHTML = mostrando ? FECHADO : ABERTO;
+                    b.title = mostrando ? 'Ocultar senha' : 'Mostrar senha';
+                    try { campo.focus(); } catch(e){}
+                  }
+                  b.onclick = toggle;
+                  b.onkeydown = function(ev){ if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); toggle(); } };
+                  caixa.appendChild(b);
                 } catch (e) {}
               }
               ajustar();
-              var obs = new MutationObserver(ajustar);
-              try { obs.observe(window.parent.document.body, {childList:true, subtree:true}); } catch(e){}
-              setInterval(ajustar, 500);
+              setTimeout(ajustar, 400);
+              setTimeout(ajustar, 1000);
+              setInterval(ajustar, 800);
             })();
             </script>
             """,
