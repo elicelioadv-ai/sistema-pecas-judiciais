@@ -112,6 +112,21 @@ _CSS_LOGIN = """
     background-attachment: fixed !important;
 }
 [data-testid="stHeader"] { background: transparent !important; }
+/* centraliza o cartao de login no meio da tela (sem pular para baixo) */
+[data-testid="stAppViewContainer"] .block-container,
+.block-container {
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+    max-width: 100% !important;
+}
+[data-testid="stAppViewContainer"] .block-container > div,
+.block-container > div { width: 100%; }
+html, body { scroll-behavior: auto !important; }
 .login-head { margin: 0 auto 6px auto; text-align: center; }
 .login-logo { font-size: clamp(60px, 14vw, 88px); line-height: 1; margin-bottom: 2px; }
 .login-head .login-title, .login-title {
@@ -126,7 +141,7 @@ div[data-testid="stForm"] {
     border: none; border-radius: 0; padding: 0; box-shadow: none;
 }
 .st-key-login_campos, .st-key-cad_campos {
-    max-width: 470px; margin: 16px auto 0 auto;
+    max-width: 470px; margin: 0 auto;
     background: #ffffff;
     border: 1px solid #d5d9de; border-top: 5px solid #1F4E78; border-radius: 14px;
     padding: 24px 26px 20px 26px;
@@ -894,23 +909,30 @@ _JS_SESSAO = r"""<script>
   }
 
   function tentar() {
-    var inp = campo();
-    if (!inp) return false;
-    if (inp.value && inp.value.length > 20) return true;
-    var t = token();
-    if (!t || t.length < 20) return false;
     try {
+      if (P.__spjTokenEnviado) { return true; }
+      var inp = campo();
+      if (!inp) return false;
+      var t = token();
+      if (!t || t.length < 20) { P.__spjTokenEnviado = true; return true; }
       var setter = Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype, "value").set;
       setter.call(inp, t);
       inp.dispatchEvent(new P.Event("input", {bubbles: true}));
-      inp.focus();
-      setTimeout(function () { try { inp.blur(); } catch (e) {} }, 80);
+      P.__spjTokenEnviado = true;
     } catch (e) { return false; }
     return true;
   }
 
-  if (tentar()) { setTimeout(tentar, 800); }
-  setInterval(tentar, 1500);
+  // tenta poucas vezes e para: ficar repetindo isso fazia a tela recarregar
+  // sozinha e pular para baixo
+  var tentativas = 0;
+  function ciclo() {
+    tentativas++;
+    var ok = tentar();
+    if (!ok && tentativas < 6) { setTimeout(ciclo, 500); }
+  }
+  try { if (P.scrollTo) P.scrollTo(0, 0); } catch (e) {}
+  setTimeout(ciclo, 100);
 })();
 </script>"""
 
