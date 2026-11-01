@@ -229,12 +229,13 @@ input[type="password"]::-webkit-strong-password-auto-fill-button,
 input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important; visibility: hidden !important;
 }
-/* Campo de senha do login: mascarado, mas sem o navegador tratar como senha
-   (evita o "gerenciador de senhas" do Google aparecer) */
+/* Campo de senha do login: o mascaramento vem do proprio type="password".
+   (Antes havia -webkit-text-security: disc aqui, e isso impedia o olhinho
+   de mostrar a senha: mesmo trocando para type="text" continuava mascarado.) */
 .st-key-login_senha input,
 .st-key-login_campos input[aria-label="Senha de acesso"],
 div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
-    -webkit-text-security: disc; letter-spacing: 2px;
+    letter-spacing: 1px;
 }
 /* Olhinho: mostrar/ocultar a senha */
 .st-key-login_senha [data-baseweb="input"],
@@ -753,36 +754,66 @@ def _captcha_novo_desafio():
         emoji if k in certos else random.choice(outros) for k in range(9)
     ]
     st.session_state["captcha_sel"] = []
+    st.session_state["captcha_ok"] = False
 
 
 def _captcha_render():
     """Verificação de segurança dentro do cartão: 'Não sou um robô' abre as figuras."""
     st.markdown("<div class='cap-titulo'>Verificação de segurança</div>", unsafe_allow_html=True)
+
     if not st.session_state.get("captcha_humano"):
         if st.button("Não sou um robô", key="captcha_humano_btn"):
             st.session_state["captcha_humano"] = True
+            st.session_state["captcha_ok"] = False
             _captcha_novo_desafio()
             st.rerun()
         return
+
+    alvo = st.session_state.get("captcha_alvo", "")
+    tiles = st.session_state.get("captcha_tiles", []) or []
+
+    if st.session_state.get("captcha_ok"):
+        st.success(f"Verificação concluída. Você pode entrar. ✅")
+        return
+
+    if len(tiles) < 9:
+        _captcha_novo_desafio()
+        st.rerun()
+        return
+
+    st.markdown(
+        "<p class='cap-pergunta'>Marque <b>todas</b> as figuras que mostram "
+        f"<b>{alvo}</b> e clique em <b>Confirmar</b>:</p>",
+        unsafe_allow_html=True,
+    )
+    sel = set(st.session_state.get("captcha_sel", []))
     with st.container(key="captcha_nativo"):
-        st.markdown(
-            "<p class='cap-pergunta'>Marque as figuras que mostram <b>"
-            f"{st.session_state.get('captcha_alvo', '')}</b>:</p>",
-            unsafe_allow_html=True,
-        )
-        sel = set(st.session_state.get("captcha_sel", []))
-        tiles = st.session_state.get("captcha_tiles", [])
         for linha in range(3):
-            colunas = st.columns(3)
+            colunas = st.columns(3, gap="small")
             for c in range(3):
                 i = linha * 3 + c
                 with colunas[c]:
-                    if st.button(tiles[i], key=f"captcha_tile_{i}",
-                                 type=("primary" if i in sel else "secondary")):
+                    marcado = "✅ " if i in sel else ""
+                    if st.button(marcado + tiles[i], key=f"captcha_tile_{i}",
+                                 width="stretch"):
                         nova = set(sel)
                         nova.symmetric_difference_update({i})
                         st.session_state["captcha_sel"] = sorted(nova)
                         st.rerun()
+
+    b1, b2 = st.columns([2, 1])
+    if b1.button("✔️ Confirmar", key="captcha_confirmar", type="primary",
+                 width="stretch"):
+        if _captcha_valido(checar_selecao=True):
+            st.session_state["captcha_ok"] = True
+            st.rerun()
+        else:
+            st.error("Ainda não está certo. Marque as figuras de " + alvo + ".")
+    if b2.button("↻", key="captcha_trocar", help="Trocar as figuras",
+                 width="stretch"):
+        st.session_state["captcha_sel"] = []
+        _captcha_novo_desafio()
+        st.rerun()
 
 
 def _captcha_necessario():
@@ -790,7 +821,12 @@ def _captcha_necessario():
     return True
 
 
-def _captcha_valido():
+def _captcha_valido(checar_selecao=False):
+    """Já confirmou a verificação? (ou a seleção atual está certa, se pedido)."""
+    if st.session_state.get("captcha_ok"):
+        return True
+    if not checar_selecao:
+        return False
     sel = set(st.session_state.get("captcha_sel", []))
     corretos = set(st.session_state.get("captcha_corretos", []))
     return bool(corretos) and sel == corretos
@@ -1100,29 +1136,42 @@ if not st.session_state.setdefault("autenticado", False):
                   var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]');
                   if (!caixa) return;
                   if (caixa.querySelector('.olho-login')) return;
-                  try { campo.setAttribute('type','password'); } catch(e){}
                   caixa.style.position = 'relative';
                   var b = d.createElement('button');
                   b.type = 'button';
                   b.className = 'olho-login';
                   b.innerHTML = ABERTO;
+                  b.title = 'Mostrar senha';
                   var on = false;
+                  function mostra(mostrar){
+                    on = mostrar;
+                    // mexe no type E no -webkit-text-security: o CSS do Streamlit
+                    // tambem mascara o campo, entao so trocar o type nao bastava
+                    try { campo.setAttribute('type', mostrar ? 'text' : 'password'); } catch(e){}
+                    try { campo.type = mostrar ? 'text' : 'password'; } catch(e){}
+                    try {
+                      campo.style.setProperty('-webkit-text-security', mostrar ? 'none' : 'disc', 'important');
+                      campo.style.setProperty('text-security', mostrar ? 'none' : 'disc', 'important');
+                    } catch(e){}
+                    b.innerHTML = mostrar ? FECHADO : ABERTO;
+                    b.title = mostrar ? 'Ocultar senha' : 'Mostrar senha';
+                  }
                   function t(ev){
                     if(ev){ ev.preventDefault(); ev.stopPropagation(); }
-                    on = !on;
-                    try { campo.setAttribute('type', on ? 'text' : 'password'); } catch(e){}
-                    b.innerHTML = on ? FECHADO : ABERTO;
+                    mostra(!on);
                   }
-                  b.addEventListener('mousedown', t, true);
-                  b.addEventListener('click', t, true);
-                  b.addEventListener('touchstart', t, true);
+                  b.addEventListener('mousedown', t);
+                  b.addEventListener('click', t);
+                  b.addEventListener('touchstart', t);
                   caixa.appendChild(b);
                 } catch(e){}
               }
               fix();
-              setInterval(fix, 400);
+              setTimeout(fix, 300);
+              setTimeout(fix, 900);
               var obs = new MutationObserver(fix);
               try { obs.observe(window.parent.document.body, {childList:true, subtree:true}); } catch(e){}
+              setInterval(fix, 800);
             })();
             </script>
             """,
