@@ -229,6 +229,17 @@ input[type="password"]::-webkit-strong-password-auto-fill-button,
 input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important; visibility: hidden !important;
 }
+/* ...mas o NOSSO olhinho nao pode ser escondido por essa regra acima.
+   (Era exatamente isso que fazia o olho nunca funcionar.) */
+.st-key-login_campos [data-testid="stTextInputRootElement"] button.olho-login,
+div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button.olho-login,
+.st-key-login_campos [data-baseweb="input"] button.olho-login,
+div[data-testid="stForm"] [data-baseweb="input"] button.olho-login {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
 /* Campo de senha do login: o mascaramento vem do proprio type="password".
    (Antes havia -webkit-text-security: disc aqui, e isso impedia o olhinho
    de mostrar a senha: mesmo trocando para type="text" continuava mascarado.) */
@@ -1080,7 +1091,7 @@ if not st.session_state.setdefault("autenticado", False):
             usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario",
                                             placeholder="Usuário (ou e-mail)")
             senha_entrada = st.text_input("Senha de acesso", key="login_senha",
-                                          placeholder="Senha de acesso")
+                                          type="password", placeholder="Senha de acesso")
             if _precisa_captcha:
                 _captcha_render()
             entrar = st.button("Entrar", type="primary", key="login_entrar", width="stretch")
@@ -1137,6 +1148,7 @@ if not st.session_state.setdefault("autenticado", False):
                   if (!caixa) return;
                   if (caixa.querySelector('.olho-login')) return;
                   caixa.style.position = 'relative';
+                  try { if (!campo.getAttribute('type')) campo.setAttribute('type','password'); } catch(e){}
                   var b = d.createElement('button');
                   b.type = 'button';
                   b.className = 'olho-login';
