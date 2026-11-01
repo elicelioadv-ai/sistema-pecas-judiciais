@@ -112,13 +112,16 @@ _CSS_LOGIN = """
     background-attachment: fixed !important;
 }
 [data-testid="stHeader"] { background: transparent !important; }
-/* centraliza o cartao de login no meio da tela (sem pular para baixo) */
+/* centraliza o cartao de login no meio da tela. O "safe" evita que o topo
+   do cartao fique cortado quando a tela e baixa (o cartao passa a comecar
+   no topo e a pagina rola normalmente). */
 [data-testid="stAppViewContainer"] .block-container,
 .block-container {
     min-height: 100vh !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
+    justify-content: safe center !important;
     align-items: center !important;
     padding-top: 1.5rem !important;
     padding-bottom: 1.5rem !important;
@@ -217,11 +220,8 @@ div[data-testid="stForm"] [data-baseweb="input"] [role="button"],
     outline: none !important; min-height: 0 !important; height: auto !important;
     min-width: 0 !important; padding: 0 4px !important; color: #000000 !important;
 }
-/* Esconde o "olhinho"/opções de senha (Streamlit e navegador) */
-div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button,
-div[data-testid="stForm"] [data-testid="stTextInputRootElement"] [role="button"],
-.st-key-login_campos [data-testid="stTextInputRootElement"] button,
-.st-key-login_campos [data-testid="stTextInputRootElement"] [role="button"],
+/* Esconde só os icones que o proprio navegador desenha dentro do campo
+   (o "revelar senha" do Edge/Chrome). O olhinho do Streamlit fica visivel. */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear,
 input[type="password"]::-webkit-credentials-auto-fill-button,
@@ -229,41 +229,14 @@ input[type="password"]::-webkit-strong-password-auto-fill-button,
 input[type="password"]::-webkit-textfield-decoration-container {
     display: none !important; visibility: hidden !important;
 }
-/* ...mas o NOSSO olhinho nao pode ser escondido por essa regra acima.
-   (Era exatamente isso que fazia o olho nunca funcionar.) */
-.st-key-login_campos [data-testid="stTextInputRootElement"] button.olho-login,
-div[data-testid="stForm"] [data-testid="stTextInputRootElement"] button.olho-login,
-.st-key-login_campos [data-baseweb="input"] button.olho-login,
-div[data-testid="stForm"] [data-baseweb="input"] button.olho-login {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-}
-/* Campo de senha do login: o mascaramento vem do proprio type="password".
-   (Antes havia -webkit-text-security: disc aqui, e isso impedia o olhinho
-   de mostrar a senha: mesmo trocando para type="text" continuava mascarado.) */
+/* Campo de senha do login: o mascaramento vem do proprio type="password". */
 .st-key-login_senha input,
 .st-key-login_campos input[aria-label="Senha de acesso"],
 div[data-testid="stForm"] input[aria-label="Senha de acesso"] {
     letter-spacing: 1px;
 }
-/* Olhinho: mostrar/ocultar a senha */
-.st-key-login_senha [data-baseweb="input"],
-.st-key-login_senha [data-testid="stTextInputRootElement"],
-input[aria-label="Senha de acesso"] {
-    position: relative !important;
-}
-.st-key-login_senha input,
-input[aria-label="Senha de acesso"] { padding-right: 44px !important; }
-.olho-login {
-    position: absolute !important; right: 6px !important; top: 50% !important; transform: translateY(-50%) !important;
-    width: 32px !important; height: 32px !important; display: flex !important; align-items: center !important; justify-content: center !important;
-    cursor: pointer !important; color: #5f6368 !important; border-radius: 50% !important; z-index: 9999 !important;
-    background: transparent !important; border: none !important; padding: 0 !important; margin: 0 !important;
-}
-.olho-login:hover { background: rgba(60,64,67,0.08) !important; }
-.olho-login svg { width: 22px !important; height: 22px !important; display: block !important; pointer-events: none !important; }
+/* O olhinho de mostrar/ocultar a senha e o nativo do Streamlit
+   (type="password"). Nao criamos mais um botao por JavaScript. */
 /* "Esqueceu a senha?": apenas o texto com o símbolo, sem caixa */
 div[data-testid="stForm"] [data-testid="stExpander"],
 div[data-testid="stForm"] [data-testid="stExpander"] details,
@@ -321,7 +294,7 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 .st-key-captcha_nativo [data-testid="stHorizontalBlock"] { gap: 8px !important; }
 .st-key-captcha_nativo [data-testid="stButton"] { margin: 0 !important; }
 .st-key-captcha_nativo button {
-    width: 100% !important; aspect-ratio: 1 / 1; padding: 0 !important;
+    width: 100% !important; height: 92px !important; padding: 0 !important;
     min-height: 0 !important; border-radius: 6px !important; line-height: 1 !important;
 }
 .st-key-captcha_nativo button p { font-size: 28px !important; margin: 0 !important; line-height: 1 !important; }
@@ -812,7 +785,7 @@ def _captcha_render():
                         st.session_state["captcha_sel"] = sorted(nova)
                         st.rerun()
 
-    b1, b2 = st.columns([2, 1])
+    b1, b2 = st.columns([1, 1])
     if b1.button("✔️ Confirmar", key="captcha_confirmar", type="primary",
                  width="stretch"):
         if _captcha_valido(checar_selecao=True):
@@ -820,7 +793,7 @@ def _captcha_render():
             st.rerun()
         else:
             st.error("Ainda não está certo. Marque as figuras de " + alvo + ".")
-    if b2.button("↻", key="captcha_trocar", help="Trocar as figuras",
+    if b2.button("↻ Trocar", key="captcha_trocar", help="Trocar as figuras",
                  width="stretch"):
         st.session_state["captcha_sel"] = []
         _captcha_novo_desafio()
@@ -1126,6 +1099,8 @@ if not st.session_state.setdefault("autenticado", False):
                                 st.error(f"Não deu para definir o acesso: {e}")
         else:
             st.caption("Crie sua conta. Ela será liberada depois que o administrador aprovar.")
+            if _precisa_captcha:
+                _captcha_render()
             with st.form("cadastro_form"):
                 cad_nome = st.text_input("Nome completo", key="cad_nome")
                 cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
@@ -1133,62 +1108,8 @@ if not st.session_state.setdefault("autenticado", False):
                 cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
                 criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
 
-        components.html(
-            """
-            <script>
-            (function () {
-              var ABERTO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-              var FECHADO = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-              function fix(){
-                try {
-                  var d = window.parent.document;
-                  var campo = d.querySelector('.st-key-login_senha input') || d.querySelector('input[aria-label="Senha de acesso"]');
-                  if (!campo) return;
-                  var caixa = campo.closest('[data-baseweb="input"]') || campo.closest('[data-testid="stTextInputRootElement"]');
-                  if (!caixa) return;
-                  if (caixa.querySelector('.olho-login')) return;
-                  caixa.style.position = 'relative';
-                  try { if (!campo.getAttribute('type')) campo.setAttribute('type','password'); } catch(e){}
-                  var b = d.createElement('button');
-                  b.type = 'button';
-                  b.className = 'olho-login';
-                  b.innerHTML = ABERTO;
-                  b.title = 'Mostrar senha';
-                  var on = false;
-                  function mostra(mostrar){
-                    on = mostrar;
-                    // mexe no type E no -webkit-text-security: o CSS do Streamlit
-                    // tambem mascara o campo, entao so trocar o type nao bastava
-                    try { campo.setAttribute('type', mostrar ? 'text' : 'password'); } catch(e){}
-                    try { campo.type = mostrar ? 'text' : 'password'; } catch(e){}
-                    try {
-                      campo.style.setProperty('-webkit-text-security', mostrar ? 'none' : 'disc', 'important');
-                      campo.style.setProperty('text-security', mostrar ? 'none' : 'disc', 'important');
-                    } catch(e){}
-                    b.innerHTML = mostrar ? FECHADO : ABERTO;
-                    b.title = mostrar ? 'Ocultar senha' : 'Mostrar senha';
-                  }
-                  function t(ev){
-                    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
-                    mostra(!on);
-                  }
-                  b.addEventListener('mousedown', t);
-                  b.addEventListener('click', t);
-                  b.addEventListener('touchstart', t);
-                  caixa.appendChild(b);
-                } catch(e){}
-              }
-              fix();
-              setTimeout(fix, 300);
-              setTimeout(fix, 900);
-              var obs = new MutationObserver(fix);
-              try { obs.observe(window.parent.document.body, {childList:true, subtree:true}); } catch(e){}
-              setInterval(fix, 800);
-            })();
-            </script>
-            """,
-            height=0,
-        )
+        # O olhinho de mostrar/ocultar a senha e o nativo do Streamlit,
+        # que aparece sozinho nos campos type="password".
 
     if modo_login == "Entrar" and entrar:
         if _precisa_captcha and not _captcha_valido():
@@ -1209,7 +1130,9 @@ if not st.session_state.setdefault("autenticado", False):
             else:
                 st.error("Usuário ou senha incorretos.")
     elif modo_login == "Criar conta" and criar:
-        if cad_s1 != cad_s2:
+        if _precisa_captcha and not _captcha_valido():
+            st.error("Para criar a conta, faça a verificação de segurança acima.")
+        elif cad_s1 != cad_s2:
             st.error("As senhas não conferem.")
         else:
             try:
@@ -2618,6 +2541,10 @@ with st.sidebar:
         st.session_state["autenticado"] = False
         st.session_state["chat_hist"] = []
         st.session_state["_cookie_apagar"] = True
+        # ao sair, a verificacao de seguranca e pedida de novo no proximo acesso
+        st.session_state["captcha_humano"] = False
+        st.session_state["captcha_ok"] = False
+        st.session_state["captcha_sel"] = []
         st.rerun()
     st.divider()
 
