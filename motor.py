@@ -1102,10 +1102,33 @@ def _subpasta_casos(dono):
     return f"casos/{seguro}" if seguro else "casos"
 
 
+def _nome_arquivo_caso(nome):
+    """Nome do caso como o usuario escreveu (so troca o que nao pode em arquivo)."""
+    limpo = re.sub(r'[\\/:*?"<>|\r\n\t]+', " ", str(nome or "")).strip()
+    limpo = re.sub(r"\s+", " ", limpo).strip(" .")
+    if len(limpo) > 90:
+        limpo = limpo[:90].strip(" .")
+    return limpo or datetime.now().strftime("%Y%m%d_%H%M%S")
+
+
+def _nome_arquivo_antigo(nome):
+    """Como o nome era gravado nas versoes anteriores (para achar os casos velhos)."""
+    return re.sub(r"[^A-Za-z0-9_\-]", "_", nome or "").strip("_")
+
+
 def salvar_caso(nome, dados, dono=""):
-    seguro = re.sub(r"[^A-Za-z0-9_\-]", "_", nome or "").strip("_") or datetime.now().strftime("%Y%m%d_%H%M%S")
-    caminho = _pasta_casos_local(dono) / f"{seguro}.json"
+    seguro = _nome_arquivo_caso(nome)
+    pasta = _pasta_casos_local(dono)
+    caminho = pasta / f"{seguro}.json"
+    # se o mesmo caso ja existia com o nome antigo (sem espacos/acentos), renomeia
+    antigo = pasta / f"{_nome_arquivo_antigo(nome)}.json"
+    if antigo != caminho and antigo.exists() and not caminho.exists():
+        try:
+            antigo.rename(caminho)
+        except Exception:
+            _LOG.warning("Não consegui renomear o caso antigo %s", antigo, exc_info=True)
     dados = dict(dados)
+    dados["_nome"] = str(nome or "").strip() or seguro
     dados["_salvo_em"] = datetime.now().isoformat(timespec="seconds")
     dados["_dono"] = (dono or "").strip()
     caminho.write_text(json.dumps(dados, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -1131,28 +1154,44 @@ def listar_casos(dono=""):
 
 
 def carregar_caso(nome, dono=""):
-    caminho = _pasta_casos_local(dono) / f"{nome}.json"
+    pasta = _pasta_casos_local(dono)
+    caminho = pasta / f"{nome}.json"
+    if not caminho.exists():
+        # caso gravado pela versao antiga (nome sem espacos/acentos)
+        alternativo = pasta / f"{_nome_arquivo_antigo(nome)}.json"
+        if alternativo.exists():
+            caminho = alternativo
     if caminho.exists():
         with open(caminho, encoding="utf-8") as f:
             return json.load(f)
-    try:
-        import nuvem
+    for tentativa in (nome, _nome_arquivo_antigo(nome)):
+        if not tentativa:
+            continue
+        try:
+            import nuvem
 
-        if nuvem.disponivel():
-            bruto = nuvem.ler_texto(f"{_subpasta_casos(dono)}/{nome}.json")
-            if bruto:
-                caminho.write_text(bruto, encoding="utf-8")
-                return json.loads(bruto)
-    except Exception:
-        _LOG.warning("Buscar caso na nuvem falhou (%s)", nome, exc_info=True)
+            if nuvem.disponivel():
+                bruto = nuvem.ler_texto(f"{_subpasta_casos(dono)}/{tentativa}.json")
+                if bruto:
+                    caminho.write_text(bruto, encoding="utf-8")
+                    return json.loads(bruto)
+        except Exception:
+            _LOG.warning("Buscar caso na nuvem falhou (%s)", tentativa, exc_info=True)
     raise FileNotFoundError(f"Caso não encontrado: {nome}")
 
 
 def apagar_caso(nome, dono=""):
-    caminho = _pasta_casos_local(dono) / f"{nome}.json"
-    if caminho.exists():
-        caminho.unlink()
-    _backup_remover(f"{nome}.json", _subpasta_casos(dono))
+    pasta = _pasta_casos_local(dono)
+    for alvo in {nome, _nome_arquivo_antigo(nome)}:
+        if not alvo:
+            continue
+        caminho = pasta / f"{alvo}.json"
+        try:
+            if caminho.exists():
+                caminho.unlink()
+        except Exception:
+            _LOG.warning("Não consegui apagar %s", caminho, exc_info=True)
+        _backup_remover(f"{alvo}.json", _subpasta_casos(dono))
 
 
 # ------------------------------------------------------------------ rascunho automático

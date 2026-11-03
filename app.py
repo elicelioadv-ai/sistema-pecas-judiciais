@@ -567,6 +567,12 @@ ESTADOS = [
 OPCOES_UF = ["—"] + [f"{sigla} – {nome}" for sigla, nome in ESTADOS]
 SIGLA_UF = {f"{sigla} – {nome}": sigla for sigla, nome in ESTADOS}
 CAMPOS_ENDERECO = ("rua", "num", "bairro", "cep", "cidade", "uf", "cidade_livre", "compl")
+CAMPOS_PARTE = ("nome", "civil", "prof", "cpf", "cnpj", "rg", "rua", "num",
+                "bairro", "cep", "uf", "cidade", "cidade_livre", "compl")
+_RE_CHAVE_PARTE = re.compile(
+    r"^(?:req|rdo)_(?:" + "|".join(CAMPOS_PARTE) + r")_\d+$"
+    r"|^exp_(?:req|rdo)_\d+$"
+)
 
 DEFAULTS = {
     "dados": "", "narrativa": "", "fatos_edit": "", "peca_edit": "",
@@ -587,7 +593,8 @@ st.session_state.setdefault("chat_hist", [])
 
 # aplica valores definidos por botões (antes de criar os campos, para não dar erro)
 for _campo, _pendente in (("fatos_edit", "_p_fatos"), ("peca_edit", "_p_peca"),
-                          ("pend", "_p_pend"), ("respostas", "_p_respostas")):
+                          ("pend", "_p_pend"), ("respostas", "_p_respostas"),
+                          ("nova_peca_nome", "_p_nova_peca")):
     if _pendente in st.session_state:
         st.session_state[_campo] = st.session_state.pop(_pendente)
 
@@ -2153,6 +2160,16 @@ def _dono():
     return str(st.session_state.get("usuario", "") or "").strip()
 
 
+def _caso_id():
+    """Identificador do caso em edição (separa o backup do navegador por caso)."""
+    return str(st.session_state.get("_caso_id") or "").strip() or "padrao"
+
+
+def _chave_backup_relato():
+    """Chave do backup do navegador: uma por caso, para nao voltar texto de outro."""
+    return "spj_relato_" + (_dono() or "admin") + "_" + _caso_id()
+
+
 def _dados_rascunho():
     """O que fica guardado automaticamente para não perder o trabalho."""
     return {
@@ -2162,6 +2179,7 @@ def _dados_rascunho():
         "pend": st.session_state.get("pend", ""),
         "dados": st.session_state.get("dados", ""),
         "nome_caso": st.session_state.get("nome_caso", ""),
+        "caso_id": _caso_id(),
     }
 
 
@@ -2195,6 +2213,12 @@ def _recuperar_rascunho():
         if valor.strip() and not st.session_state.get(chave):
             st.session_state[chave] = valor
             achou = True
+    # devolve tambem o nome do caso e o "id" do caso: assim o salvamento cai no
+    # nome certo e o backup do navegador continua sendo o mesmo
+    if str(r.get("nome_caso") or "").strip() and not st.session_state.get("nome_caso"):
+        st.session_state["nome_caso"] = str(r["nome_caso"]).strip()
+    if str(r.get("caso_id") or "").strip() and not st.session_state.get("_caso_id"):
+        st.session_state["_caso_id"] = str(r["caso_id"]).strip()
     if not achou:
         return
     st.session_state["_rascunho_msg"] = (
@@ -2440,21 +2464,47 @@ def tentar(fn, *args, **kwargs):
 
 
 def _reseta_formulario():
-    """Limpa o caso em edição, mantendo as memórias de endereço."""
+    """Limpa o caso em edição, mantendo apenas as memórias de endereço."""
     for chave, inicial in DEFAULTS.items():
         if str(chave).startswith("mem_"):
             continue
         st.session_state[chave] = inicial.copy() if isinstance(inicial, list) else inicial
-    for k in [k for k in st.session_state if str(k).startswith(("resp_", "sel_"))]:
-        del st.session_state[k]
-    for k in ("export_docx", "export_pdf"):
+    # partes (várias por caso), respostas, seleções e restos do trabalho anterior
+    for k in list(st.session_state.keys()):
+        sk = str(k)
+        if _RE_CHAVE_PARTE.match(sk):
+            st.session_state.pop(k, None)
+            continue
+        if sk.startswith(("resp_", "sel_", "corr_", "dj_", "exp_req_", "exp_rdo_")):
+            st.session_state.pop(k, None)
+            continue
+        if re.match(r"^(req|rdo)_(nome|civil|prof|cpf|cnpj|rg|rua|num|bairro|cep|uf|cidade|cidade_livre|compl|endr)_\d+$", sk):
+            st.session_state.pop(k, None)
+            continue
+        if re.match(r"^(req|rdo)_(nome|civil|prof|cpf|cnpj|rg|rua|num|bairro|cep|uf|cidade|cidade_livre|compl|endr)$", sk):
+            st.session_state.pop(k, None)
+            continue
+    st.session_state["req_count"] = 1
+    st.session_state["rdo_count"] = 1
+    st.session_state["chat_hist"] = []
+    st.session_state["chat_pergunta"] = ""
+    st.session_state["relato_preview"] = False
+    for k in ("export_docx", "export_pdf", "_correcoes", "_revisou", "_corr_msg",
+              "_corr_pendente", "_rascunho_msg", "_rascunho_ultimo", "analise_doc", "analise_alertas"):
         st.session_state.pop(k, None)
+    # garantir chaves indexadas zeradas
+    for prefixo in ("req", "rdo"):
+        for i in range(5):  # limpar até 5 possíveis
+            for campo in CAMPOS_PARTE:
+                st.session_state[f"{prefixo}_{campo}_{i}"] = ""
 
 
 def iniciar_limpo(nome):
     """Começa uma peça nova, zerando o formulário e fixando o nome do caso."""
     _reseta_formulario()
     st.session_state["nome_caso"] = nome
+    # id novo = backup do navegador novo (o texto do caso anterior não volta)
+    st.session_state["_caso_id"] = "novo_" + datetime.now().strftime("%Y%m%d%H%M%S%f")
     st.session_state["dados"] = compor_dados()
     # o rascunho é do trabalho anterior: some para não voltar na próxima abertura
     try:
@@ -2463,31 +2513,87 @@ def iniciar_limpo(nome):
         pass
     st.session_state["_rascunho_ultimo"] = None
     st.session_state.pop("_rascunho_msg", None)
+    # grava ja o rascunho novo (vazio): se a pagina for recarregada, o sistema
+    # volta para ESTE caso (nome e id certos), e nao para o trabalho anterior
+    try:
+        _salvar_rascunho(forcar=True)
+    except Exception:
+        pass
 
 
 def _dados_caso():
     """Monta o dicionário completo do caso para salvar."""
-    return {
-        "dados": compor_dados(),
+    dados = {
         "f_juizo": st.session_state.get("f_juizo", ""),
         "f_outros": st.session_state.get("f_outros", ""),
         "f_rotulo": st.session_state.get("f_rotulo", "Requerente / Requerido"),
-        "req_nome": st.session_state.get("req_nome", ""), "req_civil": st.session_state.get("req_civil", ""),
-        "req_prof": st.session_state.get("req_prof", ""),
-        "req_cpf": st.session_state.get("req_cpf", ""), "req_cnpj": st.session_state.get("req_cnpj", ""),
-        "req_rg": st.session_state.get("req_rg", ""),
-        **{f"req_{c}": st.session_state.get(f"req_{c}", "") for c in CAMPOS_ENDERECO},
-        "rdo_nome": st.session_state.get("rdo_nome", ""), "rdo_civil": st.session_state.get("rdo_civil", ""),
-        "rdo_prof": st.session_state.get("rdo_prof", ""),
-        "rdo_cpf": st.session_state.get("rdo_cpf", ""), "rdo_cnpj": st.session_state.get("rdo_cnpj", ""),
-        "rdo_rg": st.session_state.get("rdo_rg", ""),
-        **{f"rdo_{c}": st.session_state.get(f"rdo_{c}", "") for c in CAMPOS_ENDERECO},
-        "narrativa": st.session_state["narrativa"],
-        "fatos": st.session_state["fatos_edit"], "peca": st.session_state["peca_edit"],
-        "pend": st.session_state["pend"], "alertas": st.session_state["alertas"],
-        "usadas": st.session_state["usadas"],
+        "req_count": int(st.session_state.get("req_count", 1) or 1),
+        "rdo_count": int(st.session_state.get("rdo_count", 1) or 1),
+        "narrativa": st.session_state.get("narrativa", ""),
+        "fatos": st.session_state.get("fatos_edit", ""),
+        "peca": st.session_state.get("peca_edit", ""),
+        "pend": st.session_state.get("pend", ""),
+        "alertas": st.session_state.get("alertas", []),
+        "usadas": st.session_state.get("usadas", []),
         "base_nome": st.session_state.get("base_nome", ""),
+        "dados": compor_dados(),
     }
+    dados.update(_partes_salvas())
+    return dados
+
+
+def _partes_salvas():
+    """Todas as partes do caso (com os indices, para salvar mais de uma)."""
+    dados = {}
+    for prefixo in ("req", "rdo"):
+        qtd = int(st.session_state.get(f"{prefixo}_count", 1) or 1)
+        for i in range(qtd):
+            for campo in CAMPOS_PARTE:
+                chave = f"{prefixo}_{campo}_{i}"
+                dados[chave] = st.session_state.get(chave, "")
+    return dados
+
+
+def _aplicar_caso_salvo(nome, caso):
+    """Traz para a tela um caso salvo (formato novo ou antigo)."""
+    _reseta_formulario()
+    st.session_state["nome_caso"] = nome
+    st.session_state["_caso_id"] = "caso_" + str(nome)
+    st.session_state.update(
+        f_rotulo=caso.get("f_rotulo", "Requerente / Requerido"),
+        f_juizo=caso.get("f_juizo", ""),
+        f_outros=caso.get("f_outros", caso.get("dados", "")),
+        narrativa=caso.get("narrativa", ""),
+        fatos_edit=caso.get("fatos", ""), peca_edit=caso.get("peca") or "",
+        pend=caso.get("pend", ""), alertas=caso.get("alertas") or [],
+        usadas=caso.get("usadas") or [],
+    )
+    for prefixo in ("req", "rdo"):
+        qtd = int(caso.get(f"{prefixo}_count") or 0) or 1
+        antigo = {c: caso.get(f"{prefixo}_{c}", "") for c in CAMPOS_ENDERECO}
+        antigo.update(
+            nome=caso.get(f"{prefixo}_nome")
+                 or caso.get("f_autor" if prefixo == "req" else "f_reu", ""),
+            civil=caso.get(f"{prefixo}_civil", ""),
+            prof=caso.get(f"{prefixo}_prof", ""),
+            compl=caso.get(f"{prefixo}_compl") or caso.get(f"{prefixo}_endr", ""),
+        )
+        cpf, cnpj, rg = _doc_do_caso(caso, prefixo)
+        antigo.update(cpf=cpf, cnpj=cnpj, rg=rg)
+        st.session_state[f"{prefixo}_count"] = qtd
+        for i in range(qtd):
+            novo_formato = any(f"{prefixo}_{c}_{i}" in caso for c in CAMPOS_PARTE)
+            for campo in CAMPOS_PARTE:
+                chave = f"{prefixo}_{campo}_{i}"
+                if novo_formato:
+                    st.session_state[chave] = caso.get(chave, "")
+                else:
+                    st.session_state[chave] = antigo.get(campo, "") if i == 0 else ""
+    st.session_state["dados"] = compor_dados()
+    base_salva = caso.get("base_nome", "")
+    if base_salva and base_salva in motor.listar_bases():
+        st.session_state["base_nome"] = base_salva
+        st.session_state["base_editor_nome"] = base_salva
 
 
 def _salvar_automatico():
@@ -2600,31 +2706,7 @@ with st.sidebar:
         c1, c2 = st.columns(2)
         if c1.button("Abrir", width="stretch") and escolhido != "—":
             caso = motor.carregar_caso(escolhido, _dono())
-            _cpf1, _cnpj1, _rg1 = _doc_do_caso(caso, "req")
-            _cpf2, _cnpj2, _rg2 = _doc_do_caso(caso, "rdo")
-            st.session_state.update(
-                f_rotulo=caso.get("f_rotulo", "Requerente / Requerido"),
-                f_juizo=caso.get("f_juizo", ""),
-                f_outros=caso.get("f_outros", caso.get("dados", "")),
-                req_nome=caso.get("req_nome") or caso.get("f_autor", ""),
-                req_civil=caso.get("req_civil", ""), req_prof=caso.get("req_prof", ""),
-                req_cpf=_cpf1, req_cnpj=_cnpj1, req_rg=_rg1,
-                **{f"req_{c}": caso.get(f"req_{c}", "") for c in CAMPOS_ENDERECO},
-                req_compl=caso.get("req_compl") or caso.get("req_endr", ""),
-                rdo_nome=caso.get("rdo_nome") or caso.get("f_reu", ""),
-                rdo_civil=caso.get("rdo_civil", ""), rdo_prof=caso.get("rdo_prof", ""),
-                rdo_cpf=_cpf2, rdo_cnpj=_cnpj2, rdo_rg=_rg2,
-                **{f"rdo_{c}": caso.get(f"rdo_{c}", "") for c in CAMPOS_ENDERECO},
-                rdo_compl=caso.get("rdo_compl") or caso.get("rdo_endr", ""),
-                narrativa=caso.get("narrativa", ""),
-                fatos_edit=caso.get("fatos", ""), peca_edit=caso.get("peca") or "",
-                pend=caso.get("pend", ""), alertas=caso.get("alertas", []), usadas=caso.get("usadas", []),
-            )
-            st.session_state["dados"] = compor_dados()
-            base_salva = caso.get("base_nome", "")
-            if base_salva and base_salva in motor.listar_bases():
-                st.session_state["base_nome"] = base_salva
-                st.session_state["base_editor_nome"] = base_salva
+            _aplicar_caso_salvo(escolhido, caso)
             st.rerun()
         if c2.button("Apagar", width="stretch") and escolhido != "—":
             motor.apagar_caso(escolhido, _dono())
@@ -2640,14 +2722,22 @@ with st.sidebar:
         nome = (nova_peca_nome or "").strip()
         if not nome:
             st.warning("Dê um nome para a nova peça.")
+        elif nome in motor.listar_casos(_dono()):
+            st.warning("Já existe um caso com esse nome. Escolha outro nome (ou abra o caso existente).")
         else:
             caminho = motor.salvar_caso(nome, {}, _dono())
             iniciar_limpo(caminho.stem)
-            base_novo = caminho.stem
-            if base_novo not in motor.listar_bases():
-                motor.salvar_base(base_novo, [])
+            # a base legal tem regra propria de nome (sem espacos/acentos)
+            base_novo = re.sub(r"[^A-Za-z0-9_\-]", "_", caminho.stem).strip("_") or "base_do_caso"
+            try:
+                if base_novo not in motor.listar_bases():
+                    motor.salvar_base(base_novo, [])
+            except Exception:
+                pass
             st.session_state["base_nome"] = base_novo
             st.session_state["base_editor_nome"] = base_novo
+            # limpa o campo do nome na proxima execucao (nao pode mudar agora)
+            st.session_state["_p_nova_peca"] = ""
             st.rerun()
 
     st.divider()
@@ -2689,11 +2779,13 @@ with st.sidebar:
     st.divider()
     nome_caso = st.text_input("Nome do caso (para salvar)", key="nome_caso")
     if st.button("💾 Salvar caso atual", width="stretch"):
-        if not nome_caso.strip():
+        nome_limpo = (nome_caso or "").strip()
+        if not nome_limpo:
             st.warning("Dê um nome antes de salvar.")
         else:
-            caminho = motor.salvar_caso(nome_caso, _dados_caso(), _dono())
-            st.success(f"Salvo: {caminho.stem}")
+            caminho = motor.salvar_caso(nome_limpo, _dados_caso(), _dono())
+            st.session_state["_caso_id"] = "caso_" + caminho.stem
+            st.success(f"Salvo como **{caminho.stem}** — está em 📁 Casos salvos.")
 
     st.divider()
     st.subheader("🛡️ Segurança (LGPD)")
@@ -3266,7 +3358,7 @@ with aba_fatos:
             _salvar_rascunho()
             st.rerun()
     barra_texto("Relato (dite ou escreva o que o cliente contou)",
-                "spj_relato_" + (_dono() or "admin"))
+                _chave_backup_relato())
     _aplicar_correcao_pendente()
     if st.session_state.get("_corr_msg"):
         st.success(st.session_state.pop("_corr_msg"), icon="✍️")
