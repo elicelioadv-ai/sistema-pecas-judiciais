@@ -1071,7 +1071,8 @@ if not st.session_state.setdefault("autenticado", False):
             usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario",
                                             placeholder="Usuário (ou e-mail)")
             senha_entrada = st.text_input("Senha de acesso", key="login_senha",
-                                          type="password", placeholder="Senha de acesso")
+                                          type="password", placeholder="Senha de acesso",
+                                          autocomplete="new-password")
             if _precisa_captcha:
                 _captcha_render()
             entrar = st.button("Entrar", type="primary", key="login_entrar", width="stretch")
@@ -1090,8 +1091,8 @@ if not st.session_state.setdefault("autenticado", False):
                 st.info("Primeiro acesso do administrador: defina abaixo o usuário e a senha.")
                 with st.form("primeira_senha"):
                     u_novo = st.text_input("Usuário (ex.: admin)", key="u_novo")
-                    s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1")
-                    s2 = st.text_input("Repita a nova senha", type="password", key="s2")
+                    s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1", autocomplete="new-password")
+                    s2 = st.text_input("Repita a nova senha", type="password", key="s2", autocomplete="new-password")
                     definir = st.form_submit_button("Definir acesso e entrar")
                     if definir:
                         if not s1 or s1 != s2:
@@ -1111,8 +1112,8 @@ if not st.session_state.setdefault("autenticado", False):
             with st.form("cadastro_form"):
                 cad_nome = st.text_input("Nome completo", key="cad_nome")
                 cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
-                cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1")
-                cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2")
+                cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1", autocomplete="new-password")
+                cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2", autocomplete="new-password")
                 criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
 
         # O olhinho de mostrar/ocultar a senha e o nativo do Streamlit,
@@ -2199,12 +2200,18 @@ def _recuperar_rascunho():
     """Recupera o rascunho salvo (quando o app fechou ou a sessão caiu)."""
     if st.session_state.get("_rascunho_recuperado"):
         return
+    if st.session_state.get("_iniciando_limpo"):
+        st.session_state["_rascunho_recuperado"] = True
+        return
     st.session_state["_rascunho_recuperado"] = True
     try:
         r = motor.carregar_rascunho(_dono())
     except Exception:
         return
     if not r:
+        return
+    # se acabamos de iniciar um caso novo limpo nesta sessao, nao traga rascunho antigo
+    if str(st.session_state.get("_caso_id") or "").startswith("novo_"):
         return
     achou = False
     for campo, chave in (("narrativa", "narrativa"), ("fatos", "fatos_edit"),
@@ -2501,6 +2508,8 @@ def _reseta_formulario():
 
 def iniciar_limpo(nome):
     """Começa uma peça nova, zerando o formulário e fixando o nome do caso."""
+    st.session_state["_iniciando_limpo"] = True
+    st.session_state["_rascunho_recuperado"] = True  # impede que o rascunho antigo seja trazido de volta
     _reseta_formulario()
     st.session_state["nome_caso"] = nome
     # id novo = backup do navegador novo (o texto do caso anterior não volta)
