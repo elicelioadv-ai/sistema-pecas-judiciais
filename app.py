@@ -1073,9 +1073,6 @@ if not st.session_state.setdefault("autenticado", False):
             senha_entrada = st.text_input("Senha de acesso", key="login_senha",
                                           type="password", placeholder="Senha de acesso",
                                           autocomplete="new-password")
-            if _precisa_captcha:
-                _captcha_render()
-            entrar = st.button("Entrar", type="primary", key="login_entrar", width="stretch")
             with st.expander("🔑 Esqueceu a senha?"):
                 st.markdown(
                     "Sem problema. Sua senha não pode ser enviada por e-mail, mas pode ser "
@@ -1086,6 +1083,29 @@ if not st.session_state.setdefault("autenticado", False):
                     "**Streamlit → Manage app → Settings → Secrets** (variável "
                     "`SENHA_ACESSO`)."
                 )
+            components.html("""
+            <script>
+            (function(){
+                try{
+                    var doc = window.parent.document;
+                    // Remove password suggestions
+                    var inputs = doc.querySelectorAll('input[type="password"]');
+                    inputs.forEach(function(inp){
+                        inp.setAttribute('autocomplete','off');
+                        inp.setAttribute('data-lpignore','true');
+                        inp.setAttribute('data-form-type','other');
+                    });
+                    // Hide password manager icons
+                    var style = doc.createElement('style');
+                    style.textContent = 'input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none !important; }';
+                    doc.head.appendChild(style);
+                }catch(e){}
+            })();
+            </script>
+            """, height=0)
+            if _precisa_captcha:
+                _captcha_render()
+            entrar = st.button("Entrar", type="primary", key="login_entrar", width="stretch")
 
             if not motor.senha_ativa() or not motor.usuario_acesso():
                 st.info("Primeiro acesso do administrador: defina abaixo o usuário e a senha.")
