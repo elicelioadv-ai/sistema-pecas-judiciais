@@ -313,7 +313,6 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 _CSS_TEMA = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
     --azul-escuro:#1F4E78; --azul-aviso:#1F4E78; --azul-petroleo:#2d6aa3;
     --vermelho:#B2101D; --roxo:#694467; --amarelo:#F5AF00;
@@ -321,7 +320,7 @@ _CSS_TEMA = """
     --aba-ativa:#1F4E78; --aba:#f1f3f6;
     --texto-menu:#FFFFFF; --texto-menu-sec:#EEF3F6; --texto-aba:#3c4043; --link:#1F4E78; --placeholder:#6C757D;
     --botao-menu:rgba(255,255,255,0.08); --botao-menu-ativo:rgba(255,255,255,0.15);
-    --card-bg:#FFFFFF; --border:#e0e7ef; --shadow:0 1px 3px rgba(16,24,40,0.05), 0 1px 2px rgba(16,24,40,0.03);
+    --border:#e0e7ef; --shadow:0 1px 3px rgba(16,24,40,0.05), 0 1px 2px rgba(16,24,40,0.03);
 }
 * { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important; }
 .stApp, [data-testid="stAppViewContainer"] { background: var(--fundo) !important; }
@@ -330,20 +329,25 @@ _CSS_TEMA = """
     border-right: none !important;
     box-shadow: 2px 0 8px rgba(0,0,0,0.08);
 }
-[data-testid="stSidebar"] [role="radiogroup"] label {
-    padding: 8px 12px !important;
-    border-radius: 8px !important;
-    margin-bottom: 2px !important;
-    transition: all 0.15s ease !important;
-    color: #FFFFFF !important;
-}
-[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: rgba(255,255,255,0.1) !important; }
-[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background: rgba(255,255,255,0.15) !important; font-weight: 600 !important; }
 [data-testid="stSidebar"] * { color: var(--texto-menu); }
 [data-testid="stSidebar"] a { color: #FFFFFF !important; }
 [data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.12) !important; }
+[data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p,
+[data-testid="stSidebar"] div, [data-testid="stSidebar"] span { color: var(--texto-menu-sec) !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label {
+    padding: 8px 12px !important; border-radius: 8px !important; margin-bottom: 2px !important;
+    transition: all 0.15s ease !important; color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: rgba(255,255,255,0.1) !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background: rgba(255,255,255,0.15) !important; font-weight: 600 !important; }
 h1, h2, h3 { color: #101828 !important; font-weight: 600 !important; letter-spacing: -0.01em; }
-h1 { font-size: 1.875rem !important; margin-bottom: 1.5rem !important; }
+[data-testid="stMarkdownContainer"] a { color: var(--link) !important; }
+hr { border-color: var(--border) !important; }
+div[data-baseweb="input"], div[data-baseweb="select"] > div,
+div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
+[data-testid="stNumberInputContainer"] {
+    background: #FFFFFF !important; border: 1px solid var(--border) !important; border-radius: 8px !important;
+}
 [data-baseweb="tab-list"] {
     background: #f1f3f6 !important; border-radius: 10px !important; padding: 4px !important; gap: 4px;
     border: 1px solid var(--border) !important;
@@ -352,20 +356,42 @@ h1 { font-size: 1.875rem !important; margin-bottom: 1.5rem !important; }
 [data-baseweb="tab"][aria-selected="true"] {
     color: #FFFFFF !important; background: var(--azul-escuro) !important; font-weight: 600 !important;
 }
+[data-baseweb="tab-highlight"], [data-baseweb="tab-border"] { background: transparent !important; }
+[data-testid="stExpander"] details {
+    border: 1px solid var(--border) !important; border-radius: 10px !important; background: #FFFFFF !important; box-shadow: var(--shadow);
+}
+[data-testid="stExpander"] summary { color: #101828 !important; font-weight: 600 !important; }
 button[data-testid^="stBaseButton-"], a[data-testid^="stBaseLinkButton-"] {
     background: var(--azul-escuro) !important; color: #FFFFFF !important;
     border: none !important; border-radius: 8px !important; font-weight: 600 !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
+button[data-testid^="stBaseButton-"]:hover, a[data-testid^="stBaseLinkButton-"]:hover {
+    background: var(--azul-petroleo) !important;
+}
+[data-testid="stSidebar"] button[data-testid^="stBaseButton-"] {
+    background: rgba(255,255,255,0.1) !important; color: #FFFFFF !important;
+    border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 8px !important;
+}
+[data-testid="stSidebar"] button[data-testid^="stBaseButton-"]:hover { background: rgba(255,255,255,0.2) !important; }
 [data-testid="stDataFrame"], [data-testid="stTable"] {
     border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow);
 }
+[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+[data-testid="stSidebar"] div[data-baseweb="input"],
+[data-testid="stSidebar"] [role="combobox"] {
+    background: rgba(255,255,255,0.95) !important; border: 1px solid rgba(255,255,255,0.3) !important; border-radius: 8px;
+}
+[data-testid="stSidebar"] div[data-baseweb="select"] *,
+[data-testid="stSidebar"] div[data-baseweb="input"] *, [data-testid="stSidebar"] [role="combobox"] * { color: #1F2933 !important; }
+[data-testid="stSidebar"] input, [data-testid="stSidebar"] textarea { color: #1F2933 !important; -webkit-text-fill-color: #1F2933 !important; background: #FFFFFF !important; }
 </style>
 """
 st.markdown(_CSS_TEMA, unsafe_allow_html=True)
 
 
 def alerta(nivel, msg):
-    icone = {"erro": "�", "aviso": "⚠️", "ok": "✅"}.get(nivel, "•")
+    icone = {"erro": "❌", "aviso": "⚠️", "ok": "✅"}.get(nivel, "•")
     st.markdown(f"{icone} {msg}")
 
 
@@ -375,7 +401,7 @@ def alerta(nivel, msg):
 # (**negrito**, _itálico_...) vão junto para a IA e aparecem formatadas na
 # pré-visualização.
 #
-# Esta folha de estilo vai para a P�GINA DE FORA (a barra e a paletinha de cores
+# Esta folha de estilo vai para a PÁGINA DE FORA (a barra e a paletinha de cores
 # são criadas no documento principal, não dentro do app): por isso o CSS usa
 # cores fixas, e não as variáveis do tema.
 _CSS_BARRA = """
@@ -1441,7 +1467,7 @@ def _aplicar_correcao_pendente():
         return
     st.session_state["narrativa"] = novo
     _salvar_rascunho(forcar=True)
-    st.session_state["_corr_msg"] = f"✅ Corrigido: “{errado}� → “{certo}�"
+    st.session_state["_corr_msg"] = f"✅ Corrigido: “{errado}” → “{certo}”"
     _sync_backup_navegador(novo)
 
 
@@ -1465,10 +1491,10 @@ def complementos_cidade(prefixo):
     c5, c6 = st.columns([3, 1])
     uf = st.session_state.get(f"{prefixo}_uf", "—")
     lista = MUNICIPIOS.get(SIGLA_UF.get(uf, ""), []) if uf != "—" else []
-    opcoes = ["—"] + lista + (["�� outra (digitar)"] if uf != "—" else [])
+    opcoes = ["—"] + lista + (["✏️ outra (digitar)"] if uf != "—" else [])
     c5.selectbox("Cidade", opcoes, key=f"{prefixo}_cidade")
     c6.selectbox("UF", OPCOES_UF, key=f"{prefixo}_uf")
-    if st.session_state.get(f"{prefixo}_cidade", "") == "�� outra (digitar)":
+    if st.session_state.get(f"{prefixo}_cidade", "") == "✏️ outra (digitar)":
         st.text_input("Digite a cidade", key=f"{prefixo}_cidade_livre", placeholder="Nome da cidade")
 
 
@@ -1482,9 +1508,9 @@ def _endereco_resumo(prefixo):
     if bairro:
         partes.append(f"bairro {bairro}")
     cidade = _g(f"{prefixo}_cidade")
-    if cidade == "�� outra (digitar)":
+    if cidade == "✏️ outra (digitar)":
         cidade = _g(f"{prefixo}_cidade_livre") or cidade
-    if cidade and cidade != "�� outra (digitar)":
+    if cidade and cidade != "✏️ outra (digitar)":
         uf = SIGLA_UF.get(_g(f"{prefixo}_uf"), _g(f"{prefixo}_uf"))
         partes.append(cidade + (f" – {uf}" if uf else ""))
     cep = _g(f"{prefixo}_cep")
@@ -1549,9 +1575,9 @@ def _endereco_resumo_parte(prefixo, indice):
     if bairro:
         partes.append(f"bairro {bairro}")
     cidade = str(st.session_state.get(f"{prefixo}_cidade_{indice}", "") or "").strip()
-    if cidade == "�� outra (digitar)":
+    if cidade == "✏️ outra (digitar)":
         cidade = str(st.session_state.get(f"{prefixo}_cidade_livre_{indice}", "") or "").strip() or cidade
-    if cidade and cidade != "�� outra (digitar)":
+    if cidade and cidade != "✏️ outra (digitar)":
         ufv = str(st.session_state.get(f"{prefixo}_uf_{indice}", "") or "").strip()
         uf = SIGLA_UF.get(ufv, ufv)
         partes.append(cidade + (f" – {uf}" if uf and uf != "—" else ""))
@@ -1604,10 +1630,10 @@ def _cadastro_parte(prefixo, rotulo, indice=0):
         c5, c6 = st.columns([3, 1])
         uf = st.session_state.get(f"{prefixo}_uf_{indice}", "—")
         lista = MUNICIPIOS.get(SIGLA_UF.get(uf, ""), []) if uf != "—" else []
-        opcoes = ["—"] + lista + (["�� outra (digitar)"] if uf != "—" else [])
+        opcoes = ["—"] + lista + (["✏️ outra (digitar)"] if uf != "—" else [])
         c5.selectbox("Cidade", opcoes, key=f"{prefixo}_cidade_{indice}")
         c6.selectbox("UF", OPCOES_UF, key=f"{prefixo}_uf_{indice}")
-        if st.session_state.get(f"{prefixo}_cidade_{indice}", "") == "�� outra (digitar)":
+        if st.session_state.get(f"{prefixo}_cidade_{indice}", "") == "✏️ outra (digitar)":
             st.text_input("Digite a cidade", key=f"{prefixo}_cidade_livre_{indice}", placeholder="Nome da cidade")
         st.text_input("Complemento (apto/bloco, e-mail...)", key=f"{prefixo}_compl_{indice}")
 
@@ -1812,14 +1838,14 @@ def _backup_testar():
         return False, f"Backup indisponível: {e}"
 
 
-st.title("⚖� Sistema de Peças Judiciais")
+st.title("⚖️ Sistema de Peças Judiciais")
 st.caption("A IA só cita o que está na BASE LEGAL. Confira sempre os alertas antes de protocolar.")
 
 if motor.modo_uso()["uso_pago"]:
     st.success("🔒 Conta declarada como **paga/Vertex**: o provedor não usa seus dados para treinar modelos.", icon="🔒")
 else:
     st.warning(
-        "⚠� **Modo gratuito**: a cota grátis do Gemini PODE usar seus dados para treinamento e ser lida por "
+        "⚠️ **Modo gratuito**: a cota grátis do Gemini PODE usar seus dados para treinamento e ser lida por "
         "revisores humanos. Para dados reais de cliente, mantenha o **Modo seguro** ligado (lateral) e/ou "
         "ative faturamento ou use Vertex AI nas **Configurações**."
     )
@@ -1827,7 +1853,7 @@ else:
 # ------------------------------------------------------------------ barra lateral
 with st.sidebar:
     st.markdown(
-        "<div style='text-align:center; font-size:34px; line-height:1; margin-bottom:4px;'>⚖�</div>",
+        "<div style='text-align:center; font-size:34px; line-height:1; margin-bottom:4px;'>⚖️</div>",
         unsafe_allow_html=True,
     )
     st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
@@ -1857,7 +1883,7 @@ with st.sidebar:
                     if b1.button("✅ Aprovar", key=f"aprov_{u.get('usuario')}", width="stretch"):
                         usuarios.aprovar(u.get("usuario"))
                         st.rerun()
-                    if b2.button("🗑� Recusar", key=f"recus_{u.get('usuario')}", width="stretch"):
+                    if b2.button("🗑️ Recusar", key=f"recus_{u.get('usuario')}", width="stretch"):
                         usuarios.remover(u.get("usuario"))
                         st.rerun()
             else:
@@ -1887,7 +1913,7 @@ with st.sidebar:
                                 st.error(f"Não foi possível redefinir: {e}")
         st.divider()
 
-    st.header("� Casos salvos")
+    st.header("📁 Casos salvos")
     casos = motor.listar_casos(_dono())
     if casos:
         escolhido = st.selectbox("Abrir caso", ["—"] + casos, key="caso_escolhido")
@@ -1929,7 +1955,7 @@ with st.sidebar:
             st.rerun()
 
     st.divider()
-    st.subheader("� Gerar peça")
+    st.subheader("📝 Gerar peça")
     modelo_nome = st.selectbox("Modelo da peça", motor.listar_modelos(), key="modelo_nome",
                                placeholder="Escolha o modelo da peça")
     st.caption("Sugerido conforme os fatos; você pode trocar.")
@@ -1939,10 +1965,10 @@ with st.sidebar:
         for item in motor.carregar_base(base_nome):
             st.markdown(f"**{item['referencia']}** — status: `{item['status']}`")
             st.write(item["texto"])
-    if st.button("� Gerar a peça", type="primary", width="stretch"):
+    if st.button("📝 Gerar a peça", type="primary", width="stretch"):
         fatos = st.session_state["fatos_edit"]
         if not fatos.strip():
-            st.warning("Não há fatos ainda. Preencha o relato e use 'Limpar fatos' na aba 2�⃣.")
+            st.warning("Não há fatos ainda. Preencha o relato e use 'Limpar fatos' na aba 2️⃣.")
         else:
             st.session_state.update(peca_edit="", alertas=[], usadas=[])
             st.session_state.pop("export_docx", None)
@@ -1973,15 +1999,15 @@ with st.sidebar:
         else:
             caminho = motor.salvar_caso(nome_limpo, _dados_caso(), _dono())
             st.session_state["_caso_id"] = "caso_" + caminho.stem
-            st.success(f"Salvo como **{caminho.stem}** — está em � Casos salvos.")
+            st.success(f"Salvo como **{caminho.stem}** — está em 📁 Casos salvos.")
 
     st.divider()
-    st.subheader("🛡� Segurança (LGPD)")
+    st.subheader("🛡️ Segurança (LGPD)")
     st.checkbox("Modo seguro: anonimizar antes de enviar", value=True, key="modo_seguro",
                 help="Troca nomes, CPF, e-mails etc. por marcadores antes de enviar à IA e restaura na peça final.")
 
     st.divider()
-    with st.expander("⚙� Configurações do provedor"):
+    with st.expander("⚙️ Configurações do provedor"):
         _m = motor.modo_uso()
         pago = st.selectbox("A conta Google tem faturamento (pago)?", ["não", "sim"],
                             index=1 if _m["uso_pago"] else 0, key="cfg_pago",
@@ -2002,7 +2028,7 @@ with st.sidebar:
             st.success("Configurações salvas no .env.")
             st.rerun()
 
-    with st.expander("�� Backup na nuvem (nuvem → seu PC)"):
+    with st.expander("☁️ Backup na nuvem (nuvem → seu PC)"):
         _bk = _backup_status()
         if _bk.get("ativo"):
             _prov = _bk.get("provedor") or "nuvem"
@@ -2019,7 +2045,7 @@ with st.sidebar:
                     "**GOOGLE_REFRESH_TOKEN**. Configure nos *Secrets* (nuvem) ou no `.env` (PC). "
                     "O passo a passo está no arquivo LEIA-ME.")
 
-    with st.expander("�� Trocar usuário / senha"):
+    with st.expander("🗝️ Trocar usuário / senha"):
         st.caption("O acesso fica gravado no .env (senha com hash; vale também para a nuvem).")
         novo_usuario = st.text_input("Usuário", value=st.session_state.get("usuario", ""),
                                      key="acesso_usuario")
@@ -2051,7 +2077,7 @@ if st.session_state.get("modo_seguro", True):
 
 # ------------------------------------------------------------------ componentes
 def aba_base():
-    st.subheader("🗂� Curadoria da base legal")
+    st.subheader("🗂️ Curadoria da base legal")
     st.caption("Só o que estiver aqui pode ser citado. Mantenha o status em 'verificado' após conferir o texto oficial.")
     bases = motor.listar_bases()
     if not bases:
@@ -2061,12 +2087,12 @@ def aba_base():
     itens = motor.carregar_base(base_nome)
     df = pd.DataFrame(itens or [{"id": "", "referencia": "", "status": "conferir", "texto": "", "fonte": ""}])
     df.insert(0, "apagar", False)
-    st.caption("Para tirar um item que você não quer mais: marque a caixa **🗑� apagar** e clique em "
-               "**🗑� Apagar marcados**. Você também pode adicionar novas linhas ao fim da tabela.")
+    st.caption("Para tirar um item que você não quer mais: marque a caixa **🗑️ apagar** e clique em "
+               "**🗑️ Apagar marcados**. Você também pode adicionar novas linhas ao fim da tabela.")
     editado = st.data_editor(
         df, num_rows="dynamic", width="stretch", hide_index=True,
         column_config={
-            "apagar": st.column_config.CheckboxColumn("🗑� apagar", default=False, width="small"),
+            "apagar": st.column_config.CheckboxColumn("🗑️ apagar", default=False, width="small"),
             "status": st.column_config.SelectboxColumn("status", options=list(motor.STATUS_VALIDOS), required=True),
             "texto": st.column_config.TextColumn("texto", width="large"),
             "fonte": st.column_config.LinkColumn("fonte"),
@@ -2092,9 +2118,9 @@ def aba_base():
     if c1.button("💾 Salvar base", type="primary"):
         if _ids_ok(restantes) and tentar(motor.salvar_base, base_nome, restantes) is not None:
             st.success("Base salva.")
-    if c2.button("🗑� Apagar marcados"):
+    if c2.button("🗑️ Apagar marcados"):
         if not any(marcados):
-            st.info("Marque ao menos um item na coluna **🗑� apagar** para apagar.")
+            st.info("Marque ao menos um item na coluna **🗑️ apagar** para apagar.")
         elif tentar(motor.salvar_base, base_nome, restantes) is not None:
             st.success(f"{sum(marcados)} item(ns) apagado(s).")
             st.rerun()
@@ -2107,7 +2133,7 @@ def aba_base():
         st.divider()
         st.caption(f"Apagar a base **{base_nome}** inteira. Esta ação não volta.")
         conf_base = st.checkbox(f"Confirmo apagar '{base_nome}'", key="conf_apagar_base")
-        if st.button("🗑� Apagar base inteira", disabled=not conf_base):
+        if st.button("🗑️ Apagar base inteira", disabled=not conf_base):
             if tentar(motor.apagar_base, base_nome) is not None:
                 st.success(f"Base '{base_nome}' apagada.")
                 st.rerun()
@@ -2169,9 +2195,9 @@ def aba_decisoes():
         "O sistema só reúne e organiza — confira sempre no site oficial antes de citar."
     )
     with st.sidebar:
-        st.markdown("#### Decisoes")
-        subaba = st.radio("Secao", ["Pesquisar jurisprudencia", "Atalhos oficiais"], key="sub_decisoes", label_visibility="collapsed")
-    if subaba == "Pesquisar jurisprudencia":
+        st.markdown("#### Decisões")
+        subaba_dec = st.radio("Seção", ["🔎 Pesquisar jurisprudência", "🔗 Atalhos oficiais"], key="sub_decisoes", label_visibility="collapsed")
+    if subaba_dec == "🔎 Pesquisar jurisprudência":
         st.caption("Escolha **onde pesquisar** e, se quiser, os **termos** do caso. O botão abre a "
                    "pesquisa **oficial** de jurisprudência no site do órgão escolhido.")
         fonte = st.selectbox("Onde pesquisar", decisoes.FONTES_JURIS, key="jur_fonte")
@@ -2239,7 +2265,7 @@ def aba_decisoes():
                 if mostrados == 0:
                     st.info("Nenhuma decisão casou com o filtro.")
 
-    elif subaba == "Atalhos oficiais":
+    elif subaba_dec == "🔗 Atalhos oficiais":
         st.markdown("### 📚 Buscar legislação")
         st.caption("Digite o assunto, o nome do código ou a lei (ex.: civil, penal, trabalho, "
                    "consumidor, licitação, improbidade...). O botão abre o **texto oficial** no Planalto.")
@@ -2291,7 +2317,7 @@ def aba_processos():
                                key=f"dj_numero_{st.session_state.get('dj_versao', 0)}",
                                placeholder="ex.: 3000867-89.2026.8.06.0000")
         b1, b2 = st.columns([2, 1])
-        consultar = b1.button("� Consultar processo", type="primary")
+        consultar = b1.button("🔍 Consultar processo", type="primary")
         if b2.button("🧹 Limpar / nova consulta"):
             st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
             st.session_state.pop("dj_procs", None)
@@ -2329,7 +2355,7 @@ def aba_processos():
         procs = st.session_state.get("dj_procs") or []
         consultou = bool(st.session_state.get("dj_consultou"))
         if not procs and not st.session_state.get("dj_erro") and not consultou:
-            st.info("Digite o número e clique em **� Consultar processo**.")
+            st.info("Digite o número e clique em **🔍 Consultar processo**.")
         alias_uso = st.session_state.get("dj_alias") or alias
         if procs and alias_uso != alias:
             st.info("✅ O processo foi encontrado no **%s**. (O número do processo "
@@ -2386,7 +2412,7 @@ def aba_processos():
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
         n1, n2 = st.columns([2, 1])
-        if n1.button("� Buscar por nome", type="primary"):
+        if n1.button("🔍 Buscar por nome", type="primary"):
             st.session_state["dj_nome_busca"] = nome_parte.strip()
         if n2.button("🧹 Limpar / nova busca"):
             st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
@@ -2397,7 +2423,7 @@ def aba_processos():
             with st.spinner("Procurando o nome nos sites oficiais..."):
                 achados = _buscar_nome_esaj(alias, alvo)
             if achados:
-                st.success(f"✅ Encontrei {len(achados)} processo(s) em nome de “{alvo}� "
+                st.success(f"✅ Encontrei {len(achados)} processo(s) em nome de “{alvo}” "
                            f"no e-SAJ:")
                 for numero in achados[:10]:
                     st.markdown(f"**{numero}**")
@@ -2408,13 +2434,13 @@ def aba_processos():
                     st.caption(f"Mostrando 10 de {len(achados)}. Refine o nome para ver menos.")
             else:
                 if achados is not None:
-                    st.warning(f"Não encontrei “{alvo}� no e-SAJ. Procure no PJe:")
+                    st.warning(f"Não encontrei “{alvo}” no e-SAJ. Procure no PJe:")
                 links = _links_processo_nome(alias, alvo)
                 colunas = st.columns(len(links))
                 for coluna, (rotulo_link, url_link) in zip(colunas, links):
                     coluna.link_button(rotulo_link, url_link)
         else:
-            st.info("Digite o nome da parte e clique em **� Buscar por nome**.")
+            st.info("Digite o nome da parte e clique em **🔍 Buscar por nome**.")
 
 
 def exportar(texto):
@@ -2433,25 +2459,20 @@ def exportar(texto):
         caminho = st.session_state.get(chave)
         if caminho and Path(caminho).exists():
             p = Path(caminho)
-            coluna.download_button(f"⬇� Baixar {p.suffix}", p.read_bytes(),
+            coluna.download_button(f"⬇️ Baixar {p.suffix}", p.read_bytes(),
                                    file_name=p.name, key=f"dl_{chave}")
 
 
-# ------------------------------------------------------------------ navegacao principal
-st.sidebar.markdown("### Navegacao")
-menu_opcoes = ["1) Caso", "2) Fatos", "3) Peca", "4) Conferencia", "Base legal", "Anexo/Analise", "Decisoes & Processos", "Acompanhar processo", "Chat IA"]
+# ------------------------------------------------------------------ navegacao principal (sidebar)
+st.sidebar.markdown("### Navegação")
+menu_opcoes = [
+    "1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência",
+    "🗂️ Base legal", "📎 Anexo/Análise", "📰 Decisões & Processos",
+    "📌 Acompanhar processo", "💬 Chat IA"
+]
 aba_selecionada = st.sidebar.radio("Ir para", menu_opcoes, label_visibility="collapsed", key="menu_navegacao")
-aba_caso = st.container() if aba_selecionada == "1) Caso" else None
-aba_fatos = st.container() if aba_selecionada == "2) Fatos" else None
-aba_peca = st.container() if aba_selecionada == "3) Peca" else None
-aba_conf = st.container() if aba_selecionada == "4) Conferencia" else None
-aba_base_ui = st.container() if aba_selecionada == "Base legal" else None
-aba_anexo = st.container() if aba_selecionada == "Anexo/Analise" else None
-aba_decisoes_ui = st.container() if aba_selecionada == "Decisoes & Processos" else None
-aba_processos_ui = st.container() if aba_selecionada == "Acompanhar processo" else None
-aba_chat = st.container() if aba_selecionada == "Chat IA" else None
 
-with aba_caso:
+if aba_selecionada == "1️⃣ Caso":
     st.subheader("Dados da peça")
     st.caption("Preencha como no cabeçalho da peça. O que ficar em branco, a IA identifica nos fatos na hora "
                "de redigir; no final tudo sai junto no cabeçalho.")
@@ -2496,7 +2517,7 @@ with aba_caso:
     with st.expander("Ver bloco de dados que vai para a IA"):
         st.code(st.session_state["dados"] or "(vazio)")
 
-with aba_anexo:
+elif aba_selecionada == "📎 Anexo/Análise":
     st.subheader("📎 Anexar documento e analisar (triagem)")
     st.caption("A IA lê o documento (PDF/DOCX/TXT digital), identifica o tipo de peça cabível e aponta "
                "possíveis erros, indicando a fundamentação A CONFERIR. É um apoio; não substitui sua análise.")
@@ -2521,7 +2542,7 @@ with aba_anexo:
                     st.session_state["analise_alertas"] = conf["alertas"]
     if st.session_state["analise_doc"]:
         c1, c2 = st.columns([1, 4])
-        if c1.button("🗑� Apagar relatório", width="stretch"):
+        if c1.button("🗑️ Apagar relatório", width="stretch"):
             st.session_state["analise_doc"] = ""
             st.session_state["analise_alertas"] = []
             st.rerun()
@@ -2534,13 +2555,13 @@ with aba_anexo:
             with st.expander("Alertas da conferência"):
                 for n, m in st.session_state["analise_alertas"]:
                     alerta(n, m)
-        st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba 🗂� Base legal (status 'verificado').")
+        st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba 🗂️ Base legal (status 'verificado').")
 
-with aba_fatos:
+elif aba_selecionada == "2️⃣ Fatos":
     st.subheader("Relato do cliente")
     if st.session_state.get("_rascunho_msg"):
         st.info(st.session_state.pop("_rascunho_msg"), icon="💾")
-    audio = st.audio_input("🎙� Grave o relato (opcional)")
+    audio = st.audio_input("🎙️ Grave o relato (opcional)")
     if audio is not None and st.button("Transcrever"):
         with st.status("Transcrevendo...", expanded=False) as s:
             texto = tentar(motor.transcrever_audio, audio.getvalue(), audio.type or "audio/wav")
@@ -2556,19 +2577,19 @@ with aba_fatos:
                 _chave_backup_relato())
     _aplicar_correcao_pendente()
     if st.session_state.get("_corr_msg"):
-        st.success(st.session_state.pop("_corr_msg"), icon="��")
+        st.success(st.session_state.pop("_corr_msg"), icon="✍️")
     st.text_area("Relato (dite ou escreva o que o cliente contou)", key="narrativa", height=150,
                  placeholder="Digite seu texto aqui")
     c_prev, c_aviso = st.columns([1, 3])
-    if c_prev.checkbox("� Ver com formatação", key="relato_preview"):
+    if c_prev.checkbox("👁 Ver com formatação", key="relato_preview"):
         with st.container(border=True):
             st.markdown(previa_texto(st.session_state.get("narrativa", "")),
                         unsafe_allow_html=True)
     c_aviso.caption("💾 Salvo sozinho enquanto você digita (no seu navegador e no sistema). "
                     "Pode deixar o sistema aberto sem medo de perder o que escreveu.")
-    st.caption("�� **Palavra errada?** Ela fica **sublinhada em vermelho** no campo acima: "
+    st.caption("✍️ **Palavra errada?** Ela fica **sublinhada em vermelho** no campo acima: "
                "clique com o botão direito na palavra e escolha a correção sugerida. "
-               "Exemplo: “A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026…�")
+               "Exemplo: “A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026…”")
 
     if st.button("🔤 Revisar minha escrita com a IA", key="btn_revisar_escrita"):
         st.session_state["_correcoes"] = []
@@ -2592,14 +2613,14 @@ with aba_fatos:
                 "Clique no que quer corrigir:")
         for i, achado in enumerate(achados[:12]):
             col1, col2 = st.columns([3, 4])
-            if col1.button(f"� {achado['errado']}  →  ✅ {achado['certo']}", key=f"corr_{i}"):
+            if col1.button(f"❌ {achado['errado']}  →  ✅ {achado['certo']}", key=f"corr_{i}"):
                 st.session_state["_corr_pendente"] = (achado["errado"], achado["certo"])
                 st.rerun()
             col2.caption(achado.get("motivo", ""))
     elif st.session_state.get("_revisou"):
         st.success("✅ Não encontrei erros de escrita no relato.")
 
-    if st.button("�� Corrigir e organizar fatos (gramática/ABNT)", type="primary"):
+    if st.button("✍️ Corrigir e organizar fatos (gramática/ABNT)", type="primary"):
         if not st.session_state["narrativa"].strip():
             st.warning("Escreva ou dite o relato primeiro.")
         else:
@@ -2627,10 +2648,10 @@ with aba_fatos:
                      placeholder="O texto corrigido e organizado em parágrafos aparece aqui — pode editar à vontade")
 
     st.divider()
-    st.subheader("� Gerar peça nesta aba")
+    st.subheader("📝 Gerar peça nesta aba")
     modelo_nome = st.session_state.get("modelo_nome") or (motor.listar_modelos()[0] if motor.listar_modelos() else "")
     base_nome = st.session_state.get("base_nome") or (motor.listar_bases()[0] if motor.listar_bases() else None)
-    if st.button("� Gerar a peça", type="primary", use_container_width=True):
+    if st.button("📝 Gerar a peça", type="primary", use_container_width=True):
         fatos = st.session_state.get("fatos_edit") or ""
         if not fatos.strip():
             st.warning("Corrija/organize os fatos primeiro ou cole o relato corrigido acima.")
@@ -2693,25 +2714,25 @@ with aba_fatos:
                     st.session_state["_limpar_respostas"] = True
                     st.rerun()
 
-with aba_peca:
+elif aba_selecionada == "3️⃣ Peça":
     st.subheader("Peça gerada (edite à vontade)")
     if not st.session_state["peca_edit"]:
-        st.info("Gere a peça na aba 2�⃣.")
+        st.info("Gere a peça na aba 2️⃣.")
     else:
         texto = st.text_area("Texto da peça", key="peca_edit", height=520,
                          placeholder="A peça aparece aqui — pode corrigir antes de exportar")
         exportar(texto)
 
-with aba_conf:
-    st.subheader("� Sugestões de jurisprudência (conferir)")
+elif aba_selecionada == "4️⃣ Conferência":
+    st.subheader("🔍 Sugestões de jurisprudência (conferir)")
     st.warning(
         "A IA sugere **fontes para você CONFERIR** na origem. Nada entra na peça automaticamente. "
         "Confirme tribunal, número e tese no site oficial antes de citar."
     )
-    if st.button("� Buscar sugestões conforme os fatos", type="primary"):
+    if st.button("🔍 Buscar sugestões conforme os fatos", type="primary"):
         fatos = st.session_state["fatos_edit"]
         if not fatos.strip():
-            st.warning("Organize os fatos primeiro (aba 2�⃣).")
+            st.warning("Organize os fatos primeiro (aba 2️⃣).")
         else:
             bases = motor.listar_bases()
             base_nome = st.session_state.get("base_nome") or (bases[0] if bases else None)
@@ -2724,7 +2745,7 @@ with aba_conf:
                 st.session_state["juris_sugerida"] = texto
     if st.session_state["juris_sugerida"]:
         c1, c2 = st.columns([1, 4])
-        if c1.button("🗑� Apagar sugestões", width="stretch"):
+        if c1.button("🗑️ Apagar sugestões", width="stretch"):
             st.session_state["juris_sugerida"] = ""
             st.rerun()
         c2.caption("Você pode editar ou remover sugestões direto no quadro abaixo.")
@@ -2743,25 +2764,25 @@ with aba_conf:
                 if it["busca"]:
                     st.markdown(f"**Busca:** {it['busca']}")
                 st.link_button("🔎 Abrir busca na fonte oficial", it["url"])
-        st.caption("Depois de conferir no site oficial, cadastre na aba 🗂� Base legal com status "
+        st.caption("Depois de conferir no site oficial, cadastre na aba 🗂️ Base legal com status "
                    "'verificado' para a IA poder citar na peça.")
     st.divider()
     aba_conferencia()
 
-with aba_base_ui:
+elif aba_selecionada == "🗂️ Base legal":
     aba_base()
 
-with aba_decisoes_ui:
+elif aba_selecionada == "📰 Decisões & Processos":
     aba_decisoes()
 
-with aba_processos_ui:
+elif aba_selecionada == "📌 Acompanhar processo":
     aba_processos()
 
-with aba_chat:
+elif aba_selecionada == "💬 Chat IA":
     st.subheader("💬 Conversar com a IA")
     st.caption("Tire dúvidas e pesquise sobre o processo. A IA é apoio — confira sempre as fontes oficiais.")
     c1, c2 = st.columns([1, 4])
-    if c1.button("🗑� Limpar conversa", width="stretch"):
+    if c1.button("🗑️ Limpar conversa", width="stretch"):
         st.session_state["chat_hist"] = []
         st.rerun()
     c2.checkbox("Incluir os dados e os fatos deste caso no contexto", value=True,
