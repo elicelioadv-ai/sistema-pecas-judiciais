@@ -2672,8 +2672,18 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
-    st.markdown("**Comandos do sistema**")
-    st.caption("1️⃣ Caso · 2️⃣ Fatos · 3️⃣ Peça · 4️⃣ Conferência\n\n🗂️ Base legal · 📎 Anexo/Análise · 📰 Decisões & Processos\n\n📌 Acompanhar processo · 💬 Chat IA")
+    st.markdown("**Comandos**")
+    _secoes = [
+        "1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência",
+        "🗂️ Base legal", "📎 Anexo/Análise", "📰 Decisões & Processos",
+        "📌 Acompanhar processo", "💬 Chat IA",
+    ]
+    if "secao_ativa" not in st.session_state:
+        st.session_state["secao_ativa"] = _secoes[0]
+    st.session_state["secao_ativa"] = st.radio(
+        "Ir para", _secoes, index=_secoes.index(st.session_state["secao_ativa"]) if st.session_state["secao_ativa"] in _secoes else 0,
+        label_visibility="collapsed", key="_nav_radio"
+    )
     st.divider()
 
     if st.session_state.get("admin"):
@@ -3236,12 +3246,10 @@ def exportar(texto):
 
 
 # ------------------------------------------------------------------ abas principais
-aba_caso, aba_fatos, aba_peca, aba_conf, aba_base_ui, aba_anexo, aba_decisoes_ui, aba_processos_ui, aba_chat = st.tabs(
-    ["1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência", "🗂️ Base legal", "📎 Anexo/Análise",
-     "📰 Decisões & Processos", "📌 Acompanhar processo", "💬 Chat IA"]
-)
+# navegação via sidebar
+_sec = st.session_state.get("secao_ativa", "1️⃣ Caso")
 
-with aba_caso:
+if st.session_state.get("secao_ativa", "1️⃣ Caso") == "1️⃣ Caso":
     st.subheader("Dados da peça")
     st.caption("Preencha como no cabeçalho da peça. O que ficar em branco, a IA identifica nos fatos na hora "
                "de redigir; no final tudo sai junto no cabeçalho.")
@@ -3286,26 +3294,7 @@ with aba_caso:
     with st.expander("Ver bloco de dados que vai para a IA"):
         st.code(st.session_state["dados"] or "(vazio)")
 
-    st.divider()
-    col_sv, _ = st.columns([1, 5])
-    with col_sv:
-        with st.popover("💾 Salvar", help="Salvar este caso"):
-            nome_salvar = st.text_input("Nome do caso", value=st.session_state.get("nome_caso", ""), key="nome_caso_aba_caso", placeholder="ex.: Voo FTL→SP – M. Souza")
-            if st.button("Salvar caso", type="primary", key="btn_salvar_caso_aba"):
-                nome_limpo = (nome_salvar or "").strip()
-                if not nome_limpo:
-                    st.warning("Dê um nome antes de salvar.")
-                else:
-                    st.session_state["nome_caso"] = nome_limpo
-                    try:
-                        caminho = motor.salvar_caso(nome_limpo, _dados_caso(), _dono())
-                        st.session_state["_caso_id"] = "caso_" + caminho.stem
-                        st.success(f"Salvo como **{caminho.stem}**.")
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Não foi possível salvar: {e}")
-
-with aba_anexo:
+elif st.session_state.get("secao_ativa") == "📎 Anexo/Análise":
     st.subheader("📎 Anexar documento e analisar (triagem)")
     st.caption("A IA lê o documento (PDF/DOCX/TXT digital), identifica o tipo de peça cabível e aponta "
                "possíveis erros, indicando a fundamentação A CONFERIR. É um apoio; não substitui sua análise.")
@@ -3345,7 +3334,7 @@ with aba_anexo:
                     alerta(n, m)
         st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba 🗂️ Base legal (status 'verificado').")
 
-with aba_fatos:
+elif st.session_state.get("secao_ativa") == "2️⃣ Fatos":
     st.subheader("Relato do cliente")
     if st.session_state.get("_rascunho_msg"):
         st.info(st.session_state.pop("_rascunho_msg"), icon="💾")
@@ -3502,7 +3491,26 @@ with aba_fatos:
                     st.session_state["_limpar_respostas"] = True
                     st.rerun()
 
-with aba_peca:
+    st.divider()
+    col_sv, _ = st.columns([1, 5])
+    with col_sv:
+        with st.popover("💾 Salvar", help="Salvar este caso"):
+            nome_salvar = st.text_input("Nome do caso", value=st.session_state.get("nome_caso", ""), key="nome_caso_fatos", placeholder="ex.: Voo FTL→SP – M. Souza")
+            if st.button("Salvar caso", type="primary", key="btn_salvar_caso_fatos"):
+                nome_limpo = (nome_salvar or "").strip()
+                if not nome_limpo:
+                    st.warning("Dê um nome antes de salvar.")
+                else:
+                    st.session_state["nome_caso"] = nome_limpo
+                    try:
+                        caminho = motor.salvar_caso(nome_limpo, _dados_caso(), _dono())
+                        st.session_state["_caso_id"] = "caso_" + caminho.stem
+                        st.success(f"Salvo como **{caminho.stem}**.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Não foi possível salvar: {e}")
+
+elif st.session_state.get("secao_ativa") == "3️⃣ Peça":
     st.subheader("Peça gerada (edite à vontade)")
     if not st.session_state["peca_edit"]:
         st.info("Gere a peça na aba 2️⃣.")
@@ -3511,7 +3519,7 @@ with aba_peca:
                          placeholder="A peça aparece aqui — pode corrigir antes de exportar")
         exportar(texto)
 
-with aba_conf:
+elif st.session_state.get("secao_ativa") == "4️⃣ Conferência":
     st.subheader("🔍 Sugestões de jurisprudência (conferir)")
     st.warning(
         "A IA sugere **fontes para você CONFERIR** na origem. Nada entra na peça automaticamente. "
@@ -3557,16 +3565,16 @@ with aba_conf:
     st.divider()
     aba_conferencia()
 
-with aba_base_ui:
+elif st.session_state.get("secao_ativa") == "🗂️ Base legal":
     aba_base()
 
-with aba_decisoes_ui:
+elif st.session_state.get("secao_ativa") == "📰 Decisões & Processos":
     aba_decisoes()
 
-with aba_processos_ui:
+elif st.session_state.get("secao_ativa") == "📌 Acompanhar processo":
     aba_processos()
 
-with aba_chat:
+elif st.session_state.get("secao_ativa") == "💬 Chat IA":
     st.subheader("💬 Conversar com a IA")
     st.caption("Tire dúvidas e pesquise sobre o processo. A IA é apoio — confira sempre as fontes oficiais.")
     c1, c2 = st.columns([1, 4])
