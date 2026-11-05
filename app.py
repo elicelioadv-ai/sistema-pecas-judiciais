@@ -97,6 +97,19 @@ _CSS_LEIS = """
     line-height: 1.2;
 }
 .lei-grid a:hover { background: #1057c4; }
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary span,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+[data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+    line-height: 1.4 !important;
+}
+[data-testid="stSidebar"] label {
+    line-height: 1.3 !important;
+}
 </style>
 """
 
@@ -306,6 +319,19 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
     background: #d7eef3 !important; color: #222222 !important; border: 2px solid #0093AE !important;
     box-shadow: inset 0 0 0 2px #0093AE !important;
 }
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary span,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+[data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+    line-height: 1.4 !important;
+}
+[data-testid="stSidebar"] label {
+    line-height: 1.3 !important;
+}
 </style>
 """
 
@@ -408,6 +434,19 @@ button[data-testid^="stBaseButton-"]:hover, a[data-testid^="stBaseLinkButton-"]:
 [data-testid="stSidebar"] div[data-baseweb="select"] *,
 [data-testid="stSidebar"] div[data-baseweb="input"] *, [data-testid="stSidebar"] [role="combobox"] * { color: #1f2937 !important; }
 [data-testid="stSidebar"] input, [data-testid="stSidebar"] textarea { color: #1f2937 !important; -webkit-text-fill-color: #1f2937 !important; background: #FFFFFF !important; }
+[data-testid="stSidebar"] [data-testid="stExpander"] summary p,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary span,
+[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+}
+[data-testid="stSidebar"] .stCaption, [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+    line-height: 1.4 !important;
+}
+[data-testid="stSidebar"] label {
+    line-height: 1.3 !important;
+}
 </style>
 """
 st.markdown(_CSS_TEMA, unsafe_allow_html=True)
@@ -1875,6 +1914,15 @@ else:
 
 # ------------------------------------------------------------------ barra lateral
 with st.sidebar:
+    st.markdown("### Navegação")
+    menu_opcoes = [
+        "1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência",
+        "🗂️ Base legal", "📎 Anexo/Análise", "📰 Decisões & Processos",
+        "📌 Acompanhar processo", "💬 Chat IA",
+    ]
+    aba_selecionada = st.radio("Ir para", menu_opcoes, label_visibility="collapsed", key="menu_navegacao")
+    st.divider()
+
     st.markdown(
         "<div style='text-align:center; font-size:34px; line-height:1; margin-bottom:4px;'>⚖️</div>",
         unsafe_allow_html=True,
@@ -2486,14 +2534,6 @@ def exportar(texto):
                                    file_name=p.name, key=f"dl_{chave}")
 
 
-st.sidebar.divider()
-st.sidebar.markdown("### Navegação")
-menu_opcoes = [
-    "1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência",
-    "🗂️ Base legal", "📎 Anexo/Análise", "📰 Decisões & Processos",
-    "📌 Acompanhar processo", "💬 Chat IA",
-]
-aba_selecionada = st.sidebar.radio("Ir para", menu_opcoes, label_visibility="collapsed", key="menu_navegacao")
 
 if aba_selecionada == "1️⃣ Caso":
     st.subheader("Dados da peça")
