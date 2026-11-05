@@ -2672,6 +2672,8 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
+    st.markdown("**Comandos do sistema**")
+    st.caption("1️⃣ Caso · 2️⃣ Fatos · 3️⃣ Peça · 4️⃣ Conferência\n\n🗂️ Base legal · 📎 Anexo/Análise · 📰 Decisões & Processos\n\n📌 Acompanhar processo · 💬 Chat IA")
     st.divider()
 
     if st.session_state.get("admin"):
@@ -3283,6 +3285,25 @@ with aba_caso:
     st.session_state["dados"] = compor_dados()
     with st.expander("Ver bloco de dados que vai para a IA"):
         st.code(st.session_state["dados"] or "(vazio)")
+
+    st.divider()
+    col_sv, _ = st.columns([1, 5])
+    with col_sv:
+        with st.popover("💾 Salvar", help="Salvar este caso"):
+            nome_salvar = st.text_input("Nome do caso", value=st.session_state.get("nome_caso", ""), key="nome_caso_aba_caso", placeholder="ex.: Voo FTL→SP – M. Souza")
+            if st.button("Salvar caso", type="primary", key="btn_salvar_caso_aba"):
+                nome_limpo = (nome_salvar or "").strip()
+                if not nome_limpo:
+                    st.warning("Dê um nome antes de salvar.")
+                else:
+                    st.session_state["nome_caso"] = nome_limpo
+                    try:
+                        caminho = motor.salvar_caso(nome_limpo, _dados_caso(), _dono())
+                        st.session_state["_caso_id"] = "caso_" + caminho.stem
+                        st.success(f"Salvo como **{caminho.stem}**.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Não foi possível salvar: {e}")
 
 with aba_anexo:
     st.subheader("📎 Anexar documento e analisar (triagem)")
