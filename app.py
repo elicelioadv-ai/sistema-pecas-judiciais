@@ -2672,15 +2672,6 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
-    if st.button("🚪 Sair do sistema", width="stretch"):
-        st.session_state["autenticado"] = False
-        st.session_state["chat_hist"] = []
-        st.session_state["_cookie_apagar"] = True
-        # ao sair, a verificacao de seguranca e pedida de novo no proximo acesso
-        st.session_state["captcha_humano"] = False
-        st.session_state["captcha_ok"] = False
-        st.session_state["captcha_sel"] = []
-        st.rerun()
     st.divider()
 
     if st.session_state.get("admin"):
@@ -2770,53 +2761,6 @@ with st.sidebar:
             st.rerun()
 
     st.divider()
-    st.subheader("📝 Gerar peça")
-    modelo_nome = st.selectbox("Modelo da peça", motor.listar_modelos(), key="modelo_nome",
-                               placeholder="Escolha o modelo da peça")
-    st.caption("Sugerido conforme os fatos; você pode trocar.")
-    base_nome = st.selectbox("Base legal", motor.listar_bases(), key="base_nome",
-                              placeholder="Escolha a base legal")
-    with st.expander("Ver a base legal carregada"):
-        for item in motor.carregar_base(base_nome):
-            st.markdown(f"**{item['referencia']}** — status: `{item['status']}`")
-            st.write(item["texto"])
-    if st.button("📝 Gerar a peça", type="primary", width="stretch"):
-        fatos = st.session_state["fatos_edit"]
-        if not fatos.strip():
-            st.warning("Não há fatos ainda. Preencha o relato e use 'Limpar fatos' na aba 2️⃣.")
-        else:
-            st.session_state.update(peca_edit="", alertas=[], usadas=[])
-            st.session_state.pop("export_docx", None)
-            st.session_state.pop("export_pdf", None)
-            base = motor.carregar_base(base_nome)
-            _anon = None
-            if st.session_state.get("modo_seguro", True):
-                try:
-                    _anon = motor.Anonimizador([])
-                except Exception:
-                    _anon = None
-            with st.status("Redigindo a peça...", expanded=False) as s:
-                bruto = tentar(motor.gerar_peca, motor.carregar_modelo(modelo_nome),
-                               st.session_state["dados"], fatos, base, _anon)
-                if bruto:
-                    conf = motor.conferir_citacoes(bruto, base, f"{st.session_state['dados']}\n{fatos}")
-                    st.session_state.update(peca_edit=conf["texto"], alertas=conf["alertas"], usadas=conf["usadas"])
-                    s.update(label="Peça gerada e conferida", state="complete")
-                else:
-                    s.update(label="Falha ao gerar", state="error")
-
-    st.divider()
-    nome_caso = st.text_input("Nome do caso (para salvar)", key="nome_caso")
-    if st.button("💾 Salvar caso atual", width="stretch"):
-        nome_limpo = (nome_caso or "").strip()
-        if not nome_limpo:
-            st.warning("Dê um nome antes de salvar.")
-        else:
-            caminho = motor.salvar_caso(nome_limpo, _dados_caso(), _dono())
-            st.session_state["_caso_id"] = "caso_" + caminho.stem
-            st.success(f"Salvo como **{caminho.stem}** — está em 📁 Casos salvos.")
-
-    st.divider()
     st.subheader("🛡️ Segurança (LGPD)")
     st.checkbox("Modo seguro: anonimizar antes de enviar", value=True, key="modo_seguro",
                 help="Troca nomes, CPF, e-mails etc. por marcadores antes de enviar à IA e restaura na peça final.")
@@ -2883,6 +2827,16 @@ with st.sidebar:
     _m = motor.modo_uso()
     _extra = f" · Região: **{_m['regiao']}**" if _m["regiao"] else ""
     st.caption(f"Provedor: **{_m['provedor']}** · Modelo: **{_m['modelo'] or '(definir no .env)'}**{_extra}")
+
+    st.divider()
+    if st.button("🚪 Sair do sistema", width="stretch", key="btn_sair_sidebar"):
+        st.session_state["autenticado"] = False
+        st.session_state["chat_hist"] = []
+        st.session_state["_cookie_apagar"] = True
+        st.session_state["captcha_humano"] = False
+        st.session_state["captcha_ok"] = False
+        st.session_state["captcha_sel"] = []
+        st.rerun()
 
 
 anonimizador = None
