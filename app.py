@@ -312,901 +312,60 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 
 _CSS_TEMA = """
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 :root {
-    --azul-escuro:#003F65; --azul-aviso:#004164; --azul-petroleo:#00658A;
+    --azul-escuro:#1F4E78; --azul-aviso:#1F4E78; --azul-petroleo:#2d6aa3;
     --vermelho:#B2101D; --roxo:#694467; --amarelo:#F5AF00;
-    --fundo:#F8F9F9; --header:#2B576E; --botao:#E4E9EC; --botao-busca:#C3D1D9;
-    --aba-ativa:#D2D4D5; --aba:#DCDEDF;
-    --texto-menu:#FFFFFF; --texto-menu-sec:#EEF3F6; --texto-aba:#575756; --link:#3B5C7D; --placeholder:#6C757D;
+    --fundo:#f7f9fc; --header:#1F4E78; --botao:#E4E9EC; --botao-busca:#C3D1D9;
+    --aba-ativa:#1F4E78; --aba:#f1f3f6;
+    --texto-menu:#FFFFFF; --texto-menu-sec:#EEF3F6; --texto-aba:#3c4043; --link:#1F4E78; --placeholder:#6C757D;
     --botao-menu:rgba(255,255,255,0.08); --botao-menu-ativo:rgba(255,255,255,0.15);
+    --card-bg:#FFFFFF; --border:#e0e7ef; --shadow:0 1px 3px rgba(16,24,40,0.05), 0 1px 2px rgba(16,24,40,0.03);
 }
-/* fundo do interior */
+* { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important; }
 .stApp, [data-testid="stAppViewContainer"] { background: var(--fundo) !important; }
-/* barra lateral (menu) */
 [data-testid="stSidebar"] {
-    background: var(--header) !important;
-    border-right: 1px solid rgba(255,255,255,0.18) !important;
+    background: linear-gradient(180deg, #1F4E78 0%, #153a5c 100%) !important;
+    border-right: none !important;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
 }
+[data-testid="stSidebar"] [role="radiogroup"] label {
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    margin-bottom: 2px !important;
+    transition: all 0.15s ease !important;
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: rgba(255,255,255,0.1) !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background: rgba(255,255,255,0.15) !important; font-weight: 600 !important; }
 [data-testid="stSidebar"] * { color: var(--texto-menu); }
 [data-testid="stSidebar"] a { color: #FFFFFF !important; }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.18) !important; }
-[data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p,
-[data-testid="stSidebar"] div, [data-testid="stSidebar"] span { color: var(--texto-menu-sec) !important; }
-/* títulos */
-h1, h2, h3 { color: var(--azul-escuro) !important; }
-/* links */
-[data-testid="stMarkdownContainer"] a { color: var(--link) !important; }
-hr { border-color: var(--botao-busca) !important; }
-/* campos do menu lateral: fundo branco com LETRA PRETA.
-   No Streamlit 1.65 o "select" virou .react-aria-ComboBox (input), entao
-   precisa do novo seletor senao a letra fica branca sobre a caixa branca. */
-[data-testid="stSidebar"] div[data-baseweb="select"] > div,
-[data-testid="stSidebar"] div[data-baseweb="input"],
-[data-testid="stSidebar"] .react-aria-ComboBox,
-[data-testid="stSidebar"] .react-aria-ComboBox > div,
-[data-testid="stSidebar"] [role="combobox"] {
-    background: #F7F9FA !important; border: 1px solid rgba(255,255,255,0.35) !important;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-}
-[data-testid="stSidebar"] div[data-baseweb="select"] *,
-[data-testid="stSidebar"] div[data-baseweb="input"] *,
-[data-testid="stSidebar"] .react-aria-ComboBox *,
-[data-testid="stSidebar"] [role="combobox"] {
-    color: #1F2933 !important;
-}
-[data-testid="stSidebar"] input,
-[data-testid="stSidebar"] textarea {
-    color: #1F2933 !important; -webkit-text-fill-color: #1F2933 !important;
-    background: #FFFFFF !important;
-}
-[data-testid="stSidebar"] input::placeholder,
-[data-testid="stSidebar"] textarea::placeholder {
-    color: #55606B !important; -webkit-text-fill-color: #55606B !important;
-}
-/* etiqueta de status (ex.: "verificado") na lista da base legal do menu */
-[data-testid="stSidebar"] code {
-    color: #1F2933 !important; background: #ECEFF1 !important;
-}
-/* campos brancos */
-div[data-baseweb="input"], div[data-baseweb="select"] > div,
-div[data-baseweb="base-input"], div[data-baseweb="textarea"] textarea,
-[data-testid="stNumberInputContainer"] {
-    background: #FFFFFF !important; border-color: var(--botao-busca) !important;
-}
-input::placeholder, textarea::placeholder { color: var(--placeholder) !important; }
-/* aba Fatos: fundo cinza-claro nos campos de leitura/escrita (menos branco, mais confortável) */
-[data-testid="stAudioInput"] > div:last-child { background: #ECEFF1 !important; }
-.st-key-narrativa div[data-baseweb="textarea"] textarea,
-.st-key-fatos_edit div[data-baseweb="textarea"] textarea,
-[class*="st-key-resp_"] div[data-baseweb="textarea"] textarea {
-    background: #ECEFF1 !important;
-}
-/* editor formatado do Relato (igual ao Word: negrito, itálico, listas...) */
-.st-key-narrativa .__spj_com_editor__ textarea { display: none !important; }
-.st-key-narrativa .__spj_editor__ {
-    min-height: 150px; max-height: 430px; overflow-y: auto;
-    background: #ECEFF1 !important; border: 1px solid var(--botao-busca) !important;
-    border-radius: 8px; padding: 10px 12px; color: #1F2933 !important;
-    font-size: 1rem; line-height: 1.55; font-family: inherit;
-    white-space: pre-wrap; word-break: break-word; outline: none;
-}
-.st-key-narrativa .__spj_editor__ b, .st-key-narrativa .__spj_editor__ strong { font-weight: 700; }
-.st-key-narrativa .__spj_editor__ mark { background: #FFF59D !important; color: #1F2933; }
-/* cores do destaque (marka-texto) */
-.st-key-narrativa .__spj_editor__ mark.hl_d1 { background: #FFF59D !important; color: #1F2933 !important; }
-.st-key-narrativa .__spj_editor__ mark.hl_d2 { background: #C8E6C9 !important; color: #1F2933 !important; }
-.st-key-narrativa .__spj_editor__ mark.hl_d3 { background: #BBDEFB !important; color: #1F2933 !important; }
-.st-key-narrativa .__spj_editor__ mark.hl_d4 { background: #F8BBD0 !important; color: #1F2933 !important; }
-.st-key-narrativa .__spj_editor__ mark.hl_d5 { background: #FFE0B2 !important; color: #1F2933 !important; }
-.st-key-narrativa .__spj_editor__ mark.hl_d6 { background: #E0E0E0 !important; color: #1F2933 !important; }
-mark.hl_d1 { background: #FFF59D !important; color: #1F2933 !important; }
-mark.hl_d2 { background: #C8E6C9 !important; color: #1F2933 !important; }
-mark.hl_d3 { background: #BBDEFB !important; color: #1F2933 !important; }
-mark.hl_d4 { background: #F8BBD0 !important; color: #1F2933 !important; }
-mark.hl_d5 { background: #FFE0B2 !important; color: #1F2933 !important; }
-mark.hl_d6 { background: #E0E0E0 !important; color: #1F2933 !important; }
-/* paletinha de cores do botao Destaque */
-.__spj_paleta__ {
-    position: absolute; z-index: 999999; display: flex; gap: 4px; padding: 6px;
-    background: #ffffff; border: 1px solid #C3D1D9;
-    border-radius: 8px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
-}
-.__spj_paleta__ button {
-    width: 24px; height: 24px; border-radius: 5px; border: 1px solid #b0bec5;
-    cursor: pointer; padding: 0; margin: 0; background: #ffffff;
-}
-.__spj_paleta__ button:hover { outline: 2px solid #2d6aa3; outline-offset: 1px; }
-.__spj_paleta__ .sem_cor {
-    background: #ffffff !important;
-    background-image: linear-gradient(45deg, #e53935 44%, transparent 44%, transparent 56%, #e53935 56%) !important;
-}
-.__spj_paleta__ .hl_d1 { background: #FFF59D !important; }
-.__spj_paleta__ .hl_d2 { background: #C8E6C9 !important; }
-.__spj_paleta__ .hl_d3 { background: #BBDEFB !important; }
-.__spj_paleta__ .hl_d4 { background: #F8BBD0 !important; }
-.__spj_paleta__ .hl_d5 { background: #FFE0B2 !important; }
-.__spj_paleta__ .hl_d6 { background: #E0E0E0 !important; }
-.st-key-narrativa .__spj_editor__ blockquote {
-    border-left: 4px solid #90A4AE; margin: 6px 0; padding: 2px 10px; color: #37474F;
-}
-.st-key-narrativa .__spj_editor__ h2 { font-size: 1.15rem; margin: 6px 0; }
-.st-key-narrativa .__spj_editor__ ul, .st-key-narrativa .__spj_editor__ ol { padding-left: 22px; }
-.st-key-narrativa .__spj_editor__:empty:before {
-    content: "Digite seu texto aqui"; color: var(--placeholder); pointer-events: none;
-}
-/* abas */
+[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.12) !important; }
+h1, h2, h3 { color: #101828 !important; font-weight: 600 !important; letter-spacing: -0.01em; }
+h1 { font-size: 1.875rem !important; margin-bottom: 1.5rem !important; }
 [data-baseweb="tab-list"] {
-    background: var(--aba) !important; border-radius: 8px 8px 0 0; padding: 5px 6px; gap: 4px;
-    border-bottom: 1px solid var(--botao-busca) !important;
+    background: #f1f3f6 !important; border-radius: 10px !important; padding: 4px !important; gap: 4px;
+    border: 1px solid var(--border) !important;
 }
-[data-baseweb="tab"] { color: var(--texto-aba) !important; border-radius: 6px !important; }
+[data-baseweb="tab"] { color: var(--texto-aba) !important; border-radius: 8px !important; padding: 8px 16px !important; font-weight: 500 !important; }
 [data-baseweb="tab"][aria-selected="true"] {
-    color: var(--texto-menu) !important; background: var(--aba-ativa) !important; font-weight: 600 !important;
+    color: #FFFFFF !important; background: var(--azul-escuro) !important; font-weight: 600 !important;
 }
-[data-baseweb="tab-highlight"], [data-baseweb="tab-border"] { background: transparent !important; }
-/* cartelas/expansores */
-[data-testid="stExpander"] details {
-    border: 1px solid var(--botao-busca) !important; border-radius: 8px !important;
-    background: #ECEFF1 !important;
-}
-[data-testid="stExpander"] summary { color: var(--azul-escuro) !important; font-weight: 600 !important; }
-/* expansores da barra lateral: cabeçalho azul com letra branca */
-[data-testid="stSidebar"] [data-testid="stExpander"] details {
-    background: transparent !important; border: none !important;
-}
-[data-testid="stSidebar"] [data-testid="stExpander"] summary {
+button[data-testid^="stBaseButton-"], a[data-testid^="stBaseLinkButton-"] {
     background: var(--azul-escuro) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.25) !important;
-    border-radius: 8px !important; font-weight: 600 !important;
+    border: none !important; border-radius: 8px !important; font-weight: 600 !important;
 }
-[data-testid="stSidebar"] [data-testid="stExpander"] summary:hover {
-    background: var(--azul-petroleo) !important; border-color: rgba(255,255,255,0.35) !important;
-    color: #FFFFFF !important;
-}
-[data-testid="stSidebar"] [data-testid="stExpander"] summary,
-[data-testid="stSidebar"] [data-testid="stExpander"] summary * {
-    color: #FFFFFF !important; fill: #FFFFFF !important;
-}
-/* ícone do expansor "Contas" (bonequinhos) em amarelo, como o símbolo do Direito */
-[data-testid="stSidebar"] [data-testid="stExpander"] summary [data-testid="stIconMaterial"] {
-    color: var(--amarelo) !important; fill: var(--amarelo) !important;
-}
-/* botões: azul corporativo com letra branca (mirado pelo data-testid no Streamlit 1.65+) */
-button[data-testid^="stBaseButton-"],
-a[data-testid^="stBaseLinkButton-"] {
-    background: var(--azul-escuro) !important; color: #FFFFFF !important;
-    border: 1px solid var(--azul-aviso) !important;
-    border-radius: 8px !important; font-weight: 600 !important;
-    text-decoration: none !important;
-}
-button[data-testid^="stBaseButton-"]:hover,
-a[data-testid^="stBaseLinkButton-"]:hover {
-    background: var(--azul-petroleo) !important; border-color: var(--azul-petroleo) !important;
-    color: #FFFFFF !important;
-}
-/* barra lateral: mesmos botões azuis com letra branca */
-[data-testid="stSidebar"] button[data-testid^="stBaseButton-"] {
-    background: var(--azul-escuro) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.25) !important;
-    border-radius: 8px !important; font-weight: 600 !important;
-}
-[data-testid="stSidebar"] button[data-testid^="stBaseButton-"]:hover {
-    background: var(--azul-petroleo) !important; border-color: rgba(255,255,255,0.35) !important;
-    color: #FFFFFF !important;
-}
-/* barra de formatação do texto (tipo Word) */
-.__spj_barra__ {
-    display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
-    background: #ECEFF1; border: 1px solid var(--botao-busca); border-radius: 6px;
-    padding: 4px 6px; margin: 0 0 6px 0;
-}
-.__spj_barra__ button {
-    min-width: 30px; height: 28px; padding: 0 6px; line-height: 1;
-    border: 1px solid var(--botao-busca); border-radius: 4px;
-    background: #FFFFFF; color: var(--azul-escuro); font-size: 14px;
-    cursor: pointer; font-family: inherit;
-}
-.__spj_barra__ button:hover { background: var(--aba-ativa); border-color: var(--azul-escuro); }
-.__spj_barra__ button:active { background: var(--botao-busca); }
-/* o botao de destaque mostra as cores (indica que abre a paletinha) */
-.__spj_barra__ button[aria-label="Destaque"] {
-    position: relative; padding-bottom: 6px;
-    background-image: linear-gradient(90deg, #FFF59D 0%, #C8E6C9 25%, #BBDEFB 50%,
-                                     #F8BBD0 75%, #FFE0B2 100%);
-}
-.__spj_barra__ button[aria-label="Destaque"] mark { background: transparent; color: #1F2933; }
-/* aviso de recuperacao do texto */
-.__spj_aviso__ {
-    background: #FFF8E1; border: 1px solid #F5AF00; color: #6B4B00;
-    border-radius: 6px; padding: 6px 10px; margin: 0 0 6px 0; font-size: 0.85rem;
+[data-testid="stDataFrame"], [data-testid="stTable"] {
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow);
 }
 </style>
 """
-
-
-MENSAGENS_ABERTURA = [
-    "Bem-vindo(a) de volta! Que seu trabalho hoje flua leve e produtivo.",
-    "Pronto(a) para transformar fatos em uma peça impecável? Vamos começar!",
-    "Deixe a parte chata com o sistema e concentre-se no Direito.",
-    "Cada peça bem feita constrói a sua reputação. Bons trabalhos!",
-    "Organização agora, tranquilidade depois. Mãos à obra!",
-    "Um ótimo trabalho começa com uma boa ferramenta nas mãos.",
-    "Foco, clareza e agilidade: você cuida do caso, o sistema cuida da forma.",
-]
-
-
-def _saudacao():
-    hora = datetime.now(timezone(timedelta(hours=-3))).hour
-    if 5 <= hora < 12:
-        return "Bom dia"
-    if 12 <= hora < 18:
-        return "Boa tarde"
-    return "Boa noite"
-
-
-def _carregar_municipios():
-    caminho = Path(__file__).resolve().parent / "dados" / "ibge_municipios.json"
-    try:
-        with open(caminho, encoding="utf-8-sig") as arq:
-            return json.load(arq)
-    except Exception:
-        return {}
-
-
-MUNICIPIOS = _carregar_municipios()
-
-ESTADOS = [
-    ("AC", "Acre"), ("AL", "Alagoas"), ("AP", "Amapá"), ("AM", "Amazonas"), ("BA", "Bahia"),
-    ("CE", "Ceará"), ("DF", "Distrito Federal"), ("ES", "Espírito Santo"), ("GO", "Goiás"),
-    ("MA", "Maranhão"), ("MT", "Mato Grosso"), ("MS", "Mato Grosso do Sul"), ("MG", "Minas Gerais"),
-    ("PA", "Pará"), ("PB", "Paraíba"), ("PR", "Paraná"), ("PE", "Pernambuco"), ("PI", "Piauí"),
-    ("RJ", "Rio de Janeiro"), ("RN", "Rio Grande do Norte"), ("RS", "Rio Grande do Sul"),
-    ("RO", "Rondônia"), ("RR", "Roraima"), ("SC", "Santa Catarina"), ("SP", "São Paulo"),
-    ("SE", "Sergipe"), ("TO", "Tocantins"),
-]
-OPCOES_UF = ["—"] + [f"{sigla} – {nome}" for sigla, nome in ESTADOS]
-SIGLA_UF = {f"{sigla} – {nome}": sigla for sigla, nome in ESTADOS}
-CAMPOS_ENDERECO = ("rua", "num", "bairro", "cep", "cidade", "uf", "cidade_livre", "compl")
-CAMPOS_PARTE = ("nome", "civil", "prof", "cpf", "cnpj", "rg", "rua", "num",
-                "bairro", "cep", "uf", "cidade", "cidade_livre", "compl")
-_RE_CHAVE_PARTE = re.compile(
-    r"^(?:req|rdo)_(?:" + "|".join(CAMPOS_PARTE) + r")_\d+$"
-    r"|^exp_(?:req|rdo)_\d+$"
-)
-
-DEFAULTS = {
-    "dados": "", "narrativa": "", "fatos_edit": "", "peca_edit": "",
-    "pend": "", "respostas": "", "alertas": [], "usadas": [], "juris_sugerida": "",
-    "analise_doc": "", "analise_alertas": [],
-    "f_juizo": "", "f_outros": "", "f_rotulo": "Requerente / Requerido",
-    "mem_ruas": [], "mem_bairros": [], "mem_ceps": [],
-    "req_nome": "", "req_civil": "", "req_prof": "",
-    "req_cpf": "", "req_cnpj": "", "req_rg": "",
-    "rdo_nome": "", "rdo_civil": "", "rdo_prof": "",
-    "rdo_cpf": "", "rdo_cnpj": "", "rdo_rg": "",
-    **{f"req_{c}": "" for c in CAMPOS_ENDERECO},
-    **{f"rdo_{c}": "" for c in CAMPOS_ENDERECO},
-}
-for chave, inicial in DEFAULTS.items():
-    st.session_state.setdefault(chave, inicial)
-st.session_state.setdefault("chat_hist", [])
-
-# aplica valores definidos por botões (antes de criar os campos, para não dar erro)
-for _campo, _pendente in (("fatos_edit", "_p_fatos"), ("peca_edit", "_p_peca"),
-                          ("pend", "_p_pend"), ("respostas", "_p_respostas"),
-                          ("nova_peca_nome", "_p_nova_peca")):
-    if _pendente in st.session_state:
-        st.session_state[_campo] = st.session_state.pop(_pendente)
-
-if st.session_state.pop("_limpar_respostas", False):
-    for _k in [k for k in st.session_state if str(k).startswith("resp_")]:
-        del st.session_state[_k]
-
-
-# ---------------------------------------------------------------- portão de acesso (senha)
-_SELO_PC = "pecas_acesso_ok"
-
-
-def _selo_pc_ok():
-    try:
-        return (st.context.cookies.get(_SELO_PC) or "").strip() == "ok"
-    except Exception:
-        return False
-
-
-def _captcha_html():
-    """Captcha no estilo reCAPTCHA (como no controle de frota): caixa 'Não sou um robô'
-    que abre uma grade de figuras para marcar. Ao acertar, grava o selo no navegador."""
-    return """
-<style>
-  html, body { margin:0; padding:0; background:transparent;
-    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; }
-  .recaptcha { background:#f9f9f9; border:1px solid #d3d3d3; border-radius:4px;
-    padding:10px; max-width:300px; margin:0 auto; box-shadow:0 1px 3px rgba(0,0,0,.08); }
-  .recaptcha-topo { display:flex; align-items:center; gap:10px; width:100%;
-    background:none; border:none; cursor:pointer; padding:4px 2px; font-family:inherit; }
-  .recaptcha-caixa { width:24px; height:24px; border:2px solid #c1c1c1; border-radius:3px;
-    background:#fff; display:inline-block; flex-shrink:0; }
-  .recaptcha-texto { font-size:14px; color:#333; }
-  .recaptcha-marca { margin-left:auto; font-size:10px; color:#9aa0a6;
-    text-transform:uppercase; letter-spacing:1px; }
-  .recaptcha-desafio { margin-top:10px; }
-  .recaptcha-pergunta { font-size:14px; font-weight:600; color:#1F4E78; margin:0 0 8px 0; }
-  .recaptcha-grade { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
-  .recaptcha-tile { aspect-ratio:1/1; font-size:30px; background:#eef2f6;
-    border:2px solid #cfd8e3; border-radius:6px; cursor:pointer; line-height:1;
-    display:flex; align-items:center; justify-content:center; }
-  .recaptcha-tile:hover { background:#e2ebf3; }
-  .recaptcha-tile.selecionado { border-color:#0093AE; background:#d7eef3;
-    box-shadow:inset 0 0 0 2px #0093AE; }
-  .recaptcha-dica { display:block; margin-top:8px; color:#777; font-size:12px; }
-  .recaptcha-erro { color:#B2101D; font-size:13px; font-weight:600; margin:8px 0 0 0; }
-  .recaptcha-btn { margin-top:10px; width:100%; background:#1F4E78; color:#fff;
-    border:none; border-radius:6px; padding:9px; font-weight:700; font-size:14px; cursor:pointer; }
-  .recaptcha-btn:hover { background:#2d6aa3; }
-</style>
-<div class="recaptcha">
-  <button type="button" class="recaptcha-topo" id="topo" onclick="abrir()">
-    <span class="recaptcha-caixa"></span>
-    <span class="recaptcha-texto">Não sou um robô</span>
-    <span class="recaptcha-marca">segurança</span>
-  </button>
-  <div class="recaptcha-desafio" id="desafio" style="display:none;">
-    <p class="recaptcha-pergunta" id="pergunta"></p>
-    <div class="recaptcha-grade" id="grade"></div>
-    <small class="recaptcha-dica">Clique em todas as imagens certas e depois em Confirmar.</small>
-    <p class="recaptcha-erro" id="erro" style="display:none;">Verificação incorreta. Tente novamente.</p>
-    <button type="button" class="recaptcha-btn" onclick="confirmar()">Confirmar</button>
-  </div>
-</div>
-<script>
-  var IMAGENS = [["🚚","o caminhão"],["🚗","o carro"],["🚌","o ônibus"],["🚲","a bicicleta"],
-                 ["⭐","a estrela"],["✈️","o avião"],["🏠","a casa"],["🌳","a árvore"],
-                 ["⚖️","a balança"],["📚","os livros"],["🔨","o martelo"],["🏛️","o tribunal"]];
-  var corretos = [];
-  function ajustar(){ try{ window.frameElement.style.height=(document.body.scrollHeight+18)+'px'; }catch(e){} }
-  function gerar(){
-    var i = Math.floor(Math.random()*IMAGENS.length);
-    var alvo = IMAGENS[i][0], nome = IMAGENS[i][1];
-    var outros = IMAGENS.filter(function(x){ return x[0]!==alvo; }).map(function(x){ return x[0]; });
-    var pos = [0,1,2,3,4,5,6,7,8];
-    pos.sort(function(){ return Math.random()-0.5; });
-    var qtd = 2 + Math.floor(Math.random()*2);
-    corretos = pos.slice(0,qtd).sort(function(a,b){ return a-b; });
-    var g = document.getElementById('grade');
-    g.innerHTML = '';
-    for (var k=0;k<9;k++){
-      (function(k){
-        var t = document.createElement('button');
-        t.type = 'button'; t.className = 'recaptcha-tile'; t.setAttribute('data-i', k);
-        t.textContent = corretos.indexOf(k)>=0 ? alvo : outros[Math.floor(Math.random()*outros.length)];
-        t.onclick = function(){ t.classList.toggle('selecionado'); };
-        g.appendChild(t);
-      })(k);
-    }
-    document.getElementById('pergunta').innerHTML = 'Clique nas imagens que mostram <b>'+nome+'</b>:';
-    document.getElementById('erro').style.display = 'none';
-    ajustar();
-  }
-  function abrir(){
-    document.getElementById('topo').style.display = 'none';
-    document.getElementById('desafio').style.display = 'block';
-    if (!corretos.length) gerar();
-    ajustar();
-  }
-  function confirmar(){
-    var sel = [];
-    var ts = document.querySelectorAll('.recaptcha-tile.selecionado');
-    for (var i=0;i<ts.length;i++){ sel.push(parseInt(ts[i].getAttribute('data-i'),10)); }
-    sel.sort(function(a,b){ return a-b; });
-    if (JSON.stringify(sel)===JSON.stringify(corretos)){
-      try{ document.cookie='pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
-      try{ window.parent.document.cookie='pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
-      window.parent.location.reload();
-    } else {
-      document.getElementById('erro').style.display = 'block';
-      gerar();
-    }
-  }
-  ajustar();
-  window.addEventListener('load', ajustar);
-</script>
-"""
-
-
-def _gravar_selo_pc():
-    """Marca este navegador como já verificado (não pede o captcha de novo aqui)."""
-    components.html(
-        """
-        <script>
-        try { document.cookie = 'pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; } catch (e) {}
-        try { window.parent.document.cookie = 'pecas_acesso_ok=ok; max-age=31536000; path=/; SameSite=Lax'; } catch (e) {}
-        </script>
-        """,
-        height=0,
-    )
-
-
-_CAPTCHA_FIGURAS = [
-    ("🚚", "o caminhão"), ("🚗", "o carro"), ("🚌", "o ônibus"),
-    ("🚲", "a bicicleta"), ("⭐", "a estrela"), ("✈️", "o avião"),
-    ("🏠", "a casa"), ("🌳", "a árvore"), ("⚖️", "a balança"),
-    ("📚", "os livros"), ("🔨", "o martelo"), ("🏛️", "o tribunal"),
-]
-
-
-def _captcha_novo_desafio():
-    emoji, nome = random.choice(_CAPTCHA_FIGURAS)
-    outros = [e for e, _ in _CAPTCHA_FIGURAS if e != emoji]
-    certos = sorted(random.sample(range(9), random.randint(2, 3)))
-    st.session_state["captcha_alvo"] = nome
-    st.session_state["captcha_corretos"] = certos
-    st.session_state["captcha_tiles"] = [
-        emoji if k in certos else random.choice(outros) for k in range(9)
-    ]
-    st.session_state["captcha_sel"] = []
-    st.session_state["captcha_ok"] = False
-
-
-def _captcha_render():
-    """Verificação de segurança dentro do cartão: 'Não sou um robô' abre as figuras."""
-    st.markdown("<div class='cap-titulo'>Verificação de segurança</div>", unsafe_allow_html=True)
-
-    if not st.session_state.get("captcha_humano"):
-        if st.button("Não sou um robô", key="captcha_humano_btn"):
-            st.session_state["captcha_humano"] = True
-            st.session_state["captcha_ok"] = False
-            _captcha_novo_desafio()
-            st.rerun()
-        return
-
-    alvo = st.session_state.get("captcha_alvo", "")
-    tiles = st.session_state.get("captcha_tiles", []) or []
-
-    if st.session_state.get("captcha_ok"):
-        st.success(f"Verificação concluída. Você pode entrar. ✅")
-        return
-
-    if len(tiles) < 9:
-        _captcha_novo_desafio()
-        st.rerun()
-        return
-
-    st.markdown(
-        "<p class='cap-pergunta'>Marque <b>todas</b> as figuras que mostram "
-        f"<b>{alvo}</b> e clique em <b>Confirmar</b>:</p>",
-        unsafe_allow_html=True,
-    )
-    sel = set(st.session_state.get("captcha_sel", []))
-    with st.container(key="captcha_nativo"):
-        for linha in range(3):
-            colunas = st.columns(3, gap="small")
-            for c in range(3):
-                i = linha * 3 + c
-                with colunas[c]:
-                    marcado = "✅ " if i in sel else ""
-                    if st.button(marcado + tiles[i], key=f"captcha_tile_{i}",
-                                 width="stretch"):
-                        nova = set(sel)
-                        nova.symmetric_difference_update({i})
-                        st.session_state["captcha_sel"] = sorted(nova)
-                        st.rerun()
-
-    b1, b2 = st.columns([1, 1])
-    if b1.button("✔️ Confirmar", key="captcha_confirmar", type="primary",
-                 width="stretch"):
-        if _captcha_valido(checar_selecao=True):
-            st.session_state["captcha_ok"] = True
-            st.rerun()
-        else:
-            st.error("Ainda não está certo. Marque as figuras de " + alvo + ".")
-    if b2.button("↻ Trocar", key="captcha_trocar", help="Trocar as figuras",
-                 width="stretch"):
-        st.session_state["captcha_sel"] = []
-        _captcha_novo_desafio()
-        st.rerun()
-
-
-def _captcha_necessario():
-    # Pede a verificação de segurança sempre, em todo login.
-    return True
-
-
-def _captcha_valido(checar_selecao=False):
-    """Já confirmou a verificação? (ou a seleção atual está certa, se pedido)."""
-    if st.session_state.get("captcha_ok"):
-        return True
-    if not checar_selecao:
-        return False
-    sel = set(st.session_state.get("captcha_sel", []))
-    corretos = set(st.session_state.get("captcha_corretos", []))
-    return bool(corretos) and sel == corretos
-
-
-def _definir_idioma():
-    """Marca a página como português para o navegador não oferecer tradução."""
-    if st.session_state.get("_idioma_pt"):
-        return
-    components.html(
-        "<script>"
-        "try { var h = window.parent.document.documentElement;"
-        " h.setAttribute('lang', 'pt-BR'); h.setAttribute('xml:lang', 'pt-BR'); }"
-        " catch (e) {}"
-        "</script>",
-        height=0,
-    )
-    st.session_state["_idioma_pt"] = True
-
-
-_definir_idioma()
-
-
-# ------------------------------------------------- sessao que sobrevive a atualizacao
-# Quando o sistema e atualizado (ou a pagina e recarregada), o app volta para a
-# tela de entrada e o trabalho some. Para resolver, o navegador guarda um
-# "cookie de sessao" assinado: ao voltar, o app entra sozinho.
-_COOKIE_SESSAO = "pecas_sessao"
-_DIAS_SESSAO = 30
-_BUILD = "consulta-processo-tribunal-2026-10-22b"
-
-
-def _cookies_recebidas():
-    """Todos os cookies que o navegador mandou para o servidor."""
-    try:
-        return dict(st.context.cookies)
-    except Exception:
-        return {}
-
-
-def _token_sessao(usuario, admin):
-    return motor.token_sessao(usuario, admin, _DIAS_SESSAO)
-
-
-def _ler_token_sessao(token):
-    """Devolve {usuario, admin} se o cookie for valido; senao None."""
-    return motor.ler_token_sessao(token)
-
-
-def _cookie_sessao():
-    try:
-        if os.environ.get("SPJ_SEM_COOKIE"):
-            # apenas para teste: finge que o servidor nao recebe cookies
-            # (igual acontece na nuvem, onde o proxy nao os repassa)
-            return ""
-        return (st.context.cookies.get(_COOKIE_SESSAO) or "").strip()
-    except Exception:
-        return ""
-
-
-def _token_do_widget():
-    """Token de sessao que o navegador escreveu no campo escondido."""
-    try:
-        return (st.session_state.get("_token_widget") or "").strip()
-    except Exception:
-        return ""
-
-
-# O navegador (ve _JS_SESSAO) le o token guardado no cookie/localStorage e
-# escreve num campo escondido. Isso e necessario porque, na nuvem, o proxy do
-# Streamlit nao repassa os cookies para o servidor: so assim o app consegue
-# lembrar quem entrou depois de dar F5.
-_JS_SESSAO = r"""<script>
-(function () {
-  var P = window.parent;
-  var doc = P.document;
-  var NOME = "__NOME__";
-  var CHAVE = "__CHAVE__";
-
-  function doCookie(qual) {
-    try {
-      var c = qual.cookie || "";
-      var partes = c.split(";");
-      for (var i = 0; i < partes.length; i++) {
-        var p = partes[i].trim();
-        if (p.indexOf(NOME + "=") === 0) return p.substring(NOME.length + 1);
-      }
-    } catch (e) {}
-    return "";
-  }
-
-  function doLocal() {
-    try {
-      var v = P.localStorage.getItem(CHAVE);
-      if (v) return v;
-    } catch (e) {}
-    try {
-      var v2 = window.localStorage.getItem(CHAVE);
-      if (v2) return v2;
-    } catch (e) {}
-    return "";
-  }
-
-  function token() {
-    return doCookie(doc) || doCookie(window.document) || doLocal();
-  }
-
-  function campo() {
-    var c1 = doc.querySelector(".st-key-_token_widget input");
-    if (c1) return c1;
-    var cont = doc.querySelector('[data-testid="st-key-_token_widget"]');
-    if (cont) return cont.querySelector("input");
-    var cont2 = doc.querySelector(".st-key-login_token input");
-    if (cont2) return cont2;
-    return null;
-  }
-
-  function tentar() {
-    try {
-      if (P.__spjTokenEnviado) { return true; }
-      var inp = campo();
-      if (!inp) return false;
-      var t = token();
-      if (!t || t.length < 20) { P.__spjTokenEnviado = true; return true; }
-      var setter = Object.getOwnPropertyDescriptor(P.HTMLInputElement.prototype, "value").set;
-      setter.call(inp, t);
-      inp.dispatchEvent(new P.Event("input", {bubbles: true}));
-      P.__spjTokenEnviado = true;
-    } catch (e) { return false; }
-    return true;
-  }
-
-  // tenta poucas vezes e para: ficar repetindo isso fazia a tela recarregar
-  // sozinha e pular para baixo
-  var tentativas = 0;
-  function ciclo() {
-    tentativas++;
-    var ok = tentar();
-    if (!ok && tentativas < 6) { setTimeout(ciclo, 500); }
-  }
-  try { if (P.scrollTo) P.scrollTo(0, 0); } catch (e) {}
-  setTimeout(ciclo, 100);
-})();
-</script>"""
-
-
-def _gravar_cookie_sessao(usuario, admin):
-    """Manda o navegador lembrar do acesso (30 dias)."""
-    token = _token_sessao(usuario, admin)
-    valor = (_COOKIE_SESSAO + "=" + token + "; max-age=" + str(_DIAS_SESSAO * 24 * 3600)
-             + "; path=/; SameSite=Lax")
-    # escreve no iframe, no pai e na pagina de fora: assim funciona mesmo se o
-    # navegador bloquear o cookie dentro de um dos frames
-    js = ("<script>(function(){var c=" + json.dumps(valor) + ";"
-          "try{document.cookie=c;}catch(e){}"
-          "try{var p=window.parent;for(var i=0;i<6&&p;i++){"
-          "p.document.cookie=c;try{p=p.parent;}catch(x){break;}}}catch(e){}"
-          "})();</script>")
-    try:
-        components.html(js, height=0)
-    except Exception:
-        pass
-    # guarda tambem no localStorage: e o que salva a sessao quando o servidor da
-    # nuvem nao consegue ler os cookies (o proxy nao os repassa)
-    try:
-        components.html(
-            "<script>(function(){try{"
-            "window.parent.localStorage.setItem(" + json.dumps("spj_token") + ","
-            + json.dumps(token) + ");}catch(e){}})();</script>",
-            height=0,
-        )
-    except Exception:
-        pass
-
-
-def _apagar_cookie_sessao():
-    """Esquece o acesso guardado (botao 'Sair do sistema')."""
-    try:
-        components.html(
-            "<script>try { document.cookie = '" + _COOKIE_SESSAO
-            + "=; max-age=0; path=/; SameSite=Lax'; } catch (e) {}</script>"
-            "<script>try { window.parent.localStorage.removeItem('spj_token'); } catch (e) {}</script>",
-            height=0,
-        )
-    except Exception:
-        pass
-
-
-def _marcar_cookie(usuario, admin):
-    """Anota para gravar o cookie na proxima execucao (apos o rerun do login)."""
-    st.session_state["_cookie_pendente"] = (str(usuario or "").strip(), bool(admin))
-
-
-# o botao "Sair do sistema" pede para esquecer o acesso guardado
-_apagando = st.session_state.pop("_cookie_apagar", False)
-if _apagando:
-    _apagar_cookie_sessao()
-    # limpa o token guardado no campo escondido (senao entraria sozinho de novo)
-    try:
-        st.session_state["_token_widget"] = ""
-    except Exception:
-        pass
-else:
-    # ja voltou com o cookie? entao entra direto, sem pedir a senha
-    if not st.session_state.get("autenticado"):
-        _sessao = _ler_token_sessao(_cookie_sessao())
-        if not _sessao:
-            # na nuvem o proxy nao repassa os cookies: o token vem pelo campo
-            # escondido, escrito pelo navegador (ver _JS_SESSAO)
-            _sessao = _ler_token_sessao(_token_do_widget())
-        if _sessao:
-            st.session_state.update(autenticado=True, usuario=_sessao["usuario"],
-                                    admin=_sessao["admin"])
-            _gravar_cookie_sessao(_sessao["usuario"], _sessao["admin"])
-
-
-if not st.session_state.setdefault("autenticado", False):
-    # campo escondido: e por ele que o navegador entrega o token de sessao
-    # quando o servidor nao consegue ler os cookies (nuvem)
-    with st.container(key="login_token"):
-        st.text_input("sessao", key="_token_widget", label_visibility="collapsed",
-                      placeholder="")
-    try:
-        components.html(
-            _JS_SESSAO.replace("__NOME__", _COOKIE_SESSAO).replace("__CHAVE__", "spj_token"),
-            height=0,
-        )
-    except Exception:
-        pass
-    if "msg_abertura" not in st.session_state:
-        st.session_state["msg_abertura"] = random.choice(MENSAGENS_ABERTURA)
-    st.markdown(_CSS_LOGIN, unsafe_allow_html=True)
-    with st.container(key="login_campos"):
-        st.markdown(
-            "<div class='login-head'>"
-            "<div class='login-logo'>⚖️</div>"
-            "<h1 class='login-title'>Sistema de Peças Judiciais</h1>"
-            f"<div class='login-saudacao'>{_saudacao()}!</div>"
-            f"<p class='login-msg'>{html.escape(st.session_state['msg_abertura'])}</p>"
-            "<p class='login-sub'>Acesse com seu usuário e senha.</p>"
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        _precisa_captcha = _captcha_necessario()
-
-        modo_login = st.radio("Acesso", ["Entrar", "Criar conta"], horizontal=True,
-                              key="login_modo", label_visibility="collapsed")
-
-        if modo_login == "Entrar":
-            usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario",
-                                            placeholder="Usuário (ou e-mail)")
-            senha_entrada = st.text_input("Senha de acesso", key="login_senha",
-                                          type="password", placeholder="Senha de acesso",
-                                          autocomplete="new-password")
-            with st.expander("🔑 Esqueceu a senha?"):
-                st.markdown(
-                    "Sem problema. Sua senha não pode ser enviada por e-mail, mas pode ser "
-                    "**redefinida**:\n\n"
-                    "- **Usuário do sistema:** peça ao **administrador** para criar uma nova "
-                    "senha para você (ele faz em **👥 Contas**).\n"
-                    "- **Administrador:** se você esqueceu a sua, redefina em "
-                    "**Streamlit → Manage app → Settings → Secrets** (variável "
-                    "`SENHA_ACESSO`)."
-                )
-            components.html("""
-            <script>
-            (function(){
-                try{
-                    var doc = window.parent.document;
-                    // Remove password suggestions
-                    var inputs = doc.querySelectorAll('input[type="password"]');
-                    inputs.forEach(function(inp){
-                        inp.setAttribute('autocomplete','off');
-                        inp.setAttribute('data-lpignore','true');
-                        inp.setAttribute('data-form-type','other');
-                    });
-                    // Hide password manager icons
-                    var style = doc.createElement('style');
-                    style.textContent = 'input[type="password"]::-ms-reveal, input[type="password"]::-ms-clear { display: none !important; }';
-                    doc.head.appendChild(style);
-                }catch(e){}
-            })();
-            </script>
-            """, height=0)
-            if _precisa_captcha:
-                _captcha_render()
-            entrar = st.button("Entrar", type="primary", key="login_entrar", width="stretch")
-
-            if not motor.senha_ativa() or not motor.usuario_acesso():
-                st.info("Primeiro acesso do administrador: defina abaixo o usuário e a senha.")
-                with st.form("primeira_senha"):
-                    u_novo = st.text_input("Usuário (ex.: admin)", key="u_novo")
-                    s1 = st.text_input("Nova senha (mínimo 4 caracteres)", type="password", key="s1", autocomplete="new-password")
-                    s2 = st.text_input("Repita a nova senha", type="password", key="s2", autocomplete="new-password")
-                    definir = st.form_submit_button("Definir acesso e entrar")
-                    if definir:
-                        if not s1 or s1 != s2:
-                            st.error("As senhas não conferem.")
-                        else:
-                            try:
-                                motor.definir_acesso(u_novo, s1)
-                                st.session_state.update(autenticado=True, usuario=u_novo.strip(), admin=True)
-                                _marcar_cookie(u_novo.strip(), True)
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Não deu para definir o acesso: {e}")
-        else:
-            st.caption("Crie sua conta. Ela será liberada depois que o administrador aprovar.")
-            if _precisa_captcha:
-                _captcha_render()
-            with st.form("cadastro_form"):
-                cad_nome = st.text_input("Nome completo", key="cad_nome")
-                cad_usuario = st.text_input("E-mail (será seu usuário)", key="cad_usuario")
-                cad_s1 = st.text_input("Senha (mínimo 6 caracteres)", type="password", key="cad_s1", autocomplete="new-password")
-                cad_s2 = st.text_input("Repita a senha", type="password", key="cad_s2", autocomplete="new-password")
-                criar = st.form_submit_button("Criar conta", type="primary", width="stretch")
-
-        # O olhinho de mostrar/ocultar a senha e o nativo do Streamlit,
-        # que aparece sozinho nos campos type="password".
-
-    if modo_login == "Entrar" and entrar:
-        if _precisa_captcha and not _captcha_valido():
-            st.error("Para entrar, marque as figuras corretas na verificação de segurança.")
-        elif motor.verificar_acesso(usuario_entrada, senha_entrada):
-            _usuario_admin = motor.usuario_acesso() or usuario_entrada.strip()
-            st.session_state.update(autenticado=True, admin=True, usuario=_usuario_admin)
-            _marcar_cookie(_usuario_admin, True)
-            st.rerun()
-        else:
-            resultado = usuarios.autenticar(usuario_entrada, senha_entrada)
-            if resultado == usuarios.OK:
-                st.session_state.update(autenticado=True, admin=False, usuario=usuario_entrada.strip())
-                _marcar_cookie(usuario_entrada.strip(), False)
-                st.rerun()
-            elif resultado == usuarios.PENDENTE:
-                st.warning("Sua conta foi criada, mas ainda aguarda a **aprovação** do administrador.")
-            else:
-                st.error("Usuário ou senha incorretos.")
-    elif modo_login == "Criar conta" and criar:
-        if _precisa_captcha and not _captcha_valido():
-            st.error("Para criar a conta, faça a verificação de segurança acima.")
-        elif cad_s1 != cad_s2:
-            st.error("As senhas não conferem.")
-        else:
-            try:
-                usuarios.criar(cad_nome, cad_usuario, cad_s1)
-                st.success("Conta criada! Aguarde a aprovação do administrador para entrar.")
-            except ValueError as e:
-                st.error(str(e))
-            except Exception as e:
-                st.error(f"Não foi possível criar a conta: {e}")
-
-    # marcacao da versao + diagnostico ( invisivel para o usuario normal)
-    st.markdown("<div style='display:none' data-build='" + _BUILD + "'></div>",
-                unsafe_allow_html=True)
-    _ck = _cookies_recebidas()
-    if _ck.get("spj_diag") or st.query_params.get("diag"):
-        _tok = _token_do_widget()
-        st.info("DIAG build=" + _BUILD + " | cookies recebidos: "
-                + (", ".join(sorted(_ck)) or "(nenhum)")
-                + " | token no campo oculto: "
-                + (("sim (%d)" % len(_tok)) if _tok else "(nao)"))
-
-    st.stop()
-
-# grava o cookie de sessao (agora que o app ja entrou): assim, ao atualizar a
-# pagina ou o sistema, ele volta direto para dentro, sem pedir a senha de novo
-_pendente_cookie = st.session_state.pop("_cookie_pendente", None)
-if _pendente_cookie:
-    _gravar_cookie_sessao(_pendente_cookie[0], _pendente_cookie[1])
-    st.session_state["_cookie_conferido"] = False
-elif st.session_state.get("_cookie_conferido") is False:
-    # na execucao seguinte o cookie ja deveria ter chegado no servidor
-    st.session_state["_cookie_conferido"] = True
-    if not _cookie_sessao():
-        st.warning(
-            "⚠️ O seu navegador está bloqueando cookies: se você atualizar a página, "
-            "vai ter que entrar de novo. Permita cookies para este site "
-            "(cadeado ao lado do endereço) e entre mais uma vez.",
-            icon="⚠️",
-        )
-
-# tema visual do interior (aplicado só depois do login)
 st.markdown(_CSS_TEMA, unsafe_allow_html=True)
 
 
 def alerta(nivel, msg):
-    icone = {"erro": "❌", "aviso": "⚠️", "ok": "✅"}.get(nivel, "•")
+    icone = {"erro": "�", "aviso": "⚠️", "ok": "✅"}.get(nivel, "•")
     st.markdown(f"{icone} {msg}")
 
 
@@ -1216,7 +375,7 @@ def alerta(nivel, msg):
 # (**negrito**, _itálico_...) vão junto para a IA e aparecem formatadas na
 # pré-visualização.
 #
-# Esta folha de estilo vai para a PÁGINA DE FORA (a barra e a paletinha de cores
+# Esta folha de estilo vai para a P�GINA DE FORA (a barra e a paletinha de cores
 # são criadas no documento principal, não dentro do app): por isso o CSS usa
 # cores fixas, e não as variáveis do tema.
 _CSS_BARRA = """
@@ -2282,7 +1441,7 @@ def _aplicar_correcao_pendente():
         return
     st.session_state["narrativa"] = novo
     _salvar_rascunho(forcar=True)
-    st.session_state["_corr_msg"] = f"✅ Corrigido: “{errado}” → “{certo}”"
+    st.session_state["_corr_msg"] = f"✅ Corrigido: “{errado}� → “{certo}�"
     _sync_backup_navegador(novo)
 
 
@@ -2306,10 +1465,10 @@ def complementos_cidade(prefixo):
     c5, c6 = st.columns([3, 1])
     uf = st.session_state.get(f"{prefixo}_uf", "—")
     lista = MUNICIPIOS.get(SIGLA_UF.get(uf, ""), []) if uf != "—" else []
-    opcoes = ["—"] + lista + (["✏️ outra (digitar)"] if uf != "—" else [])
+    opcoes = ["—"] + lista + (["�� outra (digitar)"] if uf != "—" else [])
     c5.selectbox("Cidade", opcoes, key=f"{prefixo}_cidade")
     c6.selectbox("UF", OPCOES_UF, key=f"{prefixo}_uf")
-    if st.session_state.get(f"{prefixo}_cidade", "") == "✏️ outra (digitar)":
+    if st.session_state.get(f"{prefixo}_cidade", "") == "�� outra (digitar)":
         st.text_input("Digite a cidade", key=f"{prefixo}_cidade_livre", placeholder="Nome da cidade")
 
 
@@ -2323,9 +1482,9 @@ def _endereco_resumo(prefixo):
     if bairro:
         partes.append(f"bairro {bairro}")
     cidade = _g(f"{prefixo}_cidade")
-    if cidade == "✏️ outra (digitar)":
+    if cidade == "�� outra (digitar)":
         cidade = _g(f"{prefixo}_cidade_livre") or cidade
-    if cidade and cidade != "✏️ outra (digitar)":
+    if cidade and cidade != "�� outra (digitar)":
         uf = SIGLA_UF.get(_g(f"{prefixo}_uf"), _g(f"{prefixo}_uf"))
         partes.append(cidade + (f" – {uf}" if uf else ""))
     cep = _g(f"{prefixo}_cep")
@@ -2390,9 +1549,9 @@ def _endereco_resumo_parte(prefixo, indice):
     if bairro:
         partes.append(f"bairro {bairro}")
     cidade = str(st.session_state.get(f"{prefixo}_cidade_{indice}", "") or "").strip()
-    if cidade == "✏️ outra (digitar)":
+    if cidade == "�� outra (digitar)":
         cidade = str(st.session_state.get(f"{prefixo}_cidade_livre_{indice}", "") or "").strip() or cidade
-    if cidade and cidade != "✏️ outra (digitar)":
+    if cidade and cidade != "�� outra (digitar)":
         ufv = str(st.session_state.get(f"{prefixo}_uf_{indice}", "") or "").strip()
         uf = SIGLA_UF.get(ufv, ufv)
         partes.append(cidade + (f" – {uf}" if uf and uf != "—" else ""))
@@ -2445,10 +1604,10 @@ def _cadastro_parte(prefixo, rotulo, indice=0):
         c5, c6 = st.columns([3, 1])
         uf = st.session_state.get(f"{prefixo}_uf_{indice}", "—")
         lista = MUNICIPIOS.get(SIGLA_UF.get(uf, ""), []) if uf != "—" else []
-        opcoes = ["—"] + lista + (["✏️ outra (digitar)"] if uf != "—" else [])
+        opcoes = ["—"] + lista + (["�� outra (digitar)"] if uf != "—" else [])
         c5.selectbox("Cidade", opcoes, key=f"{prefixo}_cidade_{indice}")
         c6.selectbox("UF", OPCOES_UF, key=f"{prefixo}_uf_{indice}")
-        if st.session_state.get(f"{prefixo}_cidade_{indice}", "") == "✏️ outra (digitar)":
+        if st.session_state.get(f"{prefixo}_cidade_{indice}", "") == "�� outra (digitar)":
             st.text_input("Digite a cidade", key=f"{prefixo}_cidade_livre_{indice}", placeholder="Nome da cidade")
         st.text_input("Complemento (apto/bloco, e-mail...)", key=f"{prefixo}_compl_{indice}")
 
@@ -2653,14 +1812,14 @@ def _backup_testar():
         return False, f"Backup indisponível: {e}"
 
 
-st.title("⚖️ Sistema de Peças Judiciais")
+st.title("⚖� Sistema de Peças Judiciais")
 st.caption("A IA só cita o que está na BASE LEGAL. Confira sempre os alertas antes de protocolar.")
 
 if motor.modo_uso()["uso_pago"]:
     st.success("🔒 Conta declarada como **paga/Vertex**: o provedor não usa seus dados para treinar modelos.", icon="🔒")
 else:
     st.warning(
-        "⚠️ **Modo gratuito**: a cota grátis do Gemini PODE usar seus dados para treinamento e ser lida por "
+        "⚠� **Modo gratuito**: a cota grátis do Gemini PODE usar seus dados para treinamento e ser lida por "
         "revisores humanos. Para dados reais de cliente, mantenha o **Modo seguro** ligado (lateral) e/ou "
         "ative faturamento ou use Vertex AI nas **Configurações**."
     )
@@ -2668,7 +1827,7 @@ else:
 # ------------------------------------------------------------------ barra lateral
 with st.sidebar:
     st.markdown(
-        "<div style='text-align:center; font-size:34px; line-height:1; margin-bottom:4px;'>⚖️</div>",
+        "<div style='text-align:center; font-size:34px; line-height:1; margin-bottom:4px;'>⚖�</div>",
         unsafe_allow_html=True,
     )
     st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
@@ -2698,7 +1857,7 @@ with st.sidebar:
                     if b1.button("✅ Aprovar", key=f"aprov_{u.get('usuario')}", width="stretch"):
                         usuarios.aprovar(u.get("usuario"))
                         st.rerun()
-                    if b2.button("🗑️ Recusar", key=f"recus_{u.get('usuario')}", width="stretch"):
+                    if b2.button("🗑� Recusar", key=f"recus_{u.get('usuario')}", width="stretch"):
                         usuarios.remover(u.get("usuario"))
                         st.rerun()
             else:
@@ -2728,7 +1887,7 @@ with st.sidebar:
                                 st.error(f"Não foi possível redefinir: {e}")
         st.divider()
 
-    st.header("📁 Casos salvos")
+    st.header("� Casos salvos")
     casos = motor.listar_casos(_dono())
     if casos:
         escolhido = st.selectbox("Abrir caso", ["—"] + casos, key="caso_escolhido")
@@ -2770,7 +1929,7 @@ with st.sidebar:
             st.rerun()
 
     st.divider()
-    st.subheader("📝 Gerar peça")
+    st.subheader("� Gerar peça")
     modelo_nome = st.selectbox("Modelo da peça", motor.listar_modelos(), key="modelo_nome",
                                placeholder="Escolha o modelo da peça")
     st.caption("Sugerido conforme os fatos; você pode trocar.")
@@ -2780,10 +1939,10 @@ with st.sidebar:
         for item in motor.carregar_base(base_nome):
             st.markdown(f"**{item['referencia']}** — status: `{item['status']}`")
             st.write(item["texto"])
-    if st.button("📝 Gerar a peça", type="primary", width="stretch"):
+    if st.button("� Gerar a peça", type="primary", width="stretch"):
         fatos = st.session_state["fatos_edit"]
         if not fatos.strip():
-            st.warning("Não há fatos ainda. Preencha o relato e use 'Limpar fatos' na aba 2️⃣.")
+            st.warning("Não há fatos ainda. Preencha o relato e use 'Limpar fatos' na aba 2�⃣.")
         else:
             st.session_state.update(peca_edit="", alertas=[], usadas=[])
             st.session_state.pop("export_docx", None)
@@ -2814,15 +1973,15 @@ with st.sidebar:
         else:
             caminho = motor.salvar_caso(nome_limpo, _dados_caso(), _dono())
             st.session_state["_caso_id"] = "caso_" + caminho.stem
-            st.success(f"Salvo como **{caminho.stem}** — está em 📁 Casos salvos.")
+            st.success(f"Salvo como **{caminho.stem}** — está em � Casos salvos.")
 
     st.divider()
-    st.subheader("🛡️ Segurança (LGPD)")
+    st.subheader("🛡� Segurança (LGPD)")
     st.checkbox("Modo seguro: anonimizar antes de enviar", value=True, key="modo_seguro",
                 help="Troca nomes, CPF, e-mails etc. por marcadores antes de enviar à IA e restaura na peça final.")
 
     st.divider()
-    with st.expander("⚙️ Configurações do provedor"):
+    with st.expander("⚙� Configurações do provedor"):
         _m = motor.modo_uso()
         pago = st.selectbox("A conta Google tem faturamento (pago)?", ["não", "sim"],
                             index=1 if _m["uso_pago"] else 0, key="cfg_pago",
@@ -2843,7 +2002,7 @@ with st.sidebar:
             st.success("Configurações salvas no .env.")
             st.rerun()
 
-    with st.expander("☁️ Backup na nuvem (nuvem → seu PC)"):
+    with st.expander("�� Backup na nuvem (nuvem → seu PC)"):
         _bk = _backup_status()
         if _bk.get("ativo"):
             _prov = _bk.get("provedor") or "nuvem"
@@ -2860,7 +2019,7 @@ with st.sidebar:
                     "**GOOGLE_REFRESH_TOKEN**. Configure nos *Secrets* (nuvem) ou no `.env` (PC). "
                     "O passo a passo está no arquivo LEIA-ME.")
 
-    with st.expander("🗝️ Trocar usuário / senha"):
+    with st.expander("�� Trocar usuário / senha"):
         st.caption("O acesso fica gravado no .env (senha com hash; vale também para a nuvem).")
         novo_usuario = st.text_input("Usuário", value=st.session_state.get("usuario", ""),
                                      key="acesso_usuario")
@@ -2892,7 +2051,7 @@ if st.session_state.get("modo_seguro", True):
 
 # ------------------------------------------------------------------ componentes
 def aba_base():
-    st.subheader("🗂️ Curadoria da base legal")
+    st.subheader("🗂� Curadoria da base legal")
     st.caption("Só o que estiver aqui pode ser citado. Mantenha o status em 'verificado' após conferir o texto oficial.")
     bases = motor.listar_bases()
     if not bases:
@@ -2902,12 +2061,12 @@ def aba_base():
     itens = motor.carregar_base(base_nome)
     df = pd.DataFrame(itens or [{"id": "", "referencia": "", "status": "conferir", "texto": "", "fonte": ""}])
     df.insert(0, "apagar", False)
-    st.caption("Para tirar um item que você não quer mais: marque a caixa **🗑️ apagar** e clique em "
-               "**🗑️ Apagar marcados**. Você também pode adicionar novas linhas ao fim da tabela.")
+    st.caption("Para tirar um item que você não quer mais: marque a caixa **🗑� apagar** e clique em "
+               "**🗑� Apagar marcados**. Você também pode adicionar novas linhas ao fim da tabela.")
     editado = st.data_editor(
         df, num_rows="dynamic", width="stretch", hide_index=True,
         column_config={
-            "apagar": st.column_config.CheckboxColumn("🗑️ apagar", default=False, width="small"),
+            "apagar": st.column_config.CheckboxColumn("🗑� apagar", default=False, width="small"),
             "status": st.column_config.SelectboxColumn("status", options=list(motor.STATUS_VALIDOS), required=True),
             "texto": st.column_config.TextColumn("texto", width="large"),
             "fonte": st.column_config.LinkColumn("fonte"),
@@ -2933,9 +2092,9 @@ def aba_base():
     if c1.button("💾 Salvar base", type="primary"):
         if _ids_ok(restantes) and tentar(motor.salvar_base, base_nome, restantes) is not None:
             st.success("Base salva.")
-    if c2.button("🗑️ Apagar marcados"):
+    if c2.button("🗑� Apagar marcados"):
         if not any(marcados):
-            st.info("Marque ao menos um item na coluna **🗑️ apagar** para apagar.")
+            st.info("Marque ao menos um item na coluna **🗑� apagar** para apagar.")
         elif tentar(motor.salvar_base, base_nome, restantes) is not None:
             st.success(f"{sum(marcados)} item(ns) apagado(s).")
             st.rerun()
@@ -2948,7 +2107,7 @@ def aba_base():
         st.divider()
         st.caption(f"Apagar a base **{base_nome}** inteira. Esta ação não volta.")
         conf_base = st.checkbox(f"Confirmo apagar '{base_nome}'", key="conf_apagar_base")
-        if st.button("🗑️ Apagar base inteira", disabled=not conf_base):
+        if st.button("🗑� Apagar base inteira", disabled=not conf_base):
             if tentar(motor.apagar_base, base_nome) is not None:
                 st.success(f"Base '{base_nome}' apagada.")
                 st.rerun()
@@ -3009,11 +2168,10 @@ def aba_decisoes():
         "Pesquisa de jurisprudência nas **fontes oficiais** (STJ, STF, TST, TJs...) e atalhos. "
         "O sistema só reúne e organiza — confira sempre no site oficial antes de citar."
     )
-    t_stj, t_links = st.tabs(
-        ["🔎 Pesquisar jurisprudência", "🔗 Atalhos oficiais"]
-    )
-
-    with t_stj:
+    with st.sidebar:
+        st.markdown("#### Decisoes")
+        subaba = st.radio("Secao", ["Pesquisar jurisprudencia", "Atalhos oficiais"], key="sub_decisoes", label_visibility="collapsed")
+    if subaba == "Pesquisar jurisprudencia":
         st.caption("Escolha **onde pesquisar** e, se quiser, os **termos** do caso. O botão abre a "
                    "pesquisa **oficial** de jurisprudência no site do órgão escolhido.")
         fonte = st.selectbox("Onde pesquisar", decisoes.FONTES_JURIS, key="jur_fonte")
@@ -3081,7 +2239,7 @@ def aba_decisoes():
                 if mostrados == 0:
                     st.info("Nenhuma decisão casou com o filtro.")
 
-    with t_links:
+    elif subaba == "Atalhos oficiais":
         st.markdown("### 📚 Buscar legislação")
         st.caption("Digite o assunto, o nome do código ou a lei (ex.: civil, penal, trabalho, "
                    "consumidor, licitação, improbidade...). O botão abre o **texto oficial** no Planalto.")
@@ -3133,7 +2291,7 @@ def aba_processos():
                                key=f"dj_numero_{st.session_state.get('dj_versao', 0)}",
                                placeholder="ex.: 3000867-89.2026.8.06.0000")
         b1, b2 = st.columns([2, 1])
-        consultar = b1.button("🔍 Consultar processo", type="primary")
+        consultar = b1.button("� Consultar processo", type="primary")
         if b2.button("🧹 Limpar / nova consulta"):
             st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
             st.session_state.pop("dj_procs", None)
@@ -3171,7 +2329,7 @@ def aba_processos():
         procs = st.session_state.get("dj_procs") or []
         consultou = bool(st.session_state.get("dj_consultou"))
         if not procs and not st.session_state.get("dj_erro") and not consultou:
-            st.info("Digite o número e clique em **🔍 Consultar processo**.")
+            st.info("Digite o número e clique em **� Consultar processo**.")
         alias_uso = st.session_state.get("dj_alias") or alias
         if procs and alias_uso != alias:
             st.info("✅ O processo foi encontrado no **%s**. (O número do processo "
@@ -3228,7 +2386,7 @@ def aba_processos():
                                    key=f"dj_nome_{st.session_state.get('dj_versao', 0)}",
                                    placeholder="ex.: Maria da Silva")
         n1, n2 = st.columns([2, 1])
-        if n1.button("🔍 Buscar por nome", type="primary"):
+        if n1.button("� Buscar por nome", type="primary"):
             st.session_state["dj_nome_busca"] = nome_parte.strip()
         if n2.button("🧹 Limpar / nova busca"):
             st.session_state["dj_versao"] = st.session_state.get("dj_versao", 0) + 1
@@ -3239,7 +2397,7 @@ def aba_processos():
             with st.spinner("Procurando o nome nos sites oficiais..."):
                 achados = _buscar_nome_esaj(alias, alvo)
             if achados:
-                st.success(f"✅ Encontrei {len(achados)} processo(s) em nome de “{alvo}” "
+                st.success(f"✅ Encontrei {len(achados)} processo(s) em nome de “{alvo}� "
                            f"no e-SAJ:")
                 for numero in achados[:10]:
                     st.markdown(f"**{numero}**")
@@ -3250,13 +2408,13 @@ def aba_processos():
                     st.caption(f"Mostrando 10 de {len(achados)}. Refine o nome para ver menos.")
             else:
                 if achados is not None:
-                    st.warning(f"Não encontrei “{alvo}” no e-SAJ. Procure no PJe:")
+                    st.warning(f"Não encontrei “{alvo}� no e-SAJ. Procure no PJe:")
                 links = _links_processo_nome(alias, alvo)
                 colunas = st.columns(len(links))
                 for coluna, (rotulo_link, url_link) in zip(colunas, links):
                     coluna.link_button(rotulo_link, url_link)
         else:
-            st.info("Digite o nome da parte e clique em **🔍 Buscar por nome**.")
+            st.info("Digite o nome da parte e clique em **� Buscar por nome**.")
 
 
 def exportar(texto):
@@ -3275,15 +2433,23 @@ def exportar(texto):
         caminho = st.session_state.get(chave)
         if caminho and Path(caminho).exists():
             p = Path(caminho)
-            coluna.download_button(f"⬇️ Baixar {p.suffix}", p.read_bytes(),
+            coluna.download_button(f"⬇� Baixar {p.suffix}", p.read_bytes(),
                                    file_name=p.name, key=f"dl_{chave}")
 
 
-# ------------------------------------------------------------------ abas principais
-aba_caso, aba_fatos, aba_peca, aba_conf, aba_base_ui, aba_anexo, aba_decisoes_ui, aba_processos_ui, aba_chat = st.tabs(
-    ["1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência", "🗂️ Base legal", "📎 Anexo/Análise",
-     "📰 Decisões & Processos", "📌 Acompanhar processo", "💬 Chat IA"]
-)
+# ------------------------------------------------------------------ navegacao principal
+st.sidebar.markdown("### Navegacao")
+menu_opcoes = ["1) Caso", "2) Fatos", "3) Peca", "4) Conferencia", "Base legal", "Anexo/Analise", "Decisoes & Processos", "Acompanhar processo", "Chat IA"]
+aba_selecionada = st.sidebar.radio("Ir para", menu_opcoes, label_visibility="collapsed", key="menu_navegacao")
+aba_caso = st.container() if aba_selecionada == "1) Caso" else None
+aba_fatos = st.container() if aba_selecionada == "2) Fatos" else None
+aba_peca = st.container() if aba_selecionada == "3) Peca" else None
+aba_conf = st.container() if aba_selecionada == "4) Conferencia" else None
+aba_base_ui = st.container() if aba_selecionada == "Base legal" else None
+aba_anexo = st.container() if aba_selecionada == "Anexo/Analise" else None
+aba_decisoes_ui = st.container() if aba_selecionada == "Decisoes & Processos" else None
+aba_processos_ui = st.container() if aba_selecionada == "Acompanhar processo" else None
+aba_chat = st.container() if aba_selecionada == "Chat IA" else None
 
 with aba_caso:
     st.subheader("Dados da peça")
@@ -3355,7 +2521,7 @@ with aba_anexo:
                     st.session_state["analise_alertas"] = conf["alertas"]
     if st.session_state["analise_doc"]:
         c1, c2 = st.columns([1, 4])
-        if c1.button("🗑️ Apagar relatório", width="stretch"):
+        if c1.button("🗑� Apagar relatório", width="stretch"):
             st.session_state["analise_doc"] = ""
             st.session_state["analise_alertas"] = []
             st.rerun()
@@ -3368,13 +2534,13 @@ with aba_anexo:
             with st.expander("Alertas da conferência"):
                 for n, m in st.session_state["analise_alertas"]:
                     alerta(n, m)
-        st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba 🗂️ Base legal (status 'verificado').")
+        st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba 🗂� Base legal (status 'verificado').")
 
 with aba_fatos:
     st.subheader("Relato do cliente")
     if st.session_state.get("_rascunho_msg"):
         st.info(st.session_state.pop("_rascunho_msg"), icon="💾")
-    audio = st.audio_input("🎙️ Grave o relato (opcional)")
+    audio = st.audio_input("🎙� Grave o relato (opcional)")
     if audio is not None and st.button("Transcrever"):
         with st.status("Transcrevendo...", expanded=False) as s:
             texto = tentar(motor.transcrever_audio, audio.getvalue(), audio.type or "audio/wav")
@@ -3390,19 +2556,19 @@ with aba_fatos:
                 _chave_backup_relato())
     _aplicar_correcao_pendente()
     if st.session_state.get("_corr_msg"):
-        st.success(st.session_state.pop("_corr_msg"), icon="✍️")
+        st.success(st.session_state.pop("_corr_msg"), icon="��")
     st.text_area("Relato (dite ou escreva o que o cliente contou)", key="narrativa", height=150,
                  placeholder="Digite seu texto aqui")
     c_prev, c_aviso = st.columns([1, 3])
-    if c_prev.checkbox("👁 Ver com formatação", key="relato_preview"):
+    if c_prev.checkbox("� Ver com formatação", key="relato_preview"):
         with st.container(border=True):
             st.markdown(previa_texto(st.session_state.get("narrativa", "")),
                         unsafe_allow_html=True)
     c_aviso.caption("💾 Salvo sozinho enquanto você digita (no seu navegador e no sistema). "
                     "Pode deixar o sistema aberto sem medo de perder o que escreveu.")
-    st.caption("✍️ **Palavra errada?** Ela fica **sublinhada em vermelho** no campo acima: "
+    st.caption("�� **Palavra errada?** Ela fica **sublinhada em vermelho** no campo acima: "
                "clique com o botão direito na palavra e escolha a correção sugerida. "
-               "Exemplo: “A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026…”")
+               "Exemplo: “A cliente comprou passagem de Fortaleza para São Paulo no dia 10/03/2026…�")
 
     if st.button("🔤 Revisar minha escrita com a IA", key="btn_revisar_escrita"):
         st.session_state["_correcoes"] = []
@@ -3426,14 +2592,14 @@ with aba_fatos:
                 "Clique no que quer corrigir:")
         for i, achado in enumerate(achados[:12]):
             col1, col2 = st.columns([3, 4])
-            if col1.button(f"❌ {achado['errado']}  →  ✅ {achado['certo']}", key=f"corr_{i}"):
+            if col1.button(f"� {achado['errado']}  →  ✅ {achado['certo']}", key=f"corr_{i}"):
                 st.session_state["_corr_pendente"] = (achado["errado"], achado["certo"])
                 st.rerun()
             col2.caption(achado.get("motivo", ""))
     elif st.session_state.get("_revisou"):
         st.success("✅ Não encontrei erros de escrita no relato.")
 
-    if st.button("✍️ Corrigir e organizar fatos (gramática/ABNT)", type="primary"):
+    if st.button("�� Corrigir e organizar fatos (gramática/ABNT)", type="primary"):
         if not st.session_state["narrativa"].strip():
             st.warning("Escreva ou dite o relato primeiro.")
         else:
@@ -3461,10 +2627,10 @@ with aba_fatos:
                      placeholder="O texto corrigido e organizado em parágrafos aparece aqui — pode editar à vontade")
 
     st.divider()
-    st.subheader("📝 Gerar peça nesta aba")
+    st.subheader("� Gerar peça nesta aba")
     modelo_nome = st.session_state.get("modelo_nome") or (motor.listar_modelos()[0] if motor.listar_modelos() else "")
     base_nome = st.session_state.get("base_nome") or (motor.listar_bases()[0] if motor.listar_bases() else None)
-    if st.button("📝 Gerar a peça", type="primary", use_container_width=True):
+    if st.button("� Gerar a peça", type="primary", use_container_width=True):
         fatos = st.session_state.get("fatos_edit") or ""
         if not fatos.strip():
             st.warning("Corrija/organize os fatos primeiro ou cole o relato corrigido acima.")
@@ -3530,22 +2696,22 @@ with aba_fatos:
 with aba_peca:
     st.subheader("Peça gerada (edite à vontade)")
     if not st.session_state["peca_edit"]:
-        st.info("Gere a peça na aba 2️⃣.")
+        st.info("Gere a peça na aba 2�⃣.")
     else:
         texto = st.text_area("Texto da peça", key="peca_edit", height=520,
                          placeholder="A peça aparece aqui — pode corrigir antes de exportar")
         exportar(texto)
 
 with aba_conf:
-    st.subheader("🔍 Sugestões de jurisprudência (conferir)")
+    st.subheader("� Sugestões de jurisprudência (conferir)")
     st.warning(
         "A IA sugere **fontes para você CONFERIR** na origem. Nada entra na peça automaticamente. "
         "Confirme tribunal, número e tese no site oficial antes de citar."
     )
-    if st.button("🔍 Buscar sugestões conforme os fatos", type="primary"):
+    if st.button("� Buscar sugestões conforme os fatos", type="primary"):
         fatos = st.session_state["fatos_edit"]
         if not fatos.strip():
-            st.warning("Organize os fatos primeiro (aba 2️⃣).")
+            st.warning("Organize os fatos primeiro (aba 2�⃣).")
         else:
             bases = motor.listar_bases()
             base_nome = st.session_state.get("base_nome") or (bases[0] if bases else None)
@@ -3558,7 +2724,7 @@ with aba_conf:
                 st.session_state["juris_sugerida"] = texto
     if st.session_state["juris_sugerida"]:
         c1, c2 = st.columns([1, 4])
-        if c1.button("🗑️ Apagar sugestões", width="stretch"):
+        if c1.button("🗑� Apagar sugestões", width="stretch"):
             st.session_state["juris_sugerida"] = ""
             st.rerun()
         c2.caption("Você pode editar ou remover sugestões direto no quadro abaixo.")
@@ -3577,7 +2743,7 @@ with aba_conf:
                 if it["busca"]:
                     st.markdown(f"**Busca:** {it['busca']}")
                 st.link_button("🔎 Abrir busca na fonte oficial", it["url"])
-        st.caption("Depois de conferir no site oficial, cadastre na aba 🗂️ Base legal com status "
+        st.caption("Depois de conferir no site oficial, cadastre na aba 🗂� Base legal com status "
                    "'verificado' para a IA poder citar na peça.")
     st.divider()
     aba_conferencia()
@@ -3595,7 +2761,7 @@ with aba_chat:
     st.subheader("💬 Conversar com a IA")
     st.caption("Tire dúvidas e pesquise sobre o processo. A IA é apoio — confira sempre as fontes oficiais.")
     c1, c2 = st.columns([1, 4])
-    if c1.button("🗑️ Limpar conversa", width="stretch"):
+    if c1.button("🗑� Limpar conversa", width="stretch"):
         st.session_state["chat_hist"] = []
         st.rerun()
     c2.checkbox("Incluir os dados e os fatos deste caso no contexto", value=True,
