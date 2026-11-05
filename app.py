@@ -325,29 +325,44 @@ _CSS_TEMA = """
 * { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important; }
 .stApp, [data-testid="stAppViewContainer"] { background: var(--fundo) !important; }
 [data-testid="stSidebar"] {
-    background: #FFFFFF !important;
-    border-right: 1px solid #e0e7ef !important;
-    box-shadow: 1px 0 4px rgba(0,0,0,0.04);
+    background: #ffffff !important;
+    border-right: 1px solid #e5e7eb !important;
 }
-[data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p,
-[data-testid="stSidebar"] label, [data-testid="stSidebar"] span, [data-testid="stSidebar"] div { color: #374151 !important; }
-[data-testid="stSidebar"] .stMarkdown h3, [data-testid="stSidebar"] h3 { color: #111827 !important; font-size: 1rem !important; font-weight: 600 !important; margin-bottom: 8px !important; }
-[data-testid="stSidebar"] a { color: #1F4E78 !important; }
-[data-testid="stSidebar"] hr { border-color: #e5e7eb !important; margin: 12px 0 !important; }
-[data-testid="stSidebar"] [role="radiogroup"] { gap: 2px; }
-[data-testid="stSidebar"] [role="radiogroup"] label {
-    padding: 10px 12px !important; border-radius: 8px !important; margin-bottom: 0 !important;
-    transition: all 0.15s ease !important; color: #374151 !important; font-weight: 500 !important;
-    border: 1px solid transparent !important; background: transparent !important;
+[data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
+    color: #374151 !important;
 }
-[data-testid="stSidebar"] [role="radiogroup"] label * { color: #374151 !important; }
-[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: #f3f4f6 !important; color: #111827 !important; }
-[data-testid="stSidebar"] [role="radiogroup"] label:hover * { color: #111827 !important; }
-[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
-    background: #eff6ff !important; color: #1F4E78 !important; font-weight: 600 !important;
-    border-color: #bfdbfe !important;
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+    color: #111827 !important;
 }
-[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) * { color: #1F4E78 !important; }
+[data-testid="stSidebar"] hr { border-color: #e5e7eb !important; }
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    padding: 8px 10px !important;
+    border-radius: 6px !important;
+    margin: 2px 0 !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background: #f3f4f6 !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="select"] > div,
+[data-testid="stSidebar"] div[data-baseweb="input"],
+[data-testid="stSidebar"] [role="combobox"] {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+}
+[data-testid="stSidebar"] div[data-baseweb="select"] *,
+[data-testid="stSidebar"] div[data-baseweb="input"] *,
+[data-testid="stSidebar"] [role="combobox"] * {
+    color: #1f2937 !important;
+    -webkit-text-fill-color: #1f2937 !important;
+}
+[data-testid="stSidebar"] button[data-testid^="stBaseButton-"] {
+    background: #f9fafb !important;
+    color: #374151 !important;
+    border: 1px solid #d1d5db !important;
+}
+[data-testid="stSidebar"] button[data-testid^="stBaseButton-"]:hover {
+    background: #f3f4f6 !important;
+}
 h1, h2, h3 { color: #101828 !important; font-weight: 600 !important; letter-spacing: -0.01em; }
 [data-testid="stMarkdownContainer"] a { color: var(--link) !important; }
 hr { border-color: var(--border) !important; }
