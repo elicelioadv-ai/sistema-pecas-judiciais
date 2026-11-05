@@ -325,21 +325,29 @@ _CSS_TEMA = """
 * { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important; }
 .stApp, [data-testid="stAppViewContainer"] { background: var(--fundo) !important; }
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #1F4E78 0%, #153a5c 100%) !important;
-    border-right: none !important;
-    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    background: #FFFFFF !important;
+    border-right: 1px solid #e0e7ef !important;
+    box-shadow: 1px 0 4px rgba(0,0,0,0.04);
 }
-[data-testid="stSidebar"] * { color: var(--texto-menu); }
-[data-testid="stSidebar"] a { color: #FFFFFF !important; }
-[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,0.12) !important; }
 [data-testid="stSidebar"] .stMarkdown, [data-testid="stSidebar"] p,
-[data-testid="stSidebar"] div, [data-testid="stSidebar"] span { color: var(--texto-menu-sec) !important; }
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] span, [data-testid="stSidebar"] div { color: #374151 !important; }
+[data-testid="stSidebar"] .stMarkdown h3, [data-testid="stSidebar"] h3 { color: #111827 !important; font-size: 1rem !important; font-weight: 600 !important; margin-bottom: 8px !important; }
+[data-testid="stSidebar"] a { color: #1F4E78 !important; }
+[data-testid="stSidebar"] hr { border-color: #e5e7eb !important; margin: 12px 0 !important; }
+[data-testid="stSidebar"] [role="radiogroup"] { gap: 2px; }
 [data-testid="stSidebar"] [role="radiogroup"] label {
-    padding: 8px 12px !important; border-radius: 8px !important; margin-bottom: 2px !important;
-    transition: all 0.15s ease !important; color: #FFFFFF !important;
+    padding: 10px 12px !important; border-radius: 8px !important; margin-bottom: 0 !important;
+    transition: all 0.15s ease !important; color: #374151 !important; font-weight: 500 !important;
+    border: 1px solid transparent !important; background: transparent !important;
 }
-[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: rgba(255,255,255,0.1) !important; }
-[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) { background: rgba(255,255,255,0.15) !important; font-weight: 600 !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label * { color: #374151 !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label:hover { background: #f3f4f6 !important; color: #111827 !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label:hover * { color: #111827 !important; }
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+    background: #eff6ff !important; color: #1F4E78 !important; font-weight: 600 !important;
+    border-color: #bfdbfe !important;
+}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) * { color: #1F4E78 !important; }
 h1, h2, h3 { color: #101828 !important; font-weight: 600 !important; letter-spacing: -0.01em; }
 [data-testid="stMarkdownContainer"] a { color: var(--link) !important; }
 hr { border-color: var(--border) !important; }
@@ -370,21 +378,21 @@ button[data-testid^="stBaseButton-"]:hover, a[data-testid^="stBaseLinkButton-"]:
     background: var(--azul-petroleo) !important;
 }
 [data-testid="stSidebar"] button[data-testid^="stBaseButton-"] {
-    background: rgba(255,255,255,0.1) !important; color: #FFFFFF !important;
-    border: 1px solid rgba(255,255,255,0.2) !important; border-radius: 8px !important;
+    background: #f8fafc !important; color: #1f2937 !important;
+    border: 1px solid #d1d5db !important; border-radius: 8px !important;
 }
-[data-testid="stSidebar"] button[data-testid^="stBaseButton-"]:hover { background: rgba(255,255,255,0.2) !important; }
+[data-testid="stSidebar"] button[data-testid^="stBaseButton-"]:hover { background: #eef2f7 !important; border-color: #9ca3af !important; }
 [data-testid="stDataFrame"], [data-testid="stTable"] {
     border: 1px solid var(--border); border-radius: 10px; overflow: hidden; box-shadow: var(--shadow);
 }
 [data-testid="stSidebar"] div[data-baseweb="select"] > div,
 [data-testid="stSidebar"] div[data-baseweb="input"],
 [data-testid="stSidebar"] [role="combobox"] {
-    background: rgba(255,255,255,0.95) !important; border: 1px solid rgba(255,255,255,0.3) !important; border-radius: 8px;
+    background: #FFFFFF !important; border: 1px solid #d1d5db !important; border-radius: 8px;
 }
 [data-testid="stSidebar"] div[data-baseweb="select"] *,
-[data-testid="stSidebar"] div[data-baseweb="input"] *, [data-testid="stSidebar"] [role="combobox"] * { color: #1F2933 !important; }
-[data-testid="stSidebar"] input, [data-testid="stSidebar"] textarea { color: #1F2933 !important; -webkit-text-fill-color: #1F2933 !important; background: #FFFFFF !important; }
+[data-testid="stSidebar"] div[data-baseweb="input"] *, [data-testid="stSidebar"] [role="combobox"] * { color: #1f2937 !important; }
+[data-testid="stSidebar"] input, [data-testid="stSidebar"] textarea { color: #1f2937 !important; -webkit-text-fill-color: #1f2937 !important; background: #FFFFFF !important; }
 </style>
 """
 st.markdown(_CSS_TEMA, unsafe_allow_html=True)
@@ -2463,12 +2471,12 @@ def exportar(texto):
                                    file_name=p.name, key=f"dl_{chave}")
 
 
-# ------------------------------------------------------------------ navegacao principal (sidebar)
+st.sidebar.divider()
 st.sidebar.markdown("### Navegação")
 menu_opcoes = [
     "1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência",
     "🗂️ Base legal", "📎 Anexo/Análise", "📰 Decisões & Processos",
-    "📌 Acompanhar processo", "💬 Chat IA"
+    "📌 Acompanhar processo", "💬 Chat IA",
 ]
 aba_selecionada = st.sidebar.radio("Ir para", menu_opcoes, label_visibility="collapsed", key="menu_navegacao")
 
