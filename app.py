@@ -112,26 +112,34 @@ _CSS_LEIS = """
     font-weight: 600 !important;
     color: #111827 !important;
 }
-/* Comandos sidebar - sem bolinha, maior */
+/* Comandos sidebar - sem bolinha, sem marcador */
 [data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child,
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label span:first-child,
 [data-testid="stSidebar"] [data-testid="stRadio"] input[type="radio"],
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"],
 [data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
     display: none !important;
     width: 0 !important;
+    min-width: 0 !important;
     height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+    opacity: 0 !important;
 }
 [data-testid="stSidebar"] [data-testid="stRadio"] label {
     font-size: 1.1rem !important;
     padding: 10px 12px !important;
     cursor: pointer !important;
     gap: 0 !important;
+    background: transparent !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+    background: #f3f4f6 !important;
 }
 [data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
 [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked),
 [data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"] {
-    background: #eef2f7 !important;
+    background: transparent !important;
     font-weight: 600 !important;
     color: #111827 !important;
 }
