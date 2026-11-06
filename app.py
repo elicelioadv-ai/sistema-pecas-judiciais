@@ -97,6 +97,44 @@ _CSS_LEIS = """
     line-height: 1.2;
 }
 .lei-grid a:hover { background: #1057c4; }
+
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child {
+    display: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    font-size: 1.05rem !important;
+    padding: 10px 12px !important;
+    cursor: pointer !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    background: #eef2f7 !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+}
+/* Comandos sidebar - sem bolinha, maior */
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child,
+[data-testid="stSidebar"] [data-testid="stRadio"] input[type="radio"],
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    font-size: 1.1rem !important;
+    padding: 10px 12px !important;
+    cursor: pointer !important;
+    gap: 0 !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked),
+[data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"] {
+    background: #eef2f7 !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+}
 </style>
 """
 
@@ -305,6 +343,21 @@ div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
 .st-key-captcha_nativo button[data-testid^="stBaseButton-primary"] {
     background: #d7eef3 !important; color: #222222 !important; border: 2px solid #0093AE !important;
     box-shadow: inset 0 0 0 2px #0093AE !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child {
+    display: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    font-size: 1.05rem !important;
+    padding: 10px 12px !important;
+    cursor: pointer !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    background: #eef2f7 !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
 }
 </style>
 """
@@ -520,6 +573,21 @@ a[data-testid^="stBaseLinkButton-"]:hover {
     background: #FFF8E1; border: 1px solid #F5AF00; color: #6B4B00;
     border-radius: 6px; padding: 6px 10px; margin: 0 0 6px 0; font-size: 0.85rem;
 }
+
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child {
+    display: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    font-size: 1.05rem !important;
+    padding: 10px 12px !important;
+    cursor: pointer !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    background: #eef2f7 !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+}
 </style>
 """
 
@@ -644,6 +712,21 @@ def _captcha_html():
   .recaptcha-btn { margin-top:10px; width:100%; background:#1F4E78; color:#fff;
     border:none; border-radius:6px; padding:9px; font-weight:700; font-size:14px; cursor:pointer; }
   .recaptcha-btn:hover { background:#2d6aa3; }
+
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child {
+    display: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label {
+    font-size: 1.05rem !important;
+    padding: 10px 12px !important;
+    cursor: pointer !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    background: #eef2f7 !important;
+    font-weight: 600 !important;
+    color: #111827 !important;
+}
 </style>
 <div class="recaptcha">
   <button type="button" class="recaptcha-topo" id="topo" onclick="abrir()">
@@ -2674,15 +2757,16 @@ with st.sidebar:
     st.caption(f"Sessão: {st.session_state.get('usuario', 'advogado(a)')}")
     st.markdown("**Comandos**")
     _secoes = [
-        "1️⃣ Caso", "2️⃣ Fatos", "3️⃣ Peça", "4️⃣ Conferência",
-        "🗂️ Base legal", "📎 Anexo/Análise", "📰 Decisões & Processos",
-        "📌 Acompanhar processo", "💬 Chat IA",
+        "Caso", "Fatos", "Peça", "Conferência",
+        "Base legal", "Anexo/Análise", "Decisões & Processos",
+        "Acompanhar processo", "Chat IA",
     ]
-    if "secao_ativa" not in st.session_state:
+    if "secao_ativa" not in st.session_state or st.session_state["secao_ativa"] not in _secoes:
         st.session_state["secao_ativa"] = _secoes[0]
-    st.session_state["secao_ativa"] = st.radio(
-        "Ir para", _secoes, index=_secoes.index(st.session_state["secao_ativa"]) if st.session_state["secao_ativa"] in _secoes else 0,
-        label_visibility="collapsed", key="_nav_radio"
+    st.radio(
+        "Ir para", _secoes,
+        index=_secoes.index(st.session_state["secao_ativa"]),
+        label_visibility="collapsed", key="secao_ativa"
     )
     st.divider()
 
@@ -2970,7 +3054,7 @@ def _comunicacoes_processo(alias, numero):
 
 
 def aba_decisoes():
-    st.subheader("📰 Decisões & Processos")
+    st.subheader("Decisões & Processos")
     st.caption(
         "Pesquisa de jurisprudência nas **fontes oficiais** (STJ, STF, TST, TJs...) e atalhos. "
         "O sistema só reúne e organiza — confira sempre no site oficial antes de citar."
@@ -3077,7 +3161,7 @@ def aba_decisoes():
 
 
 def aba_processos():
-    st.subheader("📌 Acompanhar processo")
+    st.subheader("Acompanhar processo")
     st.caption("Consulta, pelo número único, os dados e as **movimentações** de um processo. "
                "São metadados oficiais do DataJud — o texto da decisão você lê no site do tribunal.")
     c1, c2 = st.columns(2)
@@ -3247,9 +3331,9 @@ def exportar(texto):
 
 # ------------------------------------------------------------------ abas principais
 # navegação via sidebar
-_sec = st.session_state.get("secao_ativa", "1️⃣ Caso")
+_sec = st.session_state.get("secao_ativa", "Caso")
 
-if st.session_state.get("secao_ativa", "1️⃣ Caso") == "1️⃣ Caso":
+if st.session_state.get("secao_ativa", "Caso") == "Caso":
     st.subheader("Dados da peça")
     st.caption("Preencha como no cabeçalho da peça. O que ficar em branco, a IA identifica nos fatos na hora "
                "de redigir; no final tudo sai junto no cabeçalho.")
@@ -3294,7 +3378,7 @@ if st.session_state.get("secao_ativa", "1️⃣ Caso") == "1️⃣ Caso":
     with st.expander("Ver bloco de dados que vai para a IA"):
         st.code(st.session_state["dados"] or "(vazio)")
 
-elif st.session_state.get("secao_ativa") == "📎 Anexo/Análise":
+elif st.session_state.get("secao_ativa") == "Anexo/Análise":
     st.subheader("📎 Anexar documento e analisar (triagem)")
     st.caption("A IA lê o documento (PDF/DOCX/TXT digital), identifica o tipo de peça cabível e aponta "
                "possíveis erros, indicando a fundamentação A CONFERIR. É um apoio; não substitui sua análise.")
@@ -3332,9 +3416,9 @@ elif st.session_state.get("secao_ativa") == "📎 Anexo/Análise":
             with st.expander("Alertas da conferência"):
                 for n, m in st.session_state["analise_alertas"]:
                     alerta(n, m)
-        st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba 🗂️ Base legal (status 'verificado').")
+        st.caption("Para a IA poder citar uma norma na peça, cadastre-a na aba Base legal (status 'verificado').")
 
-elif st.session_state.get("secao_ativa") == "2️⃣ Fatos":
+elif st.session_state.get("secao_ativa") == "Fatos":
     st.subheader("Relato do cliente")
     if st.session_state.get("_rascunho_msg"):
         st.info(st.session_state.pop("_rascunho_msg"), icon="💾")
@@ -3510,7 +3594,7 @@ elif st.session_state.get("secao_ativa") == "2️⃣ Fatos":
                     except Exception as e:
                         st.error(f"Não foi possível salvar: {e}")
 
-elif st.session_state.get("secao_ativa") == "3️⃣ Peça":
+elif st.session_state.get("secao_ativa") == "Peça":
     st.subheader("Peça gerada (edite à vontade)")
     if not st.session_state["peca_edit"]:
         st.info("Gere a peça na aba 2️⃣.")
@@ -3519,7 +3603,7 @@ elif st.session_state.get("secao_ativa") == "3️⃣ Peça":
                          placeholder="A peça aparece aqui — pode corrigir antes de exportar")
         exportar(texto)
 
-elif st.session_state.get("secao_ativa") == "4️⃣ Conferência":
+elif st.session_state.get("secao_ativa") == "Conferência":
     st.subheader("🔍 Sugestões de jurisprudência (conferir)")
     st.warning(
         "A IA sugere **fontes para você CONFERIR** na origem. Nada entra na peça automaticamente. "
@@ -3560,21 +3644,21 @@ elif st.session_state.get("secao_ativa") == "4️⃣ Conferência":
                 if it["busca"]:
                     st.markdown(f"**Busca:** {it['busca']}")
                 st.link_button("🔎 Abrir busca na fonte oficial", it["url"])
-        st.caption("Depois de conferir no site oficial, cadastre na aba 🗂️ Base legal com status "
+        st.caption("Depois de conferir no site oficial, cadastre na aba Base legal com status "
                    "'verificado' para a IA poder citar na peça.")
     st.divider()
     aba_conferencia()
 
-elif st.session_state.get("secao_ativa") == "🗂️ Base legal":
+elif st.session_state.get("secao_ativa") == "Base legal":
     aba_base()
 
-elif st.session_state.get("secao_ativa") == "📰 Decisões & Processos":
+elif st.session_state.get("secao_ativa") == "Decisões & Processos":
     aba_decisoes()
 
-elif st.session_state.get("secao_ativa") == "📌 Acompanhar processo":
+elif st.session_state.get("secao_ativa") == "Acompanhar processo":
     aba_processos()
 
-elif st.session_state.get("secao_ativa") == "💬 Chat IA":
+elif st.session_state.get("secao_ativa") == "Chat IA":
     st.subheader("💬 Conversar com a IA")
     st.caption("Tire dúvidas e pesquise sobre o processo. A IA é apoio — confira sempre as fontes oficiais.")
     c1, c2 = st.columns([1, 4])
