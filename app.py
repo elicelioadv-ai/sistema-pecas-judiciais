@@ -284,9 +284,11 @@ div[data-testid="stForm"] [data-testid="stExpander"] details,
 }
 div[data-testid="stForm"] [data-testid="stExpander"] summary,
 .st-key-login_campos [data-testid="stExpander"] summary {
-    justify-content: center !important; padding: 2px 0 !important;
-    color: #1F4E78 !important; font-weight: 600 !important; font-size: 0.9rem !important;
+    justify-content: flex-start !important; padding: 2px 0 8px 0 !important;
+    color: #1F4E78 !important; font-weight: 500 !important; font-size: 0.9rem !important;
+    cursor: pointer !important;
 }
+.st-key-login_campos [data-testid="stExpander"] summary:hover { text-decoration: underline !important; }
 div[data-testid="stForm"] [data-testid="stExpander"] summary svg,
 .st-key-login_campos [data-testid="stExpander"] summary svg { display: none !important; }
 div[data-testid="stForm"] [data-testid="stExpander"] summary:hover,
@@ -1154,9 +1156,9 @@ if not st.session_state.setdefault("autenticado", False):
             usuario_entrada = st.text_input("Usuário (ou e-mail)", key="login_usuario",
                                             placeholder="Usuário (ou e-mail)")
             senha_entrada = st.text_input("Senha de acesso", key="login_senha",
-                                          type="password", placeholder="Senha de acesso",
+                                          type="password", placeholder="Senha (mín. 4 caracteres)",
                                           autocomplete="new-password")
-            with st.expander("🔑 Esqueceu a senha?"):
+            with st.expander("Esqueceu a senha?"):
                 st.markdown(
                     "Sem problema. Sua senha não pode ser enviada por e-mail, mas pode ser "
                     "**redefinida**:\n\n"
