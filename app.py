@@ -113,18 +113,22 @@ _CSS_LEIS = """
     color: #111827 !important;
 }
 /* Comandos sidebar - sem bolinha, sem marcador */
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child,
-[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label span:first-child,
-[data-testid="stSidebar"] [data-testid="stRadio"] input[type="radio"],
-[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"],
-[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
+[data-testid="stSidebar"] [data-testid="stRadio"] div[role="radiogroup"] > label > div:first-child {
     display: none !important;
     width: 0 !important;
     min-width: 0 !important;
-    height: 0 !important;
     margin: 0 !important;
     padding: 0 !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] input[type="radio"] {
+    position: absolute !important;
     opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] [data-baseweb="radio"] > div:first-child {
+    display: none !important;
 }
 [data-testid="stSidebar"] [data-testid="stRadio"] label {
     font-size: 1.1rem !important;
@@ -132,16 +136,27 @@ _CSS_LEIS = """
     cursor: pointer !important;
     gap: 0 !important;
     background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 [data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
     background: #f3f4f6 !important;
 }
 [data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
 [data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked),
-[data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"] {
+[data-testid="stSidebar"] [data-testid="stRadio"] label[aria-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] [aria-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] [aria-checked="true"] * {
     background: transparent !important;
-    font-weight: 600 !important;
+    background-color: transparent !important;
     color: #111827 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"],
+[data-testid="stSidebar"] [data-testid="stRadio"] label:has(input:checked) {
+    font-weight: 600 !important;
 }
 </style>
 """
